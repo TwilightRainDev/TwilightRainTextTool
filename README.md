@@ -176,6 +176,7 @@ TextTool/
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.5.1 | 2026-07-17 | Fixed encoding detector: `IsValidUtf8` no longer falsely rejects files when the 4KB probe boundary cuts a multi-byte UTF-8 character mid-sequence (causing GBK fallback and garbled output) |
 | 1.5.0 | 2026-07-17 | Reorderable replace rules (Up/Down); TwilightRain.jpg avatar; language selector moved to About page; all locale keys renamed to PascalCase; punct. truncation fix with custom punctuation; line-ending no-merge rule with custom punctuation; compact About page layout; button sizing fix; publish directory unified; 8f UI font |
 | 1.4.0 | 2026-07-17 | Full i18n (zh_CN / zh_TW / en_US); `Loc` singleton with auto-detect + manual switch + JSON persistence; ProcessingPipeline single-pass refactor; CJK merger O(n²)→O(n); EncodingDetector 4KB header scan; replaces 3+2 file I/O with 1 write |
 | 1.3.0 | 2026-07-17 | Punctuation replacement tab (CRUD + JSON persistence); About tab with app icon; CJK truncation fix; layout bug fixes |
@@ -334,6 +335,7 @@ TextTool/
 
 | 版本 | 日期 | 更新内容 |
 | :-- | :--- | :------- |
+| 1.5.1 | 2026-07-17 | 修复编码检测器：`IsValidUtf8` 因 4KB 探测边界截断多字节 UTF-8 字符而误判为 false，导致回退到 GBK 产生乱码 |
 | 1.5.0 | 2026-07-17 | 替换规则可排序（上移/下移）；关于页添加 TwilightRain.jpg 头像；语言选择从状态栏迁移至关于页；所有 Loc 键改为 PascalCase；新增标点截断断段修复（可自定义标点）；新增行尾部不合并规则（可自定义标点）；关于页紧凑布局；按钮尺寸修复；发布目录统一；8f 界面字体 |
 | 1.4.0 | 2026-07-17 | 完整 i18n 国际化（zh_CN / zh_TW / en_US）；Loc 单例实现自动检测 + 手动切换 + JSON 持久化；ProcessingPipeline 单次遍历重构；CJK 合并 O(n²)→O(n)；EncodingDetector 4KB 头部扫描；3+2 次文件 I/O 简化为 1 次写入 |
 | 1.3.0 | 2026-07-17 | 新增标点替换页签（CRUD + JSON 持久化）；关于页签与程序图标；中文截断修复；布局 bug 修复 |

@@ -23,43 +23,52 @@ public static class CjkParagraphMerger
     }
 
     /// <summary>
-    /// 获取字符串的最后一个非空白字符。若无有效字符则返回 '\0'。
+    /// 一次反向扫描完成 noMerge 检查和 CJK 判断。
+    /// 返回 true 表示应该 flush 当前累积文本（停止合并）。
     /// </summary>
-    private static char LastNonWhitespace(string text)
+    private static bool ShouldFlush(StringBuilder sb, HashSet<char>? noMergeSet)
     {
-        for (int i = text.Length - 1; i >= 0; i--)
+        for (int i = sb.Length - 1; i >= 0; i--)
         {
-            if (!char.IsWhiteSpace(text[i]))
-                return text[i];
+            if (!char.IsWhiteSpace(sb[i]))
+            {
+                char c = sb[i];
+                // noMerge 优先于 CJK 规则
+                if (noMergeSet != null && noMergeSet.Count > 0 && noMergeSet.Contains(c))
+                    return true;
+                // 以 CJK 结尾 → 继续合并（不 flush）
+                return !IsCjkCharacter(c);
+            }
         }
-        return '\0';
+        // 全空白行 → flush
+        return true;
     }
 
     /// <summary>
-    /// 修复中文截断断段。遍历所有行，若某行末字符是 CJK 汉字，
-    /// 则将下一行拼接上来，继续检查直到行末不是汉字或到达最后一行。
+    /// 修复中文截断断段。正向累积模式 — 逐行扫描，遇到以 CJK 结尾的行
+    /// 则继续 append 下一行，直到行末不是汉字再输出。
+    /// noMerge 规则由调用方预编译为 HashSet 传入，避免重复构造。
     /// </summary>
-    public static List<string> Fix(List<string> lines)
+    /// <param name="lines">输入行列表</param>
+    /// <param name="noMergeSet">阻止合并的字符集，null 或空时不检查</param>
+    public static List<string> Fix(List<string> lines, HashSet<char>? noMergeSet = null)
     {
-        var result = new List<string>(lines);
+        var result = new List<string>(lines.Count);
+        var sb = new StringBuilder();
 
-        int i = 0;
-        while (i < result.Count - 1)
+        foreach (string line in lines)
         {
-            char lastChar = LastNonWhitespace(result[i]);
+            sb.Append(line);
 
-            if (lastChar != '\0' && IsCjkCharacter(lastChar))
+            if (ShouldFlush(sb, noMergeSet))
             {
-                // 中文截断：把下一行拼上来
-                result[i] = result[i] + result[i + 1];
-                result.RemoveAt(i + 1);
-                // 不递增 i，继续检查合并后的行
-            }
-            else
-            {
-                i++;
+                result.Add(sb.ToString());
+                sb.Clear();
             }
         }
+
+        if (sb.Length > 0)
+            result.Add(sb.ToString());
 
         return result;
     }

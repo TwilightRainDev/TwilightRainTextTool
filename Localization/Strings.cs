@@ -62,9 +62,9 @@ public static class Loc
     /// </summary>
     public static List<LanguageInfo> GetSupportedLanguages() => new()
     {
-        new LanguageInfo { Code = "zh_CN", Name = "简体中文" },
-        new LanguageInfo { Code = "zh_TW", Name = "繁體中文" },
-        new LanguageInfo { Code = "en_US", Name = "English" },
+        new LanguageInfo { Code = "zh_CN", Name = T("LangZhCN") },
+        new LanguageInfo { Code = "zh_TW", Name = T("LangZhTW") },
+        new LanguageInfo { Code = "en_US", Name = T("LangEnUS") },
     };
 
     /// <summary>

@@ -5,12 +5,12 @@ using TextTool.Services;
 namespace TextTool;
 
 /// <summary>
-/// TwilightRain的文本工具 v1.4.0
-/// - 行合并（阈值 + 中文截断修复 + 标点替换）
-/// - 文件拼接
-/// - 标点替换规则管理
-/// - 关于
-/// - i18n 国际化（zh_CN / zh_TW / en_US）
+/// TwilightRain's Text Tool v1.5.0
+/// - Line merge (threshold + CJK truncation fix + punctuation replacement)
+/// - File join
+/// - Punctuation replacement rule management
+/// - About page with avatar, version info, language selector
+/// - i18n (zh_CN / zh_TW / en_US)
 /// </summary>
 public sealed class MainForm : Form
 {
@@ -21,7 +21,7 @@ public sealed class MainForm : Form
     private TabPage _tabReplace = null!;
     private TabPage _tabAbout = null!;
 
-    // ===== Tab 1 "行合并" 控件 =====
+    // ===== Tab 1 "Line Merge" controls =====
     private Label _lblSourceFile = null!;
     private TextBox _txtFilePath = null!;
     private Button _btnBrowse = null!;
@@ -33,11 +33,17 @@ public sealed class MainForm : Form
     private Label _lblEncoding = null!;
     private Label _lblPostProcess = null!;
     private CheckBox _chkFixCjk = null!;
+    private CheckBox _chkFixPunct = null!;
     private CheckBox _chkApplyReplace = null!;
+    private CheckBox _chkNoMerge = null!;
     private Button _btnProcess = null!;
     private Label _lblOutput = null!;
+    private Label _lblPunctChars = null!;
+    private TextBox _txtPunctChars = null!;
+    private Label _lblNoMergeChars = null!;
+    private TextBox _txtNoMergeChars = null!;
 
-    // ===== Tab 2 "文件拼接" 控件 =====
+    // ===== Tab 2 "File Join" controls =====
     private Label _lblFolder = null!;
     private TextBox _txtFolder = null!;
     private Button _btnBrowseFolder = null!;
@@ -47,7 +53,7 @@ public sealed class MainForm : Form
     private TextBox _txtOutputName = null!;
     private Button _btnJoin = null!;
 
-    // ===== Tab 3 "标点替换" 控件 =====
+    // ===== Tab 3 "Punctuation Replace" controls =====
     private Label _lblReplaceFile = null!;
     private TextBox _txtReplaceFile = null!;
     private Button _btnBrowseReplaceFile = null!;
@@ -61,20 +67,24 @@ public sealed class MainForm : Form
     private TextBox _txtReplaceWith = null!;
     private Button _btnAddRule = null!;
     private Button _btnDeleteRule = null!;
+    private Button _btnUp = null!;
+    private Button _btnDown = null!;
     private Button _btnReplaceProcess = null!;
     private Label _lblReplaceOutput = null!;
     private Label _lblHint = null!;
 
-    // ===== Tab 4 "关于" 控件 =====
+    // ===== Tab 4 "About" controls =====
     private Label _lblAboutName = null!;
     private Label _lblAboutVersion = null!;
+    private PictureBox _pbAvatar = null!;
     private Label _lblAboutAuthor = null!;
     private Label _lblAboutDesc = null!;
+    private Label _lblAboutLanguage = null!;
+    private ComboBox _cmbAboutLanguage = null!;
 
-    // ===== 共用 =====
+    // ===== Shared =====
     private StatusStrip _statusStrip = null!;
     private ToolStripStatusLabel _statusLabel = null!;
-    private ToolStripComboBox _cmbLanguage = null!;
 
     private DetectionResult? _lastDetection;
     private DetectionResult? _lastReplaceDetection;
@@ -90,9 +100,9 @@ public sealed class MainForm : Form
 
     private void InitializeComponent()
     {
-        // ---- 窗体基本属性 ----
-        Text = "TwilightRain的文本工具";
-        Size = new Size(700, 540);
+        // ---- Form basic properties ----
+        Text = "TwilightRain's Text Tool";
+        Size = new Size(700, 560);
         StartPosition = FormStartPosition.CenterScreen;
         Font = new Font("Microsoft YaHei UI", 10f);
         AllowDrop = true;
@@ -101,10 +111,10 @@ public sealed class MainForm : Form
         {
             Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         }
-        catch { /* icon 不可用时忽略 */ }
+        catch { }
 
-        // ---- 加载标点替换规则 ----
-        _rules = PunctuationReplacer.LoadRules();
+        // ---- Load punctuation replacement rules ----
+        _rules = ReplaceRuleStore.Load();
 
         // ---- TabControl ----
         _tabControl = new TabControl
@@ -113,48 +123,33 @@ public sealed class MainForm : Form
             Padding = new Point(12, 8)
         };
 
-        // ---- Tab 1: 行合并 ----
-        _tabMerge = new TabPage("行合并");
+        // ---- Tab 1: Line Merge ----
+        _tabMerge = new TabPage("Line Merge");
         BuildTabMerge(_tabMerge);
         _tabControl.TabPages.Add(_tabMerge);
 
-        // ---- Tab 2: 文件拼接 ----
-        _tabJoin = new TabPage("文件拼接");
+        // ---- Tab 2: File Join ----
+        _tabJoin = new TabPage("File Join");
         BuildTabJoin(_tabJoin);
         _tabControl.TabPages.Add(_tabJoin);
 
-        // ---- Tab 3: 标点替换 ----
-        _tabReplace = new TabPage("标点替换");
+        // ---- Tab 3: Punctuation Replace ----
+        _tabReplace = new TabPage("Punct. Replace");
         BuildTabReplace(_tabReplace);
         _tabControl.TabPages.Add(_tabReplace);
 
-        // ---- Tab 4: 关于 ----
-        _tabAbout = new TabPage("关于");
+        // ---- Tab 4: About ----
+        _tabAbout = new TabPage("About");
         BuildTabAbout(_tabAbout);
         _tabControl.TabPages.Add(_tabAbout);
 
-        // ---- StatusStrip ----
+        // ---- StatusStrip (language selector moved to About page) ----
         _statusStrip = new StatusStrip();
         _statusLabel = new ToolStripStatusLabel("Ready");
         _statusLabel.Spring = true;
         _statusStrip.Items.Add(_statusLabel);
 
-        // 语言选择器
-        var lblLang = new ToolStripStatusLabel { Text = "🌐" };
-        _cmbLanguage = new ToolStripComboBox
-        {
-            DropDownStyle = ComboBoxStyle.DropDownList,
-            Width = 110
-        };
-        foreach (var lang in Loc.GetSupportedLanguages())
-            _cmbLanguage.Items.Add(lang);
-        _cmbLanguage.ComboBox.DisplayMember = "Name";
-        _cmbLanguage.ComboBox.ValueMember = "Code";
-        _cmbLanguage.SelectedIndexChanged += OnLanguageChanged;
-        _statusStrip.Items.Add(lblLang);
-        _statusStrip.Items.Add(_cmbLanguage);
-
-        // ---- 组装 ----
+        // ---- Assemble ----
         var mainPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(8) };
         mainPanel.Controls.Add(_tabControl);
 
@@ -163,83 +158,90 @@ public sealed class MainForm : Form
     }
 
     // ================================================================
-    //  语言切换
+    //  Localization
     // ================================================================
     private void OnLanguageChanged(object? sender, EventArgs e)
     {
-        if (_cmbLanguage.SelectedItem is LanguageInfo lang && lang.Code != Loc.CurrentLang)
+        if (_cmbAboutLanguage.SelectedItem is LanguageInfo lang && lang.Code != Loc.CurrentLang)
             Loc.SetLanguage(lang.Code);
     }
 
-    /// <summary>
-    /// 刷新所有 UI 文本（语言切换时调用）
-    /// </summary>
     private void ApplyLocalization()
     {
-        // 窗体标题
-        Text = Loc.T("app_title");
+        Text = Loc.T("AppTitle");
 
-        // Tab 名称
-        _tabMerge.Text = Loc.T("tab_merge");
-        _tabJoin.Text = Loc.T("tab_join");
-        _tabReplace.Text = Loc.T("tab_replace");
-        _tabAbout.Text = Loc.T("tab_about");
+        _tabMerge.Text = Loc.T("TabMerge");
+        _tabJoin.Text = Loc.T("TabJoin");
+        _tabReplace.Text = Loc.T("TabReplace");
+        _tabAbout.Text = Loc.T("TabAbout");
 
-        // ---- Tab 1: 行合并 ----
-        _lblSourceFile.Text = Loc.T("label_source_file");
-        _btnBrowse.Text = Loc.T("btn_browse");
-        _lblThreshold.Text = Loc.T("label_threshold");
-        _rbByte.Text = Loc.T("radio_byte");
-        _rbChar.Text = Loc.T("radio_char");
-        _lblEncodingTag.Text = Loc.T("label_encoding");
-        if (_lastDetection == null) _lblEncoding.Text = Loc.T("encoding_not_selected");
-        _lblPostProcess.Text = Loc.T("label_post_process");
-        _chkFixCjk.Text = Loc.T("chk_fix_cjk");
-        _chkApplyReplace.Text = Loc.T("chk_apply_replace");
-        _btnProcess.Text = Loc.T("btn_process");
+        _lblSourceFile.Text = Loc.T("LabelSourceFile");
+        _btnBrowse.Text = Loc.T("BtnBrowse");
+        _lblThreshold.Text = Loc.T("LabelThreshold");
+        _rbByte.Text = Loc.T("RadioByte");
+        _rbChar.Text = Loc.T("RadioChar");
+        _lblEncodingTag.Text = Loc.T("LabelEncoding");
+        if (_lastDetection == null) _lblEncoding.Text = Loc.T("EncodingNotSelected");
+        _lblPostProcess.Text = Loc.T("LabelPostProcess");
+        _chkFixCjk.Text = Loc.T("ChkFixCjk");
+        _chkFixPunct.Text = Loc.T("ChkFixPunct");
+        _lblPunctChars.Text = Loc.T("LabelPunctChars");
+        _chkApplyReplace.Text = Loc.T("ChkApplyReplace");
+        _chkNoMerge.Text = Loc.T("ChkNoMerge");
+        _lblNoMergeChars.Text = Loc.T("LabelNoMergeChars");
+        _btnProcess.Text = Loc.T("BtnProcess");
 
-        // ---- Tab 2: 文件拼接 ----
-        _lblFolder.Text = Loc.T("label_folder");
-        _lblPattern.Text = Loc.T("label_pattern");
-        _lblOutputFile.Text = Loc.T("label_output_file");
-        _btnJoin.Text = Loc.T("btn_join");
+        _lblFolder.Text = Loc.T("LabelFolder");
+        _lblPattern.Text = Loc.T("LabelPattern");
+        _lblOutputFile.Text = Loc.T("LabelOutputFile");
+        _btnJoin.Text = Loc.T("BtnJoin");
 
-        // ---- Tab 3: 标点替换 ----
-        _lblReplaceFile.Text = Loc.T("label_source_file");
-        _btnBrowseReplaceFile.Text = Loc.T("btn_browse");
-        _lblReplaceEncodingTag.Text = Loc.T("label_encoding");
-        if (_lastReplaceDetection == null) _lblReplaceEncoding.Text = Loc.T("encoding_not_selected");
-        _lblRulesHeader.Text = Loc.T("label_rules");
-        _lblFind.Text = Loc.T("label_find");
-        _lblReplaceWith.Text = Loc.T("label_replace_with");
-        _btnAddRule.Text = Loc.T("btn_add_update");
-        _btnDeleteRule.Text = Loc.T("btn_delete");
-        _lblHint.Text = Loc.T("hint_rule_edit");
-        _btnReplaceProcess.Text = Loc.T("btn_execute_replace");
+        _lblReplaceFile.Text = Loc.T("LabelSourceFile");
+        _btnBrowseReplaceFile.Text = Loc.T("BtnBrowse");
+        _lblReplaceEncodingTag.Text = Loc.T("LabelEncoding");
+        if (_lastReplaceDetection == null) _lblReplaceEncoding.Text = Loc.T("EncodingNotSelected");
+        _lblRulesHeader.Text = Loc.T("LabelRules");
+        _lblFind.Text = Loc.T("LabelFind");
+        _lblReplaceWith.Text = Loc.T("LabelReplaceWith");
+        _btnAddRule.Text = Loc.T("BtnAddUpdate");
+        _btnDeleteRule.Text = Loc.T("BtnDelete");
+        _btnUp.Text = Loc.T("BtnUp");
+        _btnDown.Text = Loc.T("BtnDown");
+        _lblHint.Text = Loc.T("HintRuleEdit");
+        _btnReplaceProcess.Text = Loc.T("BtnExecuteReplace");
 
-        // ---- Tab 4: 关于 ----
-        _lblAboutName.Text = Loc.T("about_title");
+        _lblAboutName.Text = Loc.T("AboutTitle");
         var asmVer = typeof(MainForm).Assembly.GetName().Version;
-        _lblAboutVersion.Text = Loc.T("about_version", asmVer != null ? $"{asmVer.Major}.{asmVer.Minor}.{asmVer.Build}" : "1.4.0");
-        _lblAboutAuthor.Text = Loc.T("about_author");
-        _lblAboutDesc.Text = Loc.T("about_description");
+        _lblAboutVersion.Text = Loc.T("AboutVersion",
+            asmVer != null ? $"{asmVer.Major}.{asmVer.Minor}.{asmVer.Build}" : "1.5.0");
+        _lblAboutAuthor.Text = Loc.T("AboutAuthor");
+        _lblAboutDesc.Text = Loc.T("AboutDescription");
+        _lblAboutLanguage.Text = Loc.T("AboutLanguage");
 
-        // ---- 状态栏 ----
-        _statusLabel.Text = Loc.T("status_ready");
+        RebuildLanguageCombo();
+        _statusLabel.Text = Loc.T("StatusReady");
+    }
 
-        // ---- 语言下拉框 ----
-        for (int i = 0; i < _cmbLanguage.Items.Count; i++)
+    private void RebuildLanguageCombo()
+    {
+        _cmbAboutLanguage.Items.Clear();
+        foreach (var lang in Loc.GetSupportedLanguages())
+            _cmbAboutLanguage.Items.Add(lang);
+        _cmbAboutLanguage.DisplayMember = "Name";
+        _cmbAboutLanguage.ValueMember = "Code";
+
+        for (int i = 0; i < _cmbAboutLanguage.Items.Count; i++)
         {
-            if (_cmbLanguage.Items[i] is LanguageInfo li && li.Code == Loc.CurrentLang)
+            if (_cmbAboutLanguage.Items[i] is LanguageInfo li && li.Code == Loc.CurrentLang)
             {
-                _cmbLanguage.SelectedIndex = i;
+                _cmbAboutLanguage.SelectedIndex = i;
                 break;
             }
         }
     }
 
     // ================================================================
-    //  Tab 1: 行合并
+    //  Tab 1: Line Merge
     // ================================================================
     private void BuildTabMerge(TabPage tab)
     {
@@ -247,16 +249,16 @@ public sealed class MainForm : Form
         {
             Dock = DockStyle.Fill,
             ColumnCount = 3,
-            RowCount = 7,
+            RowCount = 9,
             Padding = new Padding(16, 16, 16, 8)
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
-        // Row 0 — 源文件
+        // Row 0 — Source file
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
-        _lblSourceFile = MakeLabel("源文件：");
+        _lblSourceFile = MakeLabel("Source File:");
         layout.Controls.Add(_lblSourceFile, 0, 0);
         _txtFilePath = new TextBox
         {
@@ -269,13 +271,13 @@ public sealed class MainForm : Form
         _txtFilePath.DragDrop += OnFileDragDrop;
         layout.Controls.Add(_txtFilePath, 1, 0);
 
-        _btnBrowse = new Button { Text = "浏览...", AutoSize = true };
+        _btnBrowse = new Button { Text = "Browse...", AutoSize = true };
         _btnBrowse.Click += OnBrowseFile;
         layout.Controls.Add(_btnBrowse, 2, 0);
 
-        // Row 1 — 阈值 + 模式
+        // Row 1 — Threshold
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
-        _lblThreshold = MakeLabel("阈值：");
+        _lblThreshold = MakeLabel("Threshold:");
         layout.Controls.Add(_lblThreshold, 0, 1);
 
         var thresholdPanel = new FlowLayoutPanel
@@ -295,14 +297,14 @@ public sealed class MainForm : Form
 
         _rbByte = new RadioButton
         {
-            Text = "字节数",
+            Text = "By Bytes",
             Checked = true,
             AutoSize = true,
             Margin = new Padding(16, 0, 0, 0)
         };
         _rbChar = new RadioButton
         {
-            Text = "字符数",
+            Text = "By Chars",
             AutoSize = true,
             Margin = new Padding(8, 0, 0, 0)
         };
@@ -310,25 +312,25 @@ public sealed class MainForm : Form
         thresholdPanel.Controls.Add(_rbChar);
         layout.Controls.Add(thresholdPanel, 1, 1);
 
-        // Row 2 — 编码检测
+        // Row 2 — Encoding
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
-        _lblEncodingTag = MakeLabel("检测编码：");
+        _lblEncodingTag = MakeLabel("Encoding:");
         layout.Controls.Add(_lblEncodingTag, 0, 2);
         _lblEncoding = new Label
         {
-            Text = "（尚未选择文件）",
+            Text = "(No file selected)",
             ForeColor = Color.Gray,
             Anchor = AnchorStyles.Left
         };
         layout.Controls.Add(_lblEncoding, 1, 2);
 
-        // Row 3 — 中文截断修复
+        // Row 3 — Post: Fix CJK truncation
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
-        _lblPostProcess = MakeLabel("后处理：");
+        _lblPostProcess = MakeLabel("Post:");
         layout.Controls.Add(_lblPostProcess, 0, 3);
         _chkFixCjk = new CheckBox
         {
-            Text = "修复中文截断断段",
+            Text = "Fix CJK truncation",
             Checked = true,
             AutoSize = true,
             Anchor = AnchorStyles.Left
@@ -336,36 +338,96 @@ public sealed class MainForm : Form
         layout.SetColumnSpan(_chkFixCjk, 2);
         layout.Controls.Add(_chkFixCjk, 1, 3);
 
-        // Row 4 — 标点替换
+        // Row 4 — Fix punct. truncation + custom punct textbox
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+        _chkFixPunct = new CheckBox
+        {
+            Text = "Fix punct. truncation",
+            Checked = false,
+            AutoSize = true,
+            Anchor = AnchorStyles.Left
+        };
+        _lblPunctChars = new Label
+        {
+            Text = "Custom punct.:",
+            AutoSize = true,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Margin = new Padding(8, 0, 4, 0)
+        };
+        _txtPunctChars = new TextBox
+        {
+            Text = "，",
+            Width = 100,
+            Anchor = AnchorStyles.Left
+        };
+        var punctFixRow = new FlowLayoutPanel
+        {
+            Anchor = AnchorStyles.Left,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            AutoSize = true
+        };
+        punctFixRow.Controls.Add(_chkFixPunct);
+        punctFixRow.Controls.Add(_lblPunctChars);
+        punctFixRow.Controls.Add(_txtPunctChars);
+        layout.SetColumnSpan(punctFixRow, 2);
+        layout.Controls.Add(punctFixRow, 1, 4);
+
+        // Row 5 — Apply punct. replace rules
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
         _chkApplyReplace = new CheckBox
         {
-            Text = "应用标点替换规则",
+            Text = "Apply punct. replace rules",
             Checked = false,
             AutoSize = true,
             Anchor = AnchorStyles.Left
         };
         layout.SetColumnSpan(_chkApplyReplace, 2);
-        layout.Controls.Add(_chkApplyReplace, 1, 4);
+        layout.Controls.Add(_chkApplyReplace, 1, 5);
 
-        // Row 5 — 处理按钮
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
-        _btnProcess = new Button
+        // Row 6 — Line-ending punct. no-merge + custom punct textbox
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+        _chkNoMerge = new CheckBox
         {
-            Text = "▶  处理",
-            Enabled = false,
+            Text = "Line-ending punct. no-merge",
+            Checked = false,
             AutoSize = true,
-            Font = new Font("Microsoft YaHei UI", 11f, FontStyle.Bold),
-            BackColor = Color.SteelBlue,
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat,
-            Padding = new Padding(24, 6, 24, 6)
+            Anchor = AnchorStyles.Left
         };
-        _btnProcess.FlatAppearance.BorderSize = 0;
-        _btnProcess.Click += OnProcess;
-        layout.Controls.Add(_btnProcess, 1, 5);
+        _lblNoMergeChars = new Label
+        {
+            Text = "Custom punct.:",
+            AutoSize = true,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Margin = new Padding(8, 0, 4, 0)
+        };
+        _txtNoMergeChars = new TextBox
+        {
+            Text = "。！？",
+            Width = 100,
+            Anchor = AnchorStyles.Left
+        };
+        var noMergeRow = new FlowLayoutPanel
+        {
+            Anchor = AnchorStyles.Left,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            AutoSize = true
+        };
+        noMergeRow.Controls.Add(_chkNoMerge);
+        noMergeRow.Controls.Add(_lblNoMergeChars);
+        noMergeRow.Controls.Add(_txtNoMergeChars);
+        layout.SetColumnSpan(noMergeRow, 2);
+        layout.Controls.Add(noMergeRow, 1, 6);
 
-        // Row 6 — 输出提示
+        // Row 7 — Process button
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
+        _btnProcess = MakePrimaryButton("Process");
+        _btnProcess.Enabled = false;
+        _btnProcess.Click += OnProcess;
+        layout.Controls.Add(_btnProcess, 1, 7);
+
+        // Row 8 — Output
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
         _lblOutput = new Label
         {
@@ -374,13 +436,13 @@ public sealed class MainForm : Form
             Anchor = AnchorStyles.Left
         };
         layout.SetColumnSpan(_lblOutput, 2);
-        layout.Controls.Add(_lblOutput, 1, 6);
+        layout.Controls.Add(_lblOutput, 1, 8);
 
         tab.Controls.Add(layout);
     }
 
     // ================================================================
-    //  Tab 2: 文件拼接
+    //  Tab 2: File Join
     // ================================================================
     private void BuildTabJoin(TabPage tab)
     {
@@ -396,7 +458,7 @@ public sealed class MainForm : Form
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
-        _lblFolder = MakeLabel("目录：");
+        _lblFolder = MakeLabel("Folder:");
         layout.Controls.Add(_lblFolder, 0, 0);
         _txtFolder = new TextBox
         {
@@ -404,34 +466,24 @@ public sealed class MainForm : Form
             Text = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
         };
         layout.Controls.Add(_txtFolder, 1, 0);
-        _btnBrowseFolder = new Button { Text = "浏览...", AutoSize = true };
+        _btnBrowseFolder = new Button { Text = "Browse...", AutoSize = true };
         _btnBrowseFolder.Click += OnBrowseFolder;
         layout.Controls.Add(_btnBrowseFolder, 2, 0);
 
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
-        _lblPattern = MakeLabel("文件匹配：");
+        _lblPattern = MakeLabel("Pattern:");
         layout.Controls.Add(_lblPattern, 0, 1);
         _txtPattern = new TextBox { Text = "*.txt", Anchor = AnchorStyles.Left | AnchorStyles.Right };
         layout.Controls.Add(_txtPattern, 1, 1);
 
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
-        _lblOutputFile = MakeLabel("输出文件：");
+        _lblOutputFile = MakeLabel("Output:");
         layout.Controls.Add(_lblOutputFile, 0, 2);
         _txtOutputName = new TextBox { Text = "combined.txt", Anchor = AnchorStyles.Left | AnchorStyles.Right };
         layout.Controls.Add(_txtOutputName, 1, 2);
 
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
-        _btnJoin = new Button
-        {
-            Text = "▶  拼接",
-            AutoSize = true,
-            Font = new Font("Microsoft YaHei UI", 11f, FontStyle.Bold),
-            BackColor = Color.SteelBlue,
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat,
-            Padding = new Padding(24, 6, 24, 6)
-        };
-        _btnJoin.FlatAppearance.BorderSize = 0;
+        _btnJoin = MakePrimaryButton("Join");
         _btnJoin.Click += OnJoin;
         layout.Controls.Add(_btnJoin, 1, 3);
 
@@ -440,7 +492,7 @@ public sealed class MainForm : Form
     }
 
     // ================================================================
-    //  Tab 3: 标点替换
+    //  Tab 3: Punctuation Replace
     // ================================================================
     private void BuildTabReplace(TabPage tab)
     {
@@ -455,9 +507,9 @@ public sealed class MainForm : Form
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
-        // Row 0 — 文件选择
+        // Row 0 — File selection
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
-        _lblReplaceFile = MakeLabel("源文件：");
+        _lblReplaceFile = MakeLabel("Source:");
         layout.Controls.Add(_lblReplaceFile, 0, 0);
         _txtReplaceFile = new TextBox
         {
@@ -470,24 +522,24 @@ public sealed class MainForm : Form
         _txtReplaceFile.DragDrop += OnReplaceFileDragDrop;
         layout.Controls.Add(_txtReplaceFile, 1, 0);
 
-        _btnBrowseReplaceFile = new Button { Text = "浏览...", AutoSize = true };
+        _btnBrowseReplaceFile = new Button { Text = "Browse...", AutoSize = true };
         _btnBrowseReplaceFile.Click += OnBrowseReplaceFile;
         layout.Controls.Add(_btnBrowseReplaceFile, 2, 0);
 
-        // Row 1 — 编码提示
+        // Row 1 — Encoding hint
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        _lblReplaceEncodingTag = MakeLabel("检测编码：");
+        _lblReplaceEncodingTag = MakeLabel("Encoding:");
         layout.Controls.Add(_lblReplaceEncodingTag, 0, 1);
         _lblReplaceEncoding = new Label
         {
-            Text = "（尚未选择文件）",
+            Text = "(No file selected)",
             ForeColor = Color.Gray,
             Anchor = AnchorStyles.Left
         };
         layout.SetColumnSpan(_lblReplaceEncoding, 2);
         layout.Controls.Add(_lblReplaceEncoding, 1, 1);
 
-        // Row 2 — 规则列表 + 编辑区
+        // Row 2 — Rule list + editor
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
         var ruleSplit = new SplitContainer
@@ -498,19 +550,47 @@ public sealed class MainForm : Form
             Dock = DockStyle.Fill
         };
 
-        // 左侧：规则列表
-        var leftPanel = new Panel { Dock = DockStyle.Fill };
-        _lblRulesHeader = new Label { Text = "替换规则：", AutoSize = true, Dock = DockStyle.Top };
+        // Left: rule list + reorder buttons
+        var leftPanel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3
+        };
+        leftPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        leftPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        leftPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        _lblRulesHeader = new Label { Text = "Replace Rules:", AutoSize = true, Dock = DockStyle.Top };
         _lstRules = new ListBox
         {
             Dock = DockStyle.Fill,
             IntegralHeight = false
         };
         _lstRules.SelectedIndexChanged += OnRuleSelected;
-        leftPanel.Controls.Add(_lstRules);
-        leftPanel.Controls.Add(_lblRulesHeader);
 
-        // 右侧：规则编辑器
+        var reorderPanel = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            AutoSize = true,
+            Margin = new Padding(0, 4, 0, 0)
+        };
+        _btnUp = new Button { Text = "Up", Size = new Size(60, 20), FlatStyle = FlatStyle.Flat, Font = new Font("Microsoft YaHei UI", 8f) };
+        _btnUp.FlatAppearance.BorderSize = 0;
+        _btnUp.Click += OnMoveRuleUp;
+        _btnDown = new Button { Text = "Down", Size = new Size(60, 20), FlatStyle = FlatStyle.Flat, Font = new Font("Microsoft YaHei UI", 8f), Margin = new Padding(4, 0, 0, 0) };
+        _btnDown.FlatAppearance.BorderSize = 0;
+        _btnDown.Click += OnMoveRuleDown;
+        reorderPanel.Controls.Add(_btnUp);
+        reorderPanel.Controls.Add(_btnDown);
+
+        leftPanel.Controls.Add(_lblRulesHeader, 0, 0);
+        leftPanel.Controls.Add(_lstRules, 0, 1);
+        leftPanel.Controls.Add(reorderPanel, 0, 2);
+
+        // Right: rule editor
         var rightPanel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -522,13 +602,13 @@ public sealed class MainForm : Form
         rightPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
         rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
-        _lblFind = MakeLabel("查找：");
+        _lblFind = MakeLabel("Find:");
         rightPanel.Controls.Add(_lblFind, 0, 0);
         _txtFind = new TextBox { Anchor = AnchorStyles.Left | AnchorStyles.Right, Width = 150 };
         rightPanel.Controls.Add(_txtFind, 1, 0);
 
         rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
-        _lblReplaceWith = MakeLabel("替换为：");
+        _lblReplaceWith = MakeLabel("Replace:");
         rightPanel.Controls.Add(_lblReplaceWith, 0, 1);
         _txtReplaceWith = new TextBox { Anchor = AnchorStyles.Left | AnchorStyles.Right, Width = 150 };
         rightPanel.Controls.Add(_txtReplaceWith, 1, 1);
@@ -541,10 +621,10 @@ public sealed class MainForm : Form
             WrapContents = false,
             AutoSize = true
         };
-        _btnAddRule = new Button { Text = "➕ 添加/更新", AutoSize = true, BackColor = Color.LightGreen, FlatStyle = FlatStyle.Flat };
+        _btnAddRule = new Button { Text = "➕ Add/Update", AutoSize = true, BackColor = Color.LightGreen, FlatStyle = FlatStyle.Flat };
         _btnAddRule.FlatAppearance.BorderSize = 0;
         _btnAddRule.Click += OnAddOrUpdateRule;
-        _btnDeleteRule = new Button { Text = "🗑 删除所选", AutoSize = true, BackColor = Color.LightCoral, FlatStyle = FlatStyle.Flat, Margin = new Padding(8, 0, 0, 0) };
+        _btnDeleteRule = new Button { Text = "🗑 Delete", AutoSize = true, BackColor = Color.LightCoral, FlatStyle = FlatStyle.Flat, Margin = new Padding(8, 0, 0, 0) };
         _btnDeleteRule.FlatAppearance.BorderSize = 0;
         _btnDeleteRule.Click += OnDeleteRule;
         btnPanel.Controls.Add(_btnAddRule);
@@ -555,7 +635,7 @@ public sealed class MainForm : Form
         rightPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
         _lblHint = new Label
         {
-            Text = "提示：选择列表中规则可编辑",
+            Text = "Hint: select a rule to edit it",
             ForeColor = Color.Gray,
             AutoSize = true,
             Font = new Font("Microsoft YaHei UI", 8f)
@@ -568,36 +648,25 @@ public sealed class MainForm : Form
         layout.SetColumnSpan(ruleSplit, 3);
         layout.Controls.Add(ruleSplit, 0, 2);
 
-        // Row 3 — 处理按钮
+        // Row 3 — Execute button
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
-        _btnReplaceProcess = new Button
-        {
-            Text = "▶  执行替换",
-            Enabled = false,
-            AutoSize = true,
-            Font = new Font("Microsoft YaHei UI", 11f, FontStyle.Bold),
-            BackColor = Color.SteelBlue,
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat,
-            Padding = new Padding(24, 6, 24, 6)
-        };
-        _btnReplaceProcess.FlatAppearance.BorderSize = 0;
+        _btnReplaceProcess = MakePrimaryButton("Execute Replace");
+        _btnReplaceProcess.Enabled = false;
         _btnReplaceProcess.Click += OnReplaceProcess;
         layout.Controls.Add(_btnReplaceProcess, 1, 3);
 
-        // Row 4 — 输出
+        // Row 4 — Output
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
         _lblReplaceOutput = new Label { Text = "", ForeColor = Color.Green, Anchor = AnchorStyles.Left };
         layout.SetColumnSpan(_lblReplaceOutput, 2);
         layout.Controls.Add(_lblReplaceOutput, 1, 4);
 
-        // 加载已有规则到列表
         RefreshRuleList();
         tab.Controls.Add(layout);
     }
 
     // ================================================================
-    //  Tab 4: 关于
+    //  Tab 4: About
     // ================================================================
     private void BuildTabAbout(TabPage tab)
     {
@@ -612,115 +681,174 @@ public sealed class MainForm : Form
         mainPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        // 居中内容面板
         var centerPanel = new TableLayoutPanel
         {
             AutoSize = true,
             Anchor = AnchorStyles.None,
             ColumnCount = 1,
-            RowCount = 6
+            RowCount = 5,
+            Padding = new Padding(20)
         };
         centerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
-        // Row 0 — 图标
+        // Row 0 — Icons side-by-side: program icon + avatar
         var iconBox = new PictureBox
         {
             Size = new Size(64, 64),
             SizeMode = PictureBoxSizeMode.Zoom,
+            Anchor = AnchorStyles.None
+        };
+        try { iconBox.Image = Icon.ExtractAssociatedIcon(Application.ExecutablePath)?.ToBitmap(); } catch { }
+
+        _pbAvatar = new PictureBox
+        {
+            Size = new Size(64, 64),
+            SizeMode = PictureBoxSizeMode.Zoom,
             Anchor = AnchorStyles.None,
-            Margin = new Padding(0, 0, 0, 12)
+            Margin = new Padding(12, 0, 0, 0)
         };
         try
         {
-            iconBox.Image = Icon.ExtractAssociatedIcon(Application.ExecutablePath)?.ToBitmap();
+            string avatarPath = Path.Combine(AppContext.BaseDirectory, "Resources", "TwilightRain.jpg");
+            if (File.Exists(avatarPath))
+                _pbAvatar.Image = Image.FromFile(avatarPath);
         }
         catch { }
-        centerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        centerPanel.Controls.Add(iconBox, 0, 0);
 
-        // Row 1 — 程序名称
-        _lblAboutName = new Label
+        var iconRow = new FlowLayoutPanel
         {
-            Text = "TwilightRain的文本工具",
-            Font = new Font("Microsoft YaHei UI", 16f, FontStyle.Bold),
             AutoSize = true,
             Anchor = AnchorStyles.None,
-            Margin = new Padding(0, 0, 0, 4)
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            Margin = new Padding(0, 0, 0, 8)
         };
+        iconRow.Controls.Add(iconBox);
+        iconRow.Controls.Add(_pbAvatar);
         centerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        centerPanel.Controls.Add(_lblAboutName, 0, 1);
+        centerPanel.Controls.Add(iconRow, 0, 0);
 
-        // Row 2 — 版本号
+        // Row 1 — Program name + Version (side by side)
+        _lblAboutName = new Label
+        {
+            Text = "TwilightRain's Text Tool",
+            Font = new Font("Microsoft YaHei UI", 16f, FontStyle.Bold),
+            AutoSize = true
+        };
         _lblAboutVersion = new Label
         {
-            Text = "版本 1.4.0",
+            Text = "Version 1.5.0",
             Font = new Font("Microsoft YaHei UI", 10f),
             ForeColor = Color.Gray,
             AutoSize = true,
-            Anchor = AnchorStyles.None,
-            Margin = new Padding(0, 0, 0, 4)
+            Margin = new Padding(12, 5, 0, 0)
         };
-        centerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        centerPanel.Controls.Add(_lblAboutVersion, 0, 2);
 
-        // Row 3 — 作者
-        _lblAboutAuthor = new Label
+        var nameRow = new FlowLayoutPanel
         {
-            Text = "作者：TwilightRain",
-            Font = new Font("Microsoft YaHei UI", 10f),
             AutoSize = true,
             Anchor = AnchorStyles.None,
-            Margin = new Padding(0, 0, 0, 4)
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            Margin = new Padding(0, 0, 0, 12)
         };
+        nameRow.Controls.Add(_lblAboutName);
+        nameRow.Controls.Add(_lblAboutVersion);
         centerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        centerPanel.Controls.Add(_lblAboutAuthor, 0, 3);
+        centerPanel.Controls.Add(nameRow, 0, 1);
 
-        // Row 4 — 网址（可点击）
+        // Row 2 — Author + URL (side by side)
+        _lblAboutAuthor = new Label
+        {
+            Text = "Author: TwilightRain",
+            Font = new Font("Microsoft YaHei UI", 10f),
+            AutoSize = true
+        };
+
         var lblUrl = new LinkLabel
         {
-            Text = "https://github.com/TwilightRainDev",
+            Text = "https://github.com/TwilightRainDev/TextTool",
             Font = new Font("Microsoft YaHei UI", 10f, FontStyle.Underline),
             LinkColor = Color.SteelBlue,
             ActiveLinkColor = Color.DarkBlue,
             AutoSize = true,
-            Anchor = AnchorStyles.None,
-            Margin = new Padding(0, 0, 0, 12),
-            Tag = "https://github.com/TwilightRainDev"
+            Margin = new Padding(16, 0, 0, 0),
+            Tag = "https://github.com/TwilightRainDev/TextTool"
         };
-        lblUrl.LinkClicked += (_, e) =>
+        lblUrl.LinkClicked += (_, _) =>
         {
             try
             {
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                 {
-                    FileName = lblUrl.Tag?.ToString() ?? "https://github.com/TwilightRainDev",
+                    FileName = lblUrl.Tag?.ToString() ?? "https://github.com/TwilightRainDev/TextTool",
                     UseShellExecute = true
                 });
             }
             catch { }
         };
-        centerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        centerPanel.Controls.Add(lblUrl, 0, 4);
 
-        // Row 5 — 说明
+        var authorRow = new FlowLayoutPanel
+        {
+            AutoSize = true,
+            Anchor = AnchorStyles.None,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            Margin = new Padding(0, 0, 0, 16)
+        };
+        authorRow.Controls.Add(_lblAboutAuthor);
+        authorRow.Controls.Add(lblUrl);
+        centerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        centerPanel.Controls.Add(authorRow, 0, 2);
+
+        // Row 3 — Description (full width)
         _lblAboutDesc = new Label
         {
-            Text = "集行合并、文件拼接、中文截断修复、标点替换\n于一体的文本处理工具。",
+            Text = "An all-in-one text processing tool:\nLine Merge, File Join, CJK Fix, Punct. Replace",
             Font = new Font("Microsoft YaHei UI", 9f),
             ForeColor = Color.DimGray,
             AutoSize = true,
             Anchor = AnchorStyles.None,
-            TextAlign = ContentAlignment.MiddleCenter
+            TextAlign = ContentAlignment.MiddleCenter,
+            Margin = new Padding(0, 0, 0, 16)
         };
         centerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        centerPanel.Controls.Add(_lblAboutDesc, 0, 5);
+        centerPanel.Controls.Add(_lblAboutDesc, 0, 3);
+
+        // Row 4 — Language label + Language selector (side by side)
+        _lblAboutLanguage = new Label
+        {
+            Text = "Language:",
+            Font = new Font("Microsoft YaHei UI", 9f),
+            AutoSize = true,
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+        _cmbAboutLanguage = new ComboBox
+        {
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            Width = 140,
+            Margin = new Padding(8, 0, 0, 0)
+        };
+        _cmbAboutLanguage.SelectedIndexChanged += OnLanguageChanged;
+
+        var langRow = new FlowLayoutPanel
+        {
+            AutoSize = true,
+            Anchor = AnchorStyles.None,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false
+        };
+        langRow.Controls.Add(_lblAboutLanguage);
+        langRow.Controls.Add(_cmbAboutLanguage);
+        centerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        centerPanel.Controls.Add(langRow, 0, 4);
 
         mainPanel.Controls.Add(centerPanel, 0, 0);
         tab.Controls.Add(mainPanel);
     }
 
     // ================================================================
-    //  拖放支持
+    //  Drag & Drop
     // ================================================================
     private void OnFileDragEnter(object? sender, DragEventArgs e)
     {
@@ -744,7 +872,7 @@ public sealed class MainForm : Form
 
     private void SelectFile(string path)
     {
-        if (!File.Exists(path)) { ShowError(Loc.T("msg_file_not_found", path)); return; }
+        if (!File.Exists(path)) { ShowError(Loc.T("MsgFileNotFound", path)); return; }
         _txtFilePath.Text = path;
         try
         {
@@ -752,14 +880,14 @@ public sealed class MainForm : Form
             _lblEncoding.Text = _lastDetection.DisplayName;
             _lblEncoding.ForeColor = SystemColors.ControlText;
             _btnProcess.Enabled = true;
-            SetStatus(Loc.T("status_selected", Path.GetFileName(path), _lastDetection.DisplayName));
+            SetStatus(Loc.T("StatusSelected", Path.GetFileName(path), _lastDetection.DisplayName));
         }
-        catch (Exception ex) { ShowError(Loc.T("msg_read_failed", ex.Message)); }
+        catch (Exception ex) { ShowError(Loc.T("MsgReadFailed", ex.Message)); }
     }
 
     private void SelectReplaceFile(string path)
     {
-        if (!File.Exists(path)) { ShowError(Loc.T("msg_file_not_found", path)); return; }
+        if (!File.Exists(path)) { ShowError(Loc.T("MsgFileNotFound", path)); return; }
         _txtReplaceFile.Text = path;
         try
         {
@@ -768,20 +896,15 @@ public sealed class MainForm : Form
             _lblReplaceEncoding.ForeColor = SystemColors.ControlText;
             _btnReplaceProcess.Enabled = true;
         }
-        catch (Exception ex) { ShowError(Loc.T("msg_read_failed", ex.Message)); }
+        catch (Exception ex) { ShowError(Loc.T("MsgReadFailed", ex.Message)); }
     }
 
     // ================================================================
-    //  行合并 Tab 按钮事件
+    //  Tab 1: Line Merge button events
     // ================================================================
     private void OnBrowseFile(object? sender, EventArgs e)
     {
-        using var dlg = new OpenFileDialog
-        {
-            Title = Loc.T("tab_merge"),
-            Filter = "文本文件 (*.txt)|*.txt|所有文件 (*.*)|*.*",
-            RestoreDirectory = true
-        };
+        using var dlg = OpenTextFileDialog(Loc.T("TabMerge"));
         if (dlg.ShowDialog(this) == DialogResult.OK)
             SelectFile(dlg.FileName);
     }
@@ -793,70 +916,59 @@ public sealed class MainForm : Form
         try
         {
             _btnProcess.Enabled = false;
-            _btnProcess.Text = Loc.T("status_processing");
-            SetStatus(Loc.T("status_processing"));
+            _btnProcess.Text = Loc.T("StatusProcessing");
+            SetStatus(Loc.T("StatusProcessing"));
 
-            // Step 1: 行合并
             var options = new MergeOptions
             {
                 Threshold = (int)_numThreshold.Value,
                 Mode = _rbChar.Checked ? MergeMode.CharCount : MergeMode.ByteCount
             };
-            string outputPath = LineMerger.Merge(_txtFilePath.Text, options, _lastDetection.Encoding);
 
-            // Step 2: 中文截断修复
-            bool appliedCjk = false;
-            if (_chkFixCjk.Checked)
-            {
-                var lines = File.ReadAllLines(outputPath, Encoding.UTF8).ToList();
-                var fixed_ = CjkParagraphMerger.Fix(lines);
-                if (fixed_.Count != lines.Count)
-                {
-                    File.WriteAllLines(outputPath, fixed_, new UTF8Encoding(true));
-                    appliedCjk = true;
-                }
-            }
+            var postProcess = new PostProcessOptions(
+                FixCjk: _chkFixCjk.Checked,
+                FixPunct: _chkFixPunct.Checked,
+                PunctChars: _txtPunctChars.Text,
+                NoMerge: _chkNoMerge.Checked,
+                NoMergeChars: _txtNoMergeChars.Text,
+                ApplyReplace: _chkApplyReplace.Checked,
+                Rules: _rules);
 
-            // Step 3: 标点替换
-            bool appliedReplace = false;
-            if (_chkApplyReplace.Checked && _rules.Count > 0)
-            {
-                PunctuationReplacer.ApplyToFile(outputPath, Encoding.UTF8, _rules);
-                appliedReplace = true;
-            }
+            var result = ProcessingPipeline.Run(
+                _txtFilePath.Text, _lastDetection.Encoding, options, postProcess);
 
-            // 汇总
             var extras = new List<string>();
-            if (appliedCjk) extras.Add(Loc.T("extra_cjk"));
-            if (appliedReplace) extras.Add(Loc.T("extra_replace"));
+            if (result.CjkFixed) extras.Add(Loc.T("ExtraCjk"));
+            if (result.PunctFixed) extras.Add(Loc.T("ExtraPunct"));
+            if (result.Replaced) extras.Add(Loc.T("ExtraReplace"));
             string extraMsg = extras.Count > 0
-                ? $"（{Loc.T("label_post_process").TrimEnd('：', ':')}：{string.Join("、", extras)}）"
+                ? $"({string.Join(", ", extras)})"
                 : "";
 
-            _lblOutput.Text = Loc.T("label_output", outputPath);
+            _lblOutput.Text = Loc.T("LabelOutput", result.OutputPath);
             _lblOutput.ForeColor = Color.Green;
-            SetStatus(Loc.T("status_complete", outputPath, extraMsg));
+            SetStatus(Loc.T("StatusComplete", result.OutputPath, extraMsg));
 
             if (MessageBox.Show(this,
-                Loc.T("msg_process_body", extraMsg, outputPath),
-                Loc.T("msg_process_title"),
+                Loc.T("MsgProcessBody", extraMsg, result.OutputPath),
+                Loc.T("MsgProcessTitle"),
                 MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
             {
-                System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{outputPath}\"");
+                RevealInExplorer(result.OutputPath);
             }
         }
-        catch (Exception ex) { ShowError(Loc.T("msg_process_failed", ex.Message)); }
-        finally { _btnProcess.Enabled = true; _btnProcess.Text = Loc.T("btn_process"); }
+        catch (Exception ex) { ShowError(Loc.T("MsgProcessFailed", ex.Message)); }
+        finally { _btnProcess.Enabled = true; _btnProcess.Text = Loc.T("BtnProcess"); }
     }
 
     // ================================================================
-    //  文件拼接 Tab 按钮事件
+    //  Tab 2: File Join button events
     // ================================================================
     private void OnBrowseFolder(object? sender, EventArgs e)
     {
         using var dlg = new FolderBrowserDialog
         {
-            Description = Loc.T("tab_join"),
+            Description = Loc.T("TabJoin"),
             UseDescriptionForTitle = true,
             InitialDirectory = _txtFolder.Text
         };
@@ -869,39 +981,34 @@ public sealed class MainForm : Form
         string folder = _txtFolder.Text.Trim();
         string pattern = _txtPattern.Text.Trim();
         string outputName = _txtOutputName.Text.Trim();
-        if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder)) { ShowError(Loc.T("msg_invalid_folder")); return; }
-        if (string.IsNullOrEmpty(pattern)) { ShowError(Loc.T("msg_empty_pattern")); return; }
-        if (string.IsNullOrEmpty(outputName)) { ShowError(Loc.T("msg_empty_output")); return; }
+        if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder)) { ShowError(Loc.T("MsgInvalidFolder")); return; }
+        if (string.IsNullOrEmpty(pattern)) { ShowError(Loc.T("MsgEmptyPattern")); return; }
+        if (string.IsNullOrEmpty(outputName)) { ShowError(Loc.T("MsgEmptyOutput")); return; }
 
         try
         {
-            _btnJoin.Enabled = false; _btnJoin.Text = Loc.T("status_joining");
-            SetStatus(Loc.T("status_joining"));
-            string outputPath = FileJoiner.Join(folder, pattern, outputName);
-            SetStatus(Loc.T("status_join_complete", Directory.GetFiles(folder, pattern).Length, outputPath));
+            _btnJoin.Enabled = false; _btnJoin.Text = Loc.T("StatusJoining");
+            SetStatus(Loc.T("StatusJoining"));
+            var (outputPath, fileCount) = FileJoiner.Join(folder, pattern, outputName);
+            SetStatus(Loc.T("StatusJoinComplete", fileCount, outputPath));
 
-            if (MessageBox.Show(this, Loc.T("msg_join_body", outputPath),
-                Loc.T("msg_join_title"),
+            if (MessageBox.Show(this, Loc.T("MsgJoinBody", outputPath),
+                Loc.T("MsgJoinTitle"),
                 MessageBoxButtons.OK, MessageBoxIcon.Information) == DialogResult.OK)
             {
-                System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{outputPath}\"");
+                RevealInExplorer(outputPath);
             }
         }
-        catch (Exception ex) { ShowError(Loc.T("msg_join_failed", ex.Message)); }
-        finally { _btnJoin.Enabled = true; _btnJoin.Text = Loc.T("btn_join"); }
+        catch (Exception ex) { ShowError(Loc.T("MsgJoinFailed", ex.Message)); }
+        finally { _btnJoin.Enabled = true; _btnJoin.Text = Loc.T("BtnJoin"); }
     }
 
     // ================================================================
-    //  标点替换 Tab 按钮事件
+    //  Tab 3: Punctuation Replace button events
     // ================================================================
     private void OnBrowseReplaceFile(object? sender, EventArgs e)
     {
-        using var dlg = new OpenFileDialog
-        {
-            Title = Loc.T("tab_replace"),
-            Filter = "文本文件 (*.txt)|*.txt|所有文件 (*.*)|*.*",
-            RestoreDirectory = true
-        };
+        using var dlg = OpenTextFileDialog(Loc.T("TabReplace"));
         if (dlg.ShowDialog(this) == DialogResult.OK)
             SelectReplaceFile(dlg.FileName);
     }
@@ -916,26 +1023,39 @@ public sealed class MainForm : Form
         }
     }
 
+    private void OnMoveRuleUp(object? sender, EventArgs e)
+    {
+        int idx = _lstRules.SelectedIndex;
+        if (idx <= 0 || idx >= _rules.Count) return;
+        (_rules[idx], _rules[idx - 1]) = (_rules[idx - 1], _rules[idx]);
+        ReplaceRuleStore.Save(_rules);
+        SaveAndRefresh("StatusRulesSaved", _rules.Count);
+        _lstRules.SelectedIndex = idx - 1;
+    }
+
+    private void OnMoveRuleDown(object? sender, EventArgs e)
+    {
+        int idx = _lstRules.SelectedIndex;
+        if (idx < 0 || idx >= _rules.Count - 1) return;
+        (_rules[idx], _rules[idx + 1]) = (_rules[idx + 1], _rules[idx]);
+        ReplaceRuleStore.Save(_rules);
+        SaveAndRefresh("StatusRulesSaved", _rules.Count);
+        _lstRules.SelectedIndex = idx + 1;
+    }
+
     private void OnAddOrUpdateRule(object? sender, EventArgs e)
     {
         string find = _txtFind.Text;
         string replace = _txtReplaceWith.Text;
-        if (string.IsNullOrEmpty(find)) { ShowError(Loc.T("msg_enter_find")); return; }
+        if (string.IsNullOrEmpty(find)) { ShowError(Loc.T("MsgEnterFind")); return; }
 
         if (_lstRules.SelectedIndex >= 0 && _lstRules.SelectedIndex < _rules.Count)
-        {
             _rules[_lstRules.SelectedIndex] = new ReplaceRule { Find = find, Replace = replace };
-        }
         else
-        {
             _rules.Add(new ReplaceRule { Find = find, Replace = replace });
-        }
 
-        PunctuationReplacer.SaveRules(_rules);
-        RefreshRuleList();
-        _txtFind.Clear();
-        _txtReplaceWith.Clear();
-        SetStatus(Loc.T("status_rules_saved", _rules.Count));
+        ReplaceRuleStore.Save(_rules);
+        SaveAndRefresh("StatusRulesSaved", _rules.Count);
     }
 
     private void OnDeleteRule(object? sender, EventArgs e)
@@ -943,23 +1063,28 @@ public sealed class MainForm : Form
         if (_lstRules.SelectedIndex < 0 || _lstRules.SelectedIndex >= _rules.Count) return;
 
         _rules.RemoveAt(_lstRules.SelectedIndex);
-        PunctuationReplacer.SaveRules(_rules);
+        ReplaceRuleStore.Save(_rules);
+        SaveAndRefresh("StatusRuleDeleted", _rules.Count);
+    }
+
+    private void SaveAndRefresh(string statusKey, int ruleCount)
+    {
         RefreshRuleList();
         _txtFind.Clear();
         _txtReplaceWith.Clear();
-        SetStatus(Loc.T("status_rule_deleted", _rules.Count));
+        SetStatus(Loc.T(statusKey, ruleCount));
     }
 
     private void OnReplaceProcess(object? sender, EventArgs e)
     {
         if (_lastReplaceDetection == null || string.IsNullOrWhiteSpace(_txtReplaceFile.Text)) return;
-        if (_rules.Count == 0) { ShowError(Loc.T("msg_add_rule")); return; }
+        if (_rules.Count == 0) { ShowError(Loc.T("MsgAddRule")); return; }
 
         try
         {
             _btnReplaceProcess.Enabled = false;
-            _btnReplaceProcess.Text = Loc.T("status_replacing");
-            SetStatus(Loc.T("status_replacing"));
+            _btnReplaceProcess.Text = Loc.T("StatusReplacing");
+            SetStatus(Loc.T("StatusReplacing"));
 
             string dir = Path.GetDirectoryName(_txtReplaceFile.Text) ?? ".";
             string name = Path.GetFileNameWithoutExtension(_txtReplaceFile.Text);
@@ -970,23 +1095,23 @@ public sealed class MainForm : Form
             string replaced = PunctuationReplacer.Apply(content, _rules);
             File.WriteAllText(outputPath, replaced, new UTF8Encoding(true));
 
-            _lblReplaceOutput.Text = Loc.T("label_output", outputPath);
+            _lblReplaceOutput.Text = Loc.T("LabelOutput", outputPath);
             _lblReplaceOutput.ForeColor = Color.Green;
-            SetStatus(Loc.T("status_replace_complete", outputPath));
+            SetStatus(Loc.T("StatusReplaceComplete", outputPath));
 
-            if (MessageBox.Show(this, Loc.T("msg_replace_body", outputPath),
-                Loc.T("msg_replace_title"),
+            if (MessageBox.Show(this, Loc.T("MsgReplaceBody", outputPath),
+                Loc.T("MsgReplaceTitle"),
                 MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
             {
-                System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{outputPath}\"");
+                RevealInExplorer(outputPath);
             }
         }
-        catch (Exception ex) { ShowError(Loc.T("msg_replace_failed", ex.Message)); }
-        finally { _btnReplaceProcess.Enabled = true; _btnReplaceProcess.Text = Loc.T("btn_execute_replace"); }
+        catch (Exception ex) { ShowError(Loc.T("MsgReplaceFailed", ex.Message)); }
+        finally { _btnReplaceProcess.Enabled = true; _btnReplaceProcess.Text = Loc.T("BtnExecuteReplace"); }
     }
 
     // ================================================================
-    //  规则列表刷新
+    //  Rule list refresh
     // ================================================================
     private void RefreshRuleList()
     {
@@ -996,7 +1121,7 @@ public sealed class MainForm : Form
     }
 
     // ================================================================
-    //  辅助方法
+    //  Helpers
     // ================================================================
     private static Label MakeLabel(string text) => new()
     {
@@ -1006,12 +1131,40 @@ public sealed class MainForm : Form
         Anchor = AnchorStyles.Right
     };
 
+    private static Button MakePrimaryButton(string text)
+    {
+        var btn = new Button
+        {
+            Text = text,
+            AutoSize = true,
+            Font = new Font("Microsoft YaHei UI", 11f, FontStyle.Bold),
+            BackColor = Color.SteelBlue,
+            ForeColor = Color.White,
+            FlatStyle = FlatStyle.Flat,
+            Padding = new Padding(24, 6, 24, 6)
+        };
+        btn.FlatAppearance.BorderSize = 0;
+        return btn;
+    }
+
+    private static void RevealInExplorer(string filePath)
+    {
+        System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{filePath}\"");
+    }
+
+    private static OpenFileDialog OpenTextFileDialog(string title) => new()
+    {
+        Title = title,
+        Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
+        RestoreDirectory = true
+    };
+
     private void SetStatus(string message) => _statusLabel.Text = message;
 
     private void ShowError(string message)
     {
         _statusLabel.Text = $"❌ {message}";
-        MessageBox.Show(this, message, Loc.T("msg_error_title"),
+        MessageBox.Show(this, message, Loc.T("MsgErrorTitle"),
             MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 }

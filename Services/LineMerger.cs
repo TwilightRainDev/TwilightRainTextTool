@@ -27,8 +27,11 @@ public class MergeOptions
 /// </summary>
 public static class LineMerger
 {
-    /// <returns>输出文件路径</returns>
-    public static string Merge(string inputPath, MergeOptions options, Encoding encoding)
+    /// <summary>
+    /// 合并短行并输出。
+    /// 返回 (内存行列表, 输出文件路径)，调用方可直接操作 Lines 避免第二次文件 I/O。
+    /// </summary>
+    public static (List<string> Lines, string OutputPath) Merge(string inputPath, MergeOptions options, Encoding encoding)
     {
         string dir = Path.GetDirectoryName(inputPath) ?? ".";
         string name = Path.GetFileNameWithoutExtension(inputPath);
@@ -36,37 +39,27 @@ public static class LineMerger
         string outputPath = Path.Combine(dir, $"{name}_Processed{ext}");
 
         string[] lines = File.ReadAllLines(inputPath, encoding);
-        var result = new List<string>();
-
-        string currentLine = "";
+        var result = new List<string>(lines.Length);
+        var sb = new StringBuilder();
+        int cumulativeWidth = 0;
 
         foreach (string line in lines)
         {
-            if (currentLine == "")
-            {
-                currentLine = line;
-            }
-            else
-            {
-                currentLine += line;
-            }
+            sb.Append(line);
+            cumulativeWidth += MeasureWidth(line, options.Mode, encoding);
 
-            // 持续追加直到达到阈值，然后输出并重置
-            if (MeasureWidth(currentLine, options.Mode, encoding) >= options.Threshold)
+            if (cumulativeWidth >= options.Threshold)
             {
-                result.Add(currentLine);
-                currentLine = "";
+                result.Add(sb.ToString());
+                sb.Clear();
+                cumulativeWidth = 0;
             }
         }
 
-        // 处理尾部未达阈值的残余行
-        if (currentLine != "")
-            result.Add(currentLine);
+        if (sb.Length > 0)
+            result.Add(sb.ToString());
 
-        // 输出为 UTF-8 with BOM
-        File.WriteAllLines(outputPath, result, new UTF8Encoding(true));
-
-        return outputPath;
+        return (result, outputPath);
     }
 
     private static int MeasureWidth(string text, MergeMode mode, Encoding encoding)

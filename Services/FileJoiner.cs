@@ -8,13 +8,14 @@ namespace TextTool.Services;
 /// </summary>
 public static class FileJoiner
 {
-    /// <returns>输出文件路径</returns>
-    public static string Join(string directory, string pattern, string outputName)
+    /// <returns>(输出文件路径, 合并的文件数量)</returns>
+    public static (string OutputPath, int FileCount) Join(string directory, string pattern, string outputName)
     {
         string outputPath = Path.Combine(directory, outputName);
         var files = Directory.GetFiles(directory, pattern)
             .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
             .ToArray();
+        int fileCount = files.Length;
 
         using var writer = new StreamWriter(outputPath, false, new UTF8Encoding(true));
 
@@ -29,6 +30,6 @@ public static class FileJoiner
                 writer.WriteLine();
         }
 
-        return outputPath;
+        return (outputPath, fileCount);
     }
 }

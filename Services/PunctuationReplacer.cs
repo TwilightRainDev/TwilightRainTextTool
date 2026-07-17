@@ -1,6 +1,5 @@
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 
 namespace TextTool.Services;
 
@@ -14,10 +13,33 @@ public class ReplaceRule
 }
 
 /// <summary>
-/// 标点符号替换引擎。
-/// 规则持久化到 JSON 文件，支持用户自由增删。
+/// 标点符号替换引擎（纯转换职责）。
+/// 规则持久化由 <see cref="ReplaceRuleStore"/> 负责。
 /// </summary>
 public static class PunctuationReplacer
+{
+    /// <summary>
+    /// 按规则逐条替换文本内容
+    /// </summary>
+    public static string Apply(string text, List<ReplaceRule> rules)
+    {
+        foreach (var rule in rules)
+        {
+            if (string.IsNullOrEmpty(rule.Find))
+                continue;
+
+            // 使用简单字符串替换（非正则），避免转义问题
+            text = text.Replace(rule.Find, rule.Replace);
+        }
+        return text;
+    }
+
+}
+
+/// <summary>
+/// 替换规则持久化存储（JSON 文件）。
+/// </summary>
+public static class ReplaceRuleStore
 {
     private static string RulesPath =>
         Path.Combine(AppContext.BaseDirectory, "replace_rules.json");
@@ -25,7 +47,7 @@ public static class PunctuationReplacer
     /// <summary>
     /// 加载替换规则
     /// </summary>
-    public static List<ReplaceRule> LoadRules()
+    public static List<ReplaceRule> Load()
     {
         try
         {
@@ -44,41 +66,10 @@ public static class PunctuationReplacer
     /// <summary>
     /// 保存替换规则
     /// </summary>
-    public static void SaveRules(List<ReplaceRule> rules)
+    public static void Save(List<ReplaceRule> rules)
     {
         var options = new JsonSerializerOptions { WriteIndented = true };
         string json = JsonSerializer.Serialize(rules, options);
         File.WriteAllText(RulesPath, json, new UTF8Encoding(false));
-    }
-
-    /// <summary>
-    /// 按规则逐条替换文本内容
-    /// </summary>
-    public static string Apply(string text, List<ReplaceRule> rules)
-    {
-        foreach (var rule in rules)
-        {
-            if (string.IsNullOrEmpty(rule.Find))
-                continue;
-
-            // 使用简单字符串替换（非正则），避免转义问题
-            text = text.Replace(rule.Find, rule.Replace);
-        }
-        return text;
-    }
-
-    /// <summary>
-    /// 按规则逐条替换文件中每一行
-    /// </summary>
-    public static void ApplyToFile(string filePath, Encoding encoding, List<ReplaceRule> rules)
-    {
-        string[] lines = File.ReadAllLines(filePath, encoding);
-
-        for (int i = 0; i < lines.Length; i++)
-        {
-            lines[i] = Apply(lines[i], rules);
-        }
-
-        File.WriteAllLines(filePath, lines, new UTF8Encoding(true));
     }
 }

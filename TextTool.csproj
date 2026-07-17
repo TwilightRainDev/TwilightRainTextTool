@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net7.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+    <!-- 依赖框架部署：用户需自行安装 .NET 7 运行时 -->
+    <!-- 下载地址：https://dotnet.microsoft.com/download/dotnet/7.0 -->
+    <SelfContained>false</SelfContained>
+    <Version>1.4.0</Version>
+    <ApplicationIcon>Resources\icon.ico</ApplicationIcon>
+    <Authors>TwilightRain</Authors>
+    <Company>TwilightRain</Company>
+    <AssemblyTitle>TwilightRain的文本工具</AssemblyTitle>
+    <RepositoryUrl>https://github.com/TwilightRainDev/TextTool</RepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="10.0.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Localization\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,40 @@
+# .NET 标准 gitignore
+# https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
+
+## 编译产物
+bin/
+obj/
+publish/
+
+## 用户特定文件
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+## NuGet
+packages/
+*.nupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+## VS 缓存
+.vs/
+*.csproj.user
+*.dbmdl
+*.jfm
+
+## 运行时生成的文件
+replace_rules.json
+
+## 快捷方式
+*.lnk
+
+## IDE
+.idea/
+*.swp
+*~
+.vscode/

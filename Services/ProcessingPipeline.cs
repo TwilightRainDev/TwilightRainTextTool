@@ -13,6 +13,7 @@ public record PostProcessOptions(
     bool NoMerge,
     string NoMergeChars,
     bool ApplyReplace,
+    bool TrimLeadingComma,
     List<ReplaceRule> Rules
 );
 
@@ -38,12 +39,12 @@ public static class ProcessingPipeline
         MergeOptions mergeOpts,
         PostProcessOptions postProcess)
     {
-        // Step 1: 行合并（内存操作，不写盘）
-        var (lines, outputPath) = LineMerger.Merge(inputPath, mergeOpts, encoding);
-
-        // 预编译 set（一次性构造，所有 Merger 共享）
+        // 预编译 set（一次性构造，所有 Merger 共享，需在 Step 1 前准备好供 LineMerger 使用）
         HashSet<char>? noMergeSet = postProcess.NoMerge && !string.IsNullOrEmpty(postProcess.NoMergeChars)
             ? new HashSet<char>(postProcess.NoMergeChars) : null;
+
+        // Step 1: 行合并（内存操作，不写盘）
+        var (lines, outputPath) = LineMerger.Merge(inputPath, mergeOpts, encoding, noMergeSet);
 
         // Step 2: 中文截断修复（内存操作）
         bool cjkApplied = false;
@@ -64,7 +65,21 @@ public static class ProcessingPipeline
             lines = fixedLines;
         }
 
-        // Step 4: 标点替换（内存操作）
+        // Step 4: 去除行首逗号（内存操作）
+        bool trimApplied = false;
+        if (postProcess.TrimLeadingComma)
+        {
+            for (int i = 0; i < lines.Count; i++)
+            {
+                if (lines[i].Length > 0 && lines[i][0] == '，')
+                {
+                    lines[i] = lines[i].Substring(1);
+                    trimApplied = true;
+                }
+            }
+        }
+
+        // Step 5: 标点替换（内存操作）
         bool replaceApplied = false;
         if (postProcess.ApplyReplace && postProcess.Rules.Count > 0)
         {
@@ -76,7 +91,7 @@ public static class ProcessingPipeline
         // 一次性写入 UTF-8 with BOM
         File.WriteAllLines(outputPath, lines, new UTF8Encoding(true));
 
-        return new ProcessingResult(lines, outputPath, cjkApplied, punctApplied, replaceApplied);
+        return new ProcessingResult(lines, outputPath, cjkApplied, punctApplied, trimApplied, replaceApplied);
     }
 }
 
@@ -88,5 +103,6 @@ public record ProcessingResult(
     string OutputPath,
     bool CjkFixed,
     bool PunctFixed,
+    bool Trimmed,
     bool Replaced
 );

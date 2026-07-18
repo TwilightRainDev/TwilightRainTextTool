@@ -35,6 +35,7 @@
   "ChkApplyReplace": "应用标点替换规则（在\"标点替换\"页签中配置规则）",
   "ChkNoMerge": "行尾部标点不合并",
   "LabelNoMergeChars": "自定义标点：",
+  "ChkTrimLeadingComma": "去除位于行首逗号",
 
   "EncodingNotSelected": "（尚未选择文件）",
 
@@ -55,6 +56,7 @@
   "LabelOutput": "✓ 输出文件：{0}",
   "ExtraCjk": "中文截断修复",
   "ExtraPunct": "标点截断修复",
+  "ExtraTrimLeadingComma": "去除行首逗号",
   "ExtraReplace": "标点替换",
 
   "MsgProcessTitle": "处理完成",

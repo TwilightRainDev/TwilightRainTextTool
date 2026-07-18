@@ -128,7 +128,7 @@ dotnet publish -c Release -o bin/Release/publish
 
 ```
 TextTool/
-├── TextTool.csproj              # .NET 7 WinForms, v1.5.0
+├── TextTool.csproj              # .NET 7 WinForms, v1.6.1
 ├── Program.cs                   # Entry point, registers GBK encoding
 ├── MainForm.cs                  # Main window (~1060 lines, 4 tabs)
 ├── Resources/
@@ -176,6 +176,9 @@ TextTool/
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.6.1 | 2026-07-18 | Version centralized into `Directory.Build.props`; About page reads version from assembly at runtime — no more hardcoded version strings |
+| 1.6.0 | (skipped) | Version number reserved; internal refactoring absorbed into 1.6.1 |
+| 1.5.2 | 2026-07-18 | LineMerger now respects the no-merge character set during threshold merging, keeping lines ending with no-merge characters (e.g., `章`, `节`, `.。！？`) as independent paragraphs; renamed for clarity |
 | 1.5.1 | 2026-07-17 | Fixed encoding detector: `IsValidUtf8` no longer falsely rejects files when the 4KB probe boundary cuts a multi-byte UTF-8 character mid-sequence (causing GBK fallback and garbled output) |
 | 1.5.0 | 2026-07-17 | Reorderable replace rules (Up/Down); TwilightRain.jpg avatar; language selector moved to About page; all locale keys renamed to PascalCase; punct. truncation fix with custom punctuation; line-ending no-merge rule with custom punctuation; compact About page layout; button sizing fix; publish directory unified; 8f UI font |
 | 1.4.0 | 2026-07-17 | Full i18n (zh_CN / zh_TW / en_US); `Loc` singleton with auto-detect + manual switch + JSON persistence; ProcessingPipeline single-pass refactor; CJK merger O(n²)→O(n); EncodingDetector 4KB header scan; replaces 3+2 file I/O with 1 write |
@@ -269,6 +272,7 @@ TextTool/
 - **.NET 7 Desktop Runtime**（Windows WinForms）
 - 从 [dotnet.microsoft.com/download/dotnet/7.0](https://dotnet.microsoft.com/download/dotnet/7.0) 下载安装 **.NET Desktop Runtime 7.0（x64）**
 - 缺少运行时会弹出引导对话框
+- 到底是什么人喜欢在发行版里封装依赖啊喂，多来几个把盘都挤爆了。1M以内的极简工具封装成500MB是大运送信纸吧QAQ。
 
 ### 运行方式
 
@@ -287,7 +291,7 @@ dotnet publish -c Release -o bin/Release/publish
 
 ```
 TextTool/
-├── TextTool.csproj              # .NET 7 WinForms, v1.5.0
+├── TextTool.csproj              # .NET 7 WinForms, v1.6.1
 ├── Program.cs                   # 入口，注册 GBK 编码支持
 ├── MainForm.cs                  # 主窗口 (~1060 行, 4 个页签)
 ├── Resources/
@@ -335,6 +339,9 @@ TextTool/
 
 | 版本 | 日期 | 更新内容 |
 | :-- | :--- | :------- |
+| 1.6.1 | 2026-07-18 | 版本号统一到 `Directory.Build.props` 集中管理；关于页从程序集运行时读取版本 — 源码中不再有任何硬编码版本号 |
+| 1.6.0 | (跳过) | 版本号预留；内部重构已并入 1.6.1 |
+| 1.5.2 | 2026-07-18 | LineMerger 阈值合并时不再无视不合并规则，以 noMergeSet 字符结尾的行独立成段（如 `章`、`节`、`.。！？`）；"去除行首逗号"改名为"去除位于行首逗号" |
 | 1.5.1 | 2026-07-17 | 修复编码检测器：`IsValidUtf8` 因 4KB 探测边界截断多字节 UTF-8 字符而误判为 false，导致回退到 GBK 产生乱码 |
 | 1.5.0 | 2026-07-17 | 替换规则可排序（上移/下移）；关于页添加 TwilightRain.jpg 头像；语言选择从状态栏迁移至关于页；所有 Loc 键改为 PascalCase；新增标点截断断段修复（可自定义标点）；新增行尾部不合并规则（可自定义标点）；关于页紧凑布局；按钮尺寸修复；发布目录统一；8f 界面字体 |
 | 1.4.0 | 2026-07-17 | 完整 i18n 国际化（zh_CN / zh_TW / en_US）；Loc 单例实现自动检测 + 手动切换 + JSON 持久化；ProcessingPipeline 单次遍历重构；CJK 合并 O(n²)→O(n)；EncodingDetector 4KB 头部扫描；3+2 次文件 I/O 简化为 1 次写入 |

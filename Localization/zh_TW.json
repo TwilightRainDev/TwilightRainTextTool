@@ -35,6 +35,7 @@
   "ChkApplyReplace": "套用標點替換規則（在「標點替換」頁籤中設定規則）",
   "ChkNoMerge": "行尾部標點不合併",
   "LabelNoMergeChars": "自定義標點：",
+  "ChkTrimLeadingComma": "去除位於行首逗號",
 
   "EncodingNotSelected": "（尚未選擇檔案）",
 
@@ -55,6 +56,7 @@
   "LabelOutput": "✓ 輸出檔案：{0}",
   "ExtraCjk": "中文截斷修復",
   "ExtraPunct": "標點截斷修復",
+  "ExtraTrimLeadingComma": "去除行首逗號",
   "ExtraReplace": "標點替換",
 
   "MsgProcessTitle": "處理完成",

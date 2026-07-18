@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <!--
+      统一版本号 — 所有项目和代码通过此文件获取版本。
+      csproj 无需重复设置 <Version>，程序集版本自动从此继承。
+
+      AssemblyVersion = 1.6.1.0
+      AssemblyFileVersion = 1.6.1.0
+    -->
+    <Version>1.6.1</Version>
+  </PropertyGroup>
+</Project>

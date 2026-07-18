@@ -35,6 +35,7 @@
   "ChkApplyReplace": "Apply punctuation replacement rules (configured in \"Punct. Replace\" tab)",
   "ChkNoMerge": "Line-ending punct. no-merge",
   "LabelNoMergeChars": "Custom punct.:",
+  "ChkTrimLeadingComma": "Trim leading comma",
 
   "EncodingNotSelected": "(No file selected)",
 
@@ -55,6 +56,7 @@
   "LabelOutput": "✓ Output: {0}",
   "ExtraCjk": "CJK truncation fix",
   "ExtraPunct": "Punct. truncation fix",
+  "ExtraTrimLeadingComma": "Trim leading comma",
   "ExtraReplace": "Punctuation replacement",
 
   "MsgProcessTitle": "Processing Complete",

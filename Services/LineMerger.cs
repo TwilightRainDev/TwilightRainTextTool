@@ -31,7 +31,10 @@ public static class LineMerger
     /// 合并短行并输出。
     /// 返回 (内存行列表, 输出文件路径)，调用方可直接操作 Lines 避免第二次文件 I/O。
     /// </summary>
-    public static (List<string> Lines, string OutputPath) Merge(string inputPath, MergeOptions options, Encoding encoding)
+    /// <param name="noMergeSet">行尾不合并字符集。当前行以其中任一字符结尾时立即 flush，阻止与下行合并。</param>
+    public static (List<string> Lines, string OutputPath) Merge(
+        string inputPath, MergeOptions options, Encoding encoding,
+        HashSet<char>? noMergeSet = null)
     {
         string dir = Path.GetDirectoryName(inputPath) ?? ".";
         string name = Path.GetFileNameWithoutExtension(inputPath);
@@ -48,7 +51,8 @@ public static class LineMerger
             sb.Append(line);
             cumulativeWidth += MeasureWidth(line, options.Mode, encoding);
 
-            if (cumulativeWidth >= options.Threshold)
+            if (cumulativeWidth >= options.Threshold
+                || (noMergeSet != null && line.EndsWithAny(noMergeSet)))
             {
                 result.Add(sb.ToString());
                 sb.Clear();
@@ -69,4 +73,5 @@ public static class LineMerger
         else
             return text.Length;
     }
+
 }

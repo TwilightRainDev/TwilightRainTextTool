@@ -21,4 +21,19 @@ public static class TextUtils
         }
         return false;
     }
+
+    /// <summary>
+    /// 判断字符串末尾（跳过尾部空白后）是否以 chars 中的任一字符结尾。
+    /// chars 为 null 或空时返回 false。
+    /// </summary>
+    public static bool EndsWithAny(this string text, HashSet<char>? chars)
+    {
+        if (chars == null || chars.Count == 0) return false;
+        for (int i = text.Length - 1; i >= 0; i--)
+        {
+            if (!char.IsWhiteSpace(text[i]))
+                return chars.Contains(text[i]);
+        }
+        return false;
+    }
 }

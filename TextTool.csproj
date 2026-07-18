@@ -10,7 +10,7 @@
     <!-- 依赖框架部署：用户需自行安装 .NET 7 运行时 -->
     <!-- 下载地址：https://dotnet.microsoft.com/download/dotnet/7.0 -->
     <SelfContained>false</SelfContained>
-    <Version>1.5.1</Version>
+    <!-- 版本号统一在 Directory.Build.props 中管理 -->
     <ApplicationIcon>Resources\icon.ico</ApplicationIcon>
     <Authors>TwilightRain</Authors>
     <Company>TwilightRain</Company>

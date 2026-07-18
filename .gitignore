@@ -33,6 +33,9 @@ replace_rules.json
 ## 快捷方式
 *.lnk
 
+## 开发文档（含 git 操作记录，可能含敏感信息）
+DevDocs/
+
 ## IDE
 .idea/
 *.swp

@@ -123,7 +123,15 @@ public static class Loc
     {
         try
         {
-            var config = new Dictionary<string, string> { ["language"] = lang };
+            // 读取现有配置，保留其他字段（如 darkMode）
+            var config = new Dictionary<string, object> { ["language"] = lang };
+            if (File.Exists(ConfigPath))
+            {
+                string existing = File.ReadAllText(ConfigPath, Encoding.UTF8);
+                var existingDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(existing);
+                if (existingDict != null && existingDict.TryGetValue("darkMode", out var dm))
+                    config["darkMode"] = dm.GetBoolean();
+            }
             File.WriteAllText(ConfigPath, JsonSerializer.Serialize(config), Encoding.UTF8);
         }
         catch { /* 写入失败不阻断程序 */ }

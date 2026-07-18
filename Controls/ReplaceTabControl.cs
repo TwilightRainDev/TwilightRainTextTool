@@ -70,6 +70,8 @@ public sealed class ReplaceTabControl : UserControl
             AllowDrop = true
         };
         _txtReplaceFile.DragEnter += OnFileDragEnter;
+        _txtReplaceFile.DragOver += OnFileDragOver;
+        _txtReplaceFile.DragLeave += OnFileDragLeave;
         _txtReplaceFile.DragDrop += OnReplaceFileDragDrop;
         layout.Controls.Add(_txtReplaceFile, 1, 0);
 
@@ -239,13 +241,30 @@ public sealed class ReplaceTabControl : UserControl
     private void OnFileDragEnter(object? sender, DragEventArgs e)
     {
         if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
+        {
             e.Effect = DragDropEffects.Copy;
+            _txtReplaceFile.BackColor = Color.LemonChiffon;
+        }
         else
+        {
             e.Effect = DragDropEffects.None;
+        }
+    }
+
+    private void OnFileDragOver(object? sender, DragEventArgs e)
+    {
+        if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
+            e.Effect = DragDropEffects.Copy;
+    }
+
+    private void OnFileDragLeave(object? sender, EventArgs e)
+    {
+        _txtReplaceFile.BackColor = Color.White;
     }
 
     private void OnReplaceFileDragDrop(object? sender, DragEventArgs e)
     {
+        _txtReplaceFile.BackColor = Color.White;
         if (e.Data?.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0)
             SelectReplaceFile(files[0]);
     }

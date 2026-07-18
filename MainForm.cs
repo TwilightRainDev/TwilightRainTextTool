@@ -74,6 +74,8 @@ public sealed class MainForm : Form
 
         // Tab 4: 关于
         _aboutTab = new AboutTabControl();
+        _aboutTab.StatusChanged += SetStatus;
+        _aboutTab.ErrorOccurred += ShowError;
         _tabControl.TabPages.Add(CreateTabPage(_aboutTab, "About"));
 
         // ---- StatusStrip ----

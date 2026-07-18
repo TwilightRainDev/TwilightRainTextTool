@@ -18,6 +18,12 @@
     <RepositoryUrl>https://github.com/TwilightRainDev/TextTool</RepositoryUrl>
   </PropertyGroup>
 
+  <!-- 排除同级测试项目的源码文件，防止 SDK 自动 glob 误包含 -->
+  <ItemGroup>
+    <Compile Remove="TextTool.Tests\**" />
+    <EmbeddedResource Remove="TextTool.Tests\**" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="System.Text.Encoding.CodePages" Version="10.0.10" />
   </ItemGroup>

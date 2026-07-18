@@ -36,8 +36,18 @@ replace_rules.json
 ## 开发文档（含 git 操作记录，可能含敏感信息）
 DevDocs/
 
+## 测试产物
+TestResults/
+coverage/
+*.opencover.xml
+*.cobertura.xml
+coverage.json
+
 ## IDE
 .idea/
 *.swp
 *~
 .vscode/
+
+## ADR 模板（不含具体决策内容）
+doc/adr/_template.md

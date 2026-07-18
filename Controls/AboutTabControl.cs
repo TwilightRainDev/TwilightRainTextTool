@@ -122,7 +122,7 @@ public sealed class AboutTabControl : UserControl
 
         _btnDarkMode = new Button
         {
-            Text = ThemeManager.IsDarkMode ? "☀ Light Mode" : "🌙 Dark Mode",
+            Text = ThemeManager.IsDarkMode ? "Light Mode" : "Dark Mode",
             AutoSize = true,
             FlatStyle = FlatStyle.Flat,
             BackColor = ThemeManager.IsDarkMode ? ThemeManager.DarkControlBg : SystemColors.Control,
@@ -143,10 +143,10 @@ public sealed class AboutTabControl : UserControl
 
         // Row 5 — Config import/export
         var configRow = new FlowLayoutPanel { AutoSize = true, Anchor = AnchorStyles.None, FlowDirection = FlowDirection.LeftToRight, WrapContents = false };
-        _btnExportConfig = new Button { Text = "⬆ Export Config", AutoSize = true, FlatStyle = FlatStyle.Flat, Font = new Font("Microsoft YaHei UI", 9f), Padding = new Padding(12, 4, 12, 4), Margin = new Padding(0, 0, 8, 0) };
+        _btnExportConfig = new Button { Text = "Export Config", AutoSize = true, FlatStyle = FlatStyle.Flat, Font = new Font("Microsoft YaHei UI", 9f), Padding = new Padding(12, 4, 12, 4), Margin = new Padding(0, 0, 8, 0) };
         _btnExportConfig.FlatAppearance.BorderSize = 0;
         _btnExportConfig.Click += OnExportConfig;
-        _btnImportConfig = new Button { Text = "⬇ Import Config", AutoSize = true, FlatStyle = FlatStyle.Flat, Font = new Font("Microsoft YaHei UI", 9f), Padding = new Padding(12, 4, 12, 4) };
+        _btnImportConfig = new Button { Text = "Import Config", AutoSize = true, FlatStyle = FlatStyle.Flat, Font = new Font("Microsoft YaHei UI", 9f), Padding = new Padding(12, 4, 12, 4) };
         _btnImportConfig.FlatAppearance.BorderSize = 0;
         _btnImportConfig.Click += OnImportConfig;
         configRow.Controls.Add(_btnExportConfig);

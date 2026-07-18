@@ -12,6 +12,9 @@ public sealed class ReplaceTabControl : UserControl
     public event Action<string>? StatusChanged;
     public event Action<string>? ErrorOccurred;
 
+    /// <summary>规则列表发生变化时触发（ReplaceTabControl 不再直接调持久化）</summary>
+    public event Action? RulesChanged;
+
     /// <summary>与外部分享的规则列表引用（MainForm → MergeTabControl）</summary>
     public List<ReplaceRule> Rules => _rules;
 
@@ -35,6 +38,7 @@ public sealed class ReplaceTabControl : UserControl
     private Button _btnReplaceProcess = null!;
     private Label _lblReplaceOutput = null!;
     private Label _lblHint = null!;
+    private Button _btnPresetSchemes = null!;
 
     private readonly List<string> _selectedFiles = new();
 
@@ -51,7 +55,7 @@ public sealed class ReplaceTabControl : UserControl
         {
             Dock = DockStyle.Fill,
             ColumnCount = 3,
-            RowCount = 6,
+            RowCount = 7,
             Padding = new Padding(16, 16, 16, 8)
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -175,9 +179,9 @@ public sealed class ReplaceTabControl : UserControl
             WrapContents = false,
             AutoSize = true
         };
-        _btnAddRule = new ThemedFlatButton { Text = "➕ Add/Update", AutoSize = true, BackColor = ControlsHelper.ButtonBg, ForeColor = ControlsHelper.ButtonFg, Margin = new Padding(0, 0, 8, 0) };
+        _btnAddRule = new ThemedFlatButton { Text = "Add/Update", AutoSize = true, BackColor = ControlsHelper.ButtonBg, ForeColor = ControlsHelper.ButtonFg, Margin = new Padding(0, 0, 8, 0) };
         _btnAddRule.Click += OnAddOrUpdateRule;
-        _btnDeleteRule = new ThemedFlatButton { Text = "🗑 Delete", AutoSize = true, BackColor = ControlsHelper.ButtonBg, ForeColor = ControlsHelper.ButtonFg };
+        _btnDeleteRule = new ThemedFlatButton { Text = "Delete", AutoSize = true, BackColor = ControlsHelper.ButtonBg, ForeColor = ControlsHelper.ButtonFg };
         _btnDeleteRule.FlatAppearance.BorderSize = 0;
         _btnDeleteRule.Click += OnDeleteRule;
         btnPanel.Controls.Add(_btnAddRule);
@@ -201,18 +205,33 @@ public sealed class ReplaceTabControl : UserControl
         layout.SetColumnSpan(ruleSplit, 3);
         layout.Controls.Add(ruleSplit, 0, 2);
 
-        // Row 3 — Execute button
+        // Row 3 — 预设替换方案勾选按钮
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+        _btnPresetSchemes = new ThemedFlatButton
+        {
+            Text = "预设替换方案勾选",
+            AutoSize = true,
+            BackColor = ControlsHelper.ButtonBg,
+            ForeColor = ControlsHelper.ButtonFg,
+            Font = new Font("Microsoft YaHei UI", 9f),
+            FlatStyle = FlatStyle.Flat
+        };
+        _btnPresetSchemes.FlatAppearance.BorderSize = 0;
+        _btnPresetSchemes.Click += OnPresetSchemes;
+        layout.Controls.Add(_btnPresetSchemes, 1, 3);
+
+        // Row 4 — Execute button
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
         _btnReplaceProcess = MakePrimaryButton("Execute Replace");
         _btnReplaceProcess.Enabled = false;
         _btnReplaceProcess.Click += OnReplaceProcess;
-        layout.Controls.Add(_btnReplaceProcess, 1, 3);
+        layout.Controls.Add(_btnReplaceProcess, 1, 4);
 
-        // Row 4 — Output
+        // Row 5 — Output
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
         _lblReplaceOutput = new Label { Text = "", ForeColor = Color.Green, Anchor = AnchorStyles.Left };
         layout.SetColumnSpan(_lblReplaceOutput, 2);
-        layout.Controls.Add(_lblReplaceOutput, 1, 4);
+        layout.Controls.Add(_lblReplaceOutput, 1, 5);
 
         Controls.Add(layout);
     }
@@ -231,6 +250,7 @@ public sealed class ReplaceTabControl : UserControl
         _btnUp.Text = Loc.T("BtnUp");
         _btnDown.Text = Loc.T("BtnDown");
         _lblHint.Text = Loc.T("HintRuleEdit");
+        _btnPresetSchemes.Text = Loc.T("BtnPresetSchemes");
         _btnReplaceProcess.Text = Loc.T("BtnExecuteReplace");
     }
 
@@ -256,6 +276,10 @@ public sealed class ReplaceTabControl : UserControl
         // 特殊的暗淡文字（覆盖递归设置的统一 ForeColor）
         _lblReplaceEncoding.ForeColor = ThemeManager.MutedFg;
         _lblHint.ForeColor = ThemeManager.MutedFg;
+
+        // 预设方案按钮
+        _btnPresetSchemes.BackColor = ControlsHelper.ButtonBg;
+        _btnPresetSchemes.ForeColor = ControlsHelper.ButtonFg;
     }
 
     private void ApplyThemeToSplitContainer()
@@ -387,7 +411,7 @@ public sealed class ReplaceTabControl : UserControl
         int idx = _lstRules.SelectedIndex;
         if (idx <= 0 || idx >= _rules.Count) return;
         (_rules[idx], _rules[idx - 1]) = (_rules[idx - 1], _rules[idx]);
-        ReplaceRuleStore.Save(_rules);
+        RulesChanged?.Invoke();
         SaveAndRefresh("StatusRulesSaved", _rules.Count);
         _lstRules.SelectedIndex = idx - 1;
     }
@@ -397,7 +421,7 @@ public sealed class ReplaceTabControl : UserControl
         int idx = _lstRules.SelectedIndex;
         if (idx < 0 || idx >= _rules.Count - 1) return;
         (_rules[idx], _rules[idx + 1]) = (_rules[idx + 1], _rules[idx]);
-        ReplaceRuleStore.Save(_rules);
+        RulesChanged?.Invoke();
         SaveAndRefresh("StatusRulesSaved", _rules.Count);
         _lstRules.SelectedIndex = idx + 1;
     }
@@ -413,7 +437,7 @@ public sealed class ReplaceTabControl : UserControl
         else
             _rules.Add(new ReplaceRule { Find = find, Replace = replace });
 
-        ReplaceRuleStore.Save(_rules);
+        RulesChanged?.Invoke();
         SaveAndRefresh("StatusRulesSaved", _rules.Count);
     }
 
@@ -422,7 +446,7 @@ public sealed class ReplaceTabControl : UserControl
         if (_lstRules.SelectedIndex < 0 || _lstRules.SelectedIndex >= _rules.Count) return;
 
         _rules.RemoveAt(_lstRules.SelectedIndex);
-        ReplaceRuleStore.Save(_rules);
+        RulesChanged?.Invoke();
         SaveAndRefresh("StatusRuleDeleted", _rules.Count);
     }
 
@@ -484,6 +508,31 @@ public sealed class ReplaceTabControl : UserControl
         }
         catch (Exception ex) { ErrorOccurred?.Invoke(Loc.T("MsgReplaceFailed", ex.Message)); }
         finally { _btnReplaceProcess.Enabled = true; _btnReplaceProcess.Text = Loc.T("BtnExecuteReplace"); }
+    }
+
+    // ================================================================
+    //  Preset schemes
+    // ================================================================
+
+    private void OnPresetSchemes(object? sender, EventArgs e)
+    {
+        var schemes = ReplaceSchemeStore.Load();
+        using var dlg = new SchemeSelectionForm(schemes);
+        if (dlg.ShowDialog(this) == DialogResult.OK)
+        {
+            var selected = dlg.SelectedRules;
+            if (selected.Count == 0) return;
+
+            int before = _rules.Count;
+            _rules.AddRange(selected);
+            RulesChanged?.Invoke();
+            SaveAndRefresh("StatusRulesSaved", _rules.Count);
+
+            StatusChanged?.Invoke(Loc.T("StatusSchemeApplied", selected.Count, before, _rules.Count));
+        }
+
+        // 用户可能修改了方案内容，需要持久化
+        ReplaceSchemeStore.Save(schemes);
     }
 
     // ================================================================

@@ -74,6 +74,7 @@ public sealed class MainForm : Form
         _replaceTab = new ReplaceTabControl(_rules);
         _replaceTab.StatusChanged += SetStatus;
         _replaceTab.ErrorOccurred += ShowError;
+        _replaceTab.RulesChanged += OnReplaceRulesChanged;
         _tabControl.TabPages.Add(CreateTabPage(_replaceTab, "Punct. Replace"));
 
         // Tab 4: 关于
@@ -155,9 +156,12 @@ public sealed class MainForm : Form
 
     private void SetStatus(string message) => _statusLabel.Text = message;
 
+    /// <summary>替换规则有变更时统一持久化（避免 UI 控件直接调 ReplaceRuleStore）</summary>
+    private void OnReplaceRulesChanged() => ReplaceRuleStore.Save(_rules);
+
     private void ShowError(string message)
     {
-        _statusLabel.Text = $"❌ {message}";
+        _statusLabel.Text = $"Error: {message}";
         MessageBox.Show(this, message, Loc.T("MsgErrorTitle"),
             MessageBoxButtons.OK, MessageBoxIcon.Error);
     }

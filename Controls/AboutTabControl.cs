@@ -1,22 +1,15 @@
 using System.Text;
 using System.Text.Json;
 using TextTool.Localization;
+using TextTool.Services;
 
 namespace TextTool.Controls;
 
 /// <summary>
-/// "关于" 页签：应用信息、作者、链接、语言选择、深色模式、配置导入导出。
+/// "关于" 页签：应用信息、作者、链接、语言选择 + 深色模式切换、配置导入导出。
 /// </summary>
 public sealed class AboutTabControl : UserControl
 {
-    // ===== 暗色/亮色主题色 =====
-    private static readonly Color DarkBg = Color.FromArgb(30, 30, 30);
-    private static readonly Color DarkFg = Color.FromArgb(220, 220, 220);
-    private static readonly Color DarkControlBg = Color.FromArgb(45, 45, 45);
-    private static readonly Color LightBg = Color.White;
-    private static readonly Color LightFg = Color.Black;
-    private static readonly Color LightGrayFg = Color.Gray;
-
     // ===== 控件 =====
     private Label _lblAboutName = null!;
     private Label _lblAboutVersion = null!;
@@ -29,18 +22,13 @@ public sealed class AboutTabControl : UserControl
     private Button _btnExportConfig = null!;
     private Button _btnImportConfig = null!;
 
-    private bool _darkMode;
-
     public AboutTabControl()
     {
-        _darkMode = LoadDarkModePref();
         InitializeComponent();
     }
 
     private void InitializeComponent()
     {
-        BackColor = _darkMode ? DarkBg : LightBg;
-
         var mainPanel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 1
@@ -51,7 +39,7 @@ public sealed class AboutTabControl : UserControl
         var centerPanel = new TableLayoutPanel
         {
             AutoSize = true, Anchor = AnchorStyles.None,
-            ColumnCount = 1, RowCount = 7,
+            ColumnCount = 1, RowCount = 6,
             Padding = new Padding(20)
         };
         centerPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -81,7 +69,7 @@ public sealed class AboutTabControl : UserControl
         {
             Text = initialVer != null ? $"Version {initialVer.Major}.{initialVer.Minor}.{initialVer.Build}" : "",
             Font = new Font("Microsoft YaHei UI", 10f),
-            ForeColor = _darkMode ? DarkFg : Color.Gray,
+            ForeColor = ThemeManager.IsDarkMode ? ThemeManager.DarkFg : Color.Gray,
             AutoSize = true, Margin = new Padding(12, 5, 0, 0)
         };
 
@@ -98,8 +86,8 @@ public sealed class AboutTabControl : UserControl
         {
             Text = "https://github.com/TwilightRainDev/TextTool",
             Font = new Font("Microsoft YaHei UI", 10f, FontStyle.Underline),
-            LinkColor = _darkMode ? Color.LightBlue : Color.SteelBlue,
-            ActiveLinkColor = _darkMode ? Color.DeepSkyBlue : Color.DarkBlue,
+            LinkColor = ThemeManager.IsDarkMode ? Color.LightBlue : Color.SteelBlue,
+            ActiveLinkColor = ThemeManager.IsDarkMode ? Color.DeepSkyBlue : Color.DarkBlue,
             AutoSize = true, Margin = new Padding(16, 0, 0, 0),
             Tag = "https://github.com/TwilightRainDev/TextTool"
         };
@@ -119,7 +107,7 @@ public sealed class AboutTabControl : UserControl
         {
             Text = "An all-in-one text processing tool:\nLine Merge, File Join, CJK Fix, Punct. Replace",
             Font = new Font("Microsoft YaHei UI", 9f),
-            ForeColor = _darkMode ? DarkFg : Color.DimGray,
+            ForeColor = ThemeManager.IsDarkMode ? ThemeManager.DarkFg : Color.DimGray,
             AutoSize = true, Anchor = AnchorStyles.None,
             TextAlign = ContentAlignment.MiddleCenter,
             Margin = new Padding(0, 0, 0, 16)
@@ -127,35 +115,33 @@ public sealed class AboutTabControl : UserControl
         centerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         centerPanel.Controls.Add(_lblAboutDesc, 0, 3);
 
-        // Row 4 — Language
+        // Row 4 — Language selector + Dark mode toggle (并置)
         _lblAboutLanguage = new Label { Text = "Language:", Font = new Font("Microsoft YaHei UI", 9f), AutoSize = true, TextAlign = ContentAlignment.MiddleLeft };
         _cmbAboutLanguage = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 140, Margin = new Padding(8, 0, 0, 0) };
         _cmbAboutLanguage.SelectedIndexChanged += OnLanguageChanged;
 
-        var langRow = new FlowLayoutPanel { AutoSize = true, Anchor = AnchorStyles.None, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Margin = new Padding(0, 0, 0, 12) };
-        langRow.Controls.Add(_lblAboutLanguage);
-        langRow.Controls.Add(_cmbAboutLanguage);
-        centerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        centerPanel.Controls.Add(langRow, 0, 4);
-
-        // Row 5 — Dark mode toggle
         _btnDarkMode = new Button
         {
-            Text = _darkMode ? "☀ Light Mode" : "🌙 Dark Mode",
+            Text = ThemeManager.IsDarkMode ? "☀ Light Mode" : "🌙 Dark Mode",
             AutoSize = true,
             FlatStyle = FlatStyle.Flat,
-            BackColor = _darkMode ? DarkControlBg : SystemColors.Control,
-            ForeColor = _darkMode ? DarkFg : LightFg,
+            BackColor = ThemeManager.IsDarkMode ? ThemeManager.DarkControlBg : SystemColors.Control,
+            ForeColor = ThemeManager.Fg,
             Font = new Font("Microsoft YaHei UI", 9f),
             Padding = new Padding(12, 4, 12, 4),
-            Margin = new Padding(0, 0, 0, 8)
+            Margin = new Padding(16, 0, 0, 0)
         };
         _btnDarkMode.FlatAppearance.BorderSize = 0;
         _btnDarkMode.Click += OnToggleDarkMode;
-        centerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        centerPanel.Controls.Add(_btnDarkMode, 0, 5);
 
-        // Row 6 — Config import/export
+        var langRow = new FlowLayoutPanel { AutoSize = true, Anchor = AnchorStyles.None, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Margin = new Padding(0, 0, 0, 12) };
+        langRow.Controls.Add(_lblAboutLanguage);
+        langRow.Controls.Add(_cmbAboutLanguage);
+        langRow.Controls.Add(_btnDarkMode);
+        centerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        centerPanel.Controls.Add(langRow, 0, 4);
+
+        // Row 5 — Config import/export
         var configRow = new FlowLayoutPanel { AutoSize = true, Anchor = AnchorStyles.None, FlowDirection = FlowDirection.LeftToRight, WrapContents = false };
         _btnExportConfig = new Button { Text = "⬆ Export Config", AutoSize = true, FlatStyle = FlatStyle.Flat, Font = new Font("Microsoft YaHei UI", 9f), Padding = new Padding(12, 4, 12, 4), Margin = new Padding(0, 0, 8, 0) };
         _btnExportConfig.FlatAppearance.BorderSize = 0;
@@ -166,7 +152,7 @@ public sealed class AboutTabControl : UserControl
         configRow.Controls.Add(_btnExportConfig);
         configRow.Controls.Add(_btnImportConfig);
         centerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        centerPanel.Controls.Add(configRow, 0, 6);
+        centerPanel.Controls.Add(configRow, 0, 5);
 
         mainPanel.Controls.Add(centerPanel, 0, 0);
         Controls.Add(mainPanel);
@@ -175,21 +161,33 @@ public sealed class AboutTabControl : UserControl
     }
 
     // ================================================================
-    //  深色模式
+    //  主题 — 深色 / 浅色
     // ================================================================
 
     private void OnToggleDarkMode(object? sender, EventArgs e)
     {
-        _darkMode = !_darkMode;
-        SaveDarkModePref(_darkMode);
-        ApplyTheme();
-        _btnDarkMode.Text = _darkMode ? "☀ Light Mode" : "🌙 Dark Mode";
+        ThemeManager.Toggle();
+        // ThemeManager.Toggle() 触发 ThemeChanged → MainForm.ApplyTheme() → 所有页签主题更新
     }
 
-    private void ApplyTheme()
+    /// <summary>公开给 MainForm 调用以应用当前主题</summary>
+    public void ApplyTheme()
     {
-        BackColor = _darkMode ? DarkBg : LightBg;
+        BackColor = ThemeManager.Bg;
+        ForeColor = ThemeManager.Fg;
 
+        // 按钮文字
+        _btnDarkMode.Text = ThemeManager.IsDarkMode ? Loc.T("BtnLightMode") : Loc.T("BtnDarkMode");
+        _btnDarkMode.BackColor = ThemeManager.IsDarkMode ? ThemeManager.DarkControlBg : SystemColors.Control;
+        _btnDarkMode.ForeColor = ThemeManager.Fg;
+
+        // 配置导入/导出按钮采用反转配色
+        _btnExportConfig.BackColor = ControlsHelper.ButtonBg;
+        _btnExportConfig.ForeColor = ControlsHelper.ButtonFg;
+        _btnImportConfig.BackColor = ControlsHelper.ButtonBg;
+        _btnImportConfig.ForeColor = ControlsHelper.ButtonFg;
+
+        // 递归应用到子控件
         foreach (Control c in Controls)
             ApplyThemeToControl(c);
     }
@@ -207,26 +205,30 @@ public sealed class AboutTabControl : UserControl
     {
         if (ctl is Label lbl)
         {
-            lbl.ForeColor = _darkMode ? DarkFg : Color.Black;
             if (lbl == _lblAboutVersion)
-                lbl.ForeColor = _darkMode ? DarkFg : Color.Gray;
-            if (lbl == _lblAboutDesc)
-                lbl.ForeColor = _darkMode ? DarkFg : Color.DimGray;
+                lbl.ForeColor = ThemeManager.MutedFg;
+            else if (lbl == _lblAboutDesc)
+                lbl.ForeColor = ThemeManager.IsDarkMode ? Color.FromArgb(180, 180, 180) : Color.DimGray;
+            else
+                lbl.ForeColor = ThemeManager.Fg;
         }
         else if (ctl is LinkLabel link)
         {
-            link.LinkColor = _darkMode ? Color.LightBlue : Color.SteelBlue;
-            link.ActiveLinkColor = _darkMode ? Color.DeepSkyBlue : Color.DarkBlue;
+            link.LinkColor = ThemeManager.IsDarkMode ? Color.LightBlue : Color.SteelBlue;
+            link.ActiveLinkColor = ThemeManager.IsDarkMode ? Color.DeepSkyBlue : Color.DarkBlue;
         }
         else if (ctl is ComboBox combo)
         {
-            combo.BackColor = _darkMode ? DarkControlBg : LightBg;
-            combo.ForeColor = _darkMode ? DarkFg : LightFg;
+            combo.BackColor = ThemeManager.ControlBg;
+            combo.ForeColor = ThemeManager.Fg;
         }
         else if (ctl is Button btn)
         {
-            btn.BackColor = _darkMode ? DarkControlBg : SystemColors.Control;
-            btn.ForeColor = _darkMode ? DarkFg : LightFg;
+            // 已在 ApplyTheme() 中固定配色的按钮跳过
+            if (btn == _btnDarkMode || btn == _btnExportConfig || btn == _btnImportConfig)
+                return;
+            btn.BackColor = ThemeManager.IsDarkMode ? ThemeManager.DarkControlBg : SystemColors.Control;
+            btn.ForeColor = ThemeManager.Fg;
         }
         else if (ctl is FlowLayoutPanel flp)
         {
@@ -254,12 +256,10 @@ public sealed class AboutTabControl : UserControl
             string srcDir = AppContext.BaseDirectory;
             string dstDir = dlg.SelectedPath;
 
-            // 导出替换规则
             string rulesSrc = Path.Combine(srcDir, "replace_rules.json");
             if (File.Exists(rulesSrc))
                 File.Copy(rulesSrc, Path.Combine(dstDir, "replace_rules.json"), overwrite: true);
 
-            // 导出应用配置
             string configSrc = Path.Combine(srcDir, "app_config.json");
             if (File.Exists(configSrc))
                 File.Copy(configSrc, Path.Combine(dstDir, "app_config.json"), overwrite: true);
@@ -292,7 +292,6 @@ public sealed class AboutTabControl : UserControl
                     File.Copy(srcPath, Path.Combine(dstDir, name), overwrite: true);
             }
 
-            // 如果导入了 app_config.json，重新加载语言偏好
             if (dlg.FileNames.Any(f => Path.GetFileName(f) == "app_config.json"))
             {
                 string lang = LoadLanguageFromConfig();
@@ -324,41 +323,6 @@ public sealed class AboutTabControl : UserControl
     }
 
     // ================================================================
-    //  深色模式持久化
-    // ================================================================
-
-    private static string ConfigPath => Path.Combine(AppContext.BaseDirectory, "app_config.json");
-
-    private static bool LoadDarkModePref()
-    {
-        try
-        {
-            if (File.Exists(ConfigPath))
-            {
-                var doc = JsonDocument.Parse(File.ReadAllText(ConfigPath, Encoding.UTF8));
-                if (doc.RootElement.TryGetProperty("darkMode", out var dm))
-                    return dm.GetBoolean();
-            }
-        }
-        catch { }
-        return false;
-    }
-
-    private static void SaveDarkModePref(bool dark)
-    {
-        try
-        {
-            var dict = new Dictionary<string, object>
-            {
-                ["language"] = Loc.CurrentLang,
-                ["darkMode"] = dark
-            };
-            File.WriteAllText(ConfigPath, JsonSerializer.Serialize(dict), Encoding.UTF8);
-        }
-        catch { }
-    }
-
-    // ================================================================
     //  事件
     // ================================================================
 
@@ -370,8 +334,7 @@ public sealed class AboutTabControl : UserControl
         if (_cmbAboutLanguage.SelectedItem is LanguageInfo lang && lang.Code != Loc.CurrentLang)
         {
             Loc.SetLanguage(lang.Code);
-            // 切换语言后重新持久化（包含 darkMode）
-            SaveDarkModePref(_darkMode);
+            // SetLanguage → SaveLanguage() 已通过 ThemeManager.SaveAll() 附带 darkMode
         }
     }
 
@@ -384,7 +347,7 @@ public sealed class AboutTabControl : UserControl
         _lblAboutAuthor.Text = Loc.T("AboutAuthor");
         _lblAboutDesc.Text = Loc.T("AboutDescription");
         _lblAboutLanguage.Text = Loc.T("AboutLanguage");
-        _btnDarkMode.Text = _darkMode ? Loc.T("BtnLightMode") : Loc.T("BtnDarkMode");
+        _btnDarkMode.Text = ThemeManager.IsDarkMode ? Loc.T("BtnLightMode") : Loc.T("BtnDarkMode");
         _btnExportConfig.Text = Loc.T("BtnExportConfig");
         _btnImportConfig.Text = Loc.T("BtnImportConfig");
 

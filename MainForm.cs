@@ -10,7 +10,7 @@ namespace TextTool;
 /// </summary>
 public sealed class MainForm : Form
 {
-    // ===== 页签控件引用（供 ApplyLocalization 遍历使用）=====
+    // ===== 页签控件引用（供 ApplyLocalization / ApplyTheme 遍历使用）=====
     private MergeTabControl _mergeTab = null!;
     private JoinTabControl _joinTab = null!;
     private ReplaceTabControl _replaceTab = null!;
@@ -18,16 +18,20 @@ public sealed class MainForm : Form
 
     // ===== 共享状态 =====
     private TabControl _tabControl = null!;
+    private Panel _mainPanel = null!;
     private StatusStrip _statusStrip = null!;
     private ToolStripStatusLabel _statusLabel = null!;
     private List<ReplaceRule> _rules = null!;
 
     public MainForm()
     {
+        ThemeManager.Init();   // 先加载深色模式偏好（供 Loc.SaveLanguage 持久化时使用）
         Loc.Init();
         InitializeComponent();
+        ApplyTheme();          // 应用初始主题
         ApplyLocalization();
         Loc.LanguageChanged += () => BeginInvoke(ApplyLocalization);
+        ThemeManager.ThemeChanged += _ => BeginInvoke(ApplyTheme);
     }
 
     private void InitializeComponent()
@@ -84,10 +88,10 @@ public sealed class MainForm : Form
         _statusStrip.Items.Add(_statusLabel);
 
         // ---- 组装 ----
-        var mainPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(8) };
-        mainPanel.Controls.Add(_tabControl);
+        _mainPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(8) };
+        _mainPanel.Controls.Add(_tabControl);
 
-        Controls.Add(mainPanel);
+        Controls.Add(_mainPanel);
         Controls.Add(_statusStrip);
     }
 
@@ -98,6 +102,29 @@ public sealed class MainForm : Form
         control.Dock = DockStyle.Fill;
         page.Controls.Add(control);
         return page;
+    }
+
+    // ================================================================
+    //  主题（深色/浅色 — 由 ThemeManager 统一驱动）
+    // ================================================================
+
+    private void ApplyTheme()
+    {
+        BackColor = ThemeManager.Bg;
+        ForeColor = ThemeManager.Fg;
+
+        _mainPanel.BackColor = ThemeManager.Bg;
+        _tabControl.BackColor = ThemeManager.Bg;
+        foreach (TabPage page in _tabControl.TabPages)
+            page.BackColor = ThemeManager.Bg;
+
+        _statusStrip.BackColor = ThemeManager.IsDarkMode ? ThemeManager.DarkControlBg : SystemColors.Control;
+        _statusLabel.ForeColor = ThemeManager.Fg;
+
+        _mergeTab.ApplyTheme();
+        _joinTab.ApplyTheme();
+        _replaceTab.ApplyTheme();
+        _aboutTab.ApplyTheme();
     }
 
     // ================================================================

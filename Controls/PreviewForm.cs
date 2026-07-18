@@ -82,6 +82,9 @@ public sealed class PreviewForm : Form
         Controls.Add(btnPanel);
 
         CancelButton = _btnClose;
+
+        // 应用全局主题
+        ApplyTheme();
     }
 
     private void OnSave(object? sender, EventArgs e)
@@ -99,5 +102,15 @@ public sealed class PreviewForm : Form
             MessageBox.Show(this, Loc.T("MsgSaveFailed", ex.Message),
                 Loc.T("MsgErrorTitle"), MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+    }
+
+    /// <summary>应用当前主题（深色/浅色）</summary>
+    public void ApplyTheme()
+    {
+        BackColor = ThemeManager.Bg;
+        ForeColor = ThemeManager.Fg;
+
+        _txtPreview.BackColor = ThemeManager.ControlBg;
+        _txtPreview.ForeColor = ThemeManager.Fg;
     }
 }

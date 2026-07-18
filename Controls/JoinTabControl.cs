@@ -77,7 +77,33 @@ public sealed class JoinTabControl : UserControl
         _lblFolder.Text = Loc.T("LabelFolder");
         _lblPattern.Text = Loc.T("LabelPattern");
         _lblOutputFile.Text = Loc.T("LabelOutputFile");
+        _btnBrowseFolder.Text = Loc.T("BtnBrowse");
         _btnJoin.Text = Loc.T("BtnJoin");
+    }
+
+    /// <summary>公开给 MainForm 调用以应用当前主题</summary>
+    public void ApplyTheme()
+    {
+        BackColor = ThemeManager.Bg;
+
+        _lblFolder.ForeColor = ThemeManager.Fg;
+        _lblPattern.ForeColor = ThemeManager.Fg;
+        _lblOutputFile.ForeColor = ThemeManager.Fg;
+
+        _txtFolder.BackColor = ThemeManager.ControlBg;
+        _txtFolder.ForeColor = ThemeManager.Fg;
+        _txtPattern.BackColor = ThemeManager.ControlBg;
+        _txtPattern.ForeColor = ThemeManager.Fg;
+        _txtOutputName.BackColor = ThemeManager.ControlBg;
+        _txtOutputName.ForeColor = ThemeManager.Fg;
+
+        _btnBrowseFolder.BackColor = ControlsHelper.ButtonBg;
+        _btnBrowseFolder.ForeColor = ControlsHelper.ButtonFg;
+        _btnBrowseFolder.FlatAppearance.MouseOverBackColor = ControlsHelper.ButtonBg;
+
+        _btnJoin.BackColor = ControlsHelper.ButtonBg;
+        _btnJoin.ForeColor = ControlsHelper.ButtonFg;
+        _btnJoin.FlatAppearance.MouseOverBackColor = ControlsHelper.ButtonBg;
     }
 
     private void OnBrowseFolder(object? sender, EventArgs e)
@@ -120,32 +146,9 @@ public sealed class JoinTabControl : UserControl
         finally { _btnJoin.Enabled = true; _btnJoin.Text = Loc.T("BtnJoin"); }
     }
 
-    private static void RevealInExplorer(string filePath)
-    {
-        System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{filePath}\"");
-    }
+    private static void RevealInExplorer(string filePath) => ControlsHelper.RevealInExplorer(filePath);
 
-    private static Label MakeLabel(string text) => new()
-    {
-        Text = text,
-        AutoSize = true,
-        TextAlign = ContentAlignment.MiddleRight,
-        Anchor = AnchorStyles.Right
-    };
+    private static Label MakeLabel(string text) => ControlsHelper.MakeLabel(text);
 
-    private static Button MakePrimaryButton(string text)
-    {
-        var btn = new Button
-        {
-            Text = text,
-            AutoSize = true,
-            Font = new Font("Microsoft YaHei UI", 11f, FontStyle.Bold),
-            BackColor = Color.SteelBlue,
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat,
-            Padding = new Padding(24, 6, 24, 6)
-        };
-        btn.FlatAppearance.BorderSize = 0;
-        return btn;
-    }
+    private static ThemedFlatButton MakePrimaryButton(string text) => ControlsHelper.MakePrimaryButton(text);
 }

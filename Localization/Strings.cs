@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using TextTool.Services;
 
 namespace TextTool.Localization;
 
@@ -34,7 +35,7 @@ public static class Loc
     /// </summary>
     public static void Init()
     {
-        string saved = LoadSavedLanguage();
+        string saved = ThemeManager.InitialLanguage ?? LoadSavedLanguage();
         SetLanguage(string.IsNullOrEmpty(saved) ? DetectSystemLanguage() : saved);
     }
 
@@ -123,16 +124,8 @@ public static class Loc
     {
         try
         {
-            // 读取现有配置，保留其他字段（如 darkMode）
-            var config = new Dictionary<string, object> { ["language"] = lang };
-            if (File.Exists(ConfigPath))
-            {
-                string existing = File.ReadAllText(ConfigPath, Encoding.UTF8);
-                var existingDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(existing);
-                if (existingDict != null && existingDict.TryGetValue("darkMode", out var dm))
-                    config["darkMode"] = dm.GetBoolean();
-            }
-            File.WriteAllText(ConfigPath, JsonSerializer.Serialize(config), Encoding.UTF8);
+            // 委托 ThemeManager 持久化全部配置（语言 + 深色模式）
+            ThemeManager.SaveAll();
         }
         catch { /* 写入失败不阻断程序 */ }
     }

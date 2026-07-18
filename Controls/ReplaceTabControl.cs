@@ -36,7 +36,7 @@ public sealed class ReplaceTabControl : UserControl
     private Label _lblReplaceOutput = null!;
     private Label _lblHint = null!;
 
-    private DetectionResult? _lastReplaceDetection;
+    private readonly List<string> _selectedFiles = new();
 
     public ReplaceTabControl(List<ReplaceRule> rules)
     {
@@ -66,7 +66,8 @@ public sealed class ReplaceTabControl : UserControl
         {
             Anchor = AnchorStyles.Left | AnchorStyles.Right,
             ReadOnly = true,
-            BackColor = Color.White,
+            BackColor = ThemeManager.ControlBg,
+            ForeColor = ThemeManager.Fg,
             AllowDrop = true
         };
         _txtReplaceFile.DragEnter += OnFileDragEnter;
@@ -174,10 +175,9 @@ public sealed class ReplaceTabControl : UserControl
             WrapContents = false,
             AutoSize = true
         };
-        _btnAddRule = new Button { Text = "➕ Add/Update", AutoSize = true, BackColor = Color.LightGreen, FlatStyle = FlatStyle.Flat };
-        _btnAddRule.FlatAppearance.BorderSize = 0;
+        _btnAddRule = new ThemedFlatButton { Text = "➕ Add/Update", AutoSize = true, BackColor = ControlsHelper.ButtonBg, ForeColor = ControlsHelper.ButtonFg, Margin = new Padding(0, 0, 8, 0) };
         _btnAddRule.Click += OnAddOrUpdateRule;
-        _btnDeleteRule = new Button { Text = "🗑 Delete", AutoSize = true, BackColor = Color.LightCoral, FlatStyle = FlatStyle.Flat, Margin = new Padding(8, 0, 0, 0) };
+        _btnDeleteRule = new ThemedFlatButton { Text = "🗑 Delete", AutoSize = true, BackColor = ControlsHelper.ButtonBg, ForeColor = ControlsHelper.ButtonFg };
         _btnDeleteRule.FlatAppearance.BorderSize = 0;
         _btnDeleteRule.Click += OnDeleteRule;
         btnPanel.Controls.Add(_btnAddRule);
@@ -222,7 +222,7 @@ public sealed class ReplaceTabControl : UserControl
         _lblReplaceFile.Text = Loc.T("LabelSourceFile");
         _btnBrowseReplaceFile.Text = Loc.T("BtnBrowse");
         _lblReplaceEncodingTag.Text = Loc.T("LabelEncoding");
-        if (_lastReplaceDetection == null) _lblReplaceEncoding.Text = Loc.T("EncodingNotSelected");
+        if (_selectedFiles.Count == 0) _lblReplaceEncoding.Text = Loc.T("EncodingNotSelected");
         _lblRulesHeader.Text = Loc.T("LabelRules");
         _lblFind.Text = Loc.T("LabelFind");
         _lblReplaceWith.Text = Loc.T("LabelReplaceWith");
@@ -232,6 +232,61 @@ public sealed class ReplaceTabControl : UserControl
         _btnDown.Text = Loc.T("BtnDown");
         _lblHint.Text = Loc.T("HintRuleEdit");
         _btnReplaceProcess.Text = Loc.T("BtnExecuteReplace");
+    }
+
+    /// <summary>公开给 MainForm 调用以应用当前主题</summary>
+    public void ApplyTheme()
+    {
+        BackColor = ThemeManager.Bg;
+
+        // 递归遍历控件子树设置统一配色（Label → Fg, Button → ButtonBg/ButtonFg, Panel → Bg）
+        ApplyThemeToSplitContainer();
+
+        // TextBox / ListBox（递归不处理这些控件类型）
+        _txtReplaceFile.BackColor = ThemeManager.ControlBg;
+        _txtReplaceFile.ForeColor = ThemeManager.Fg;
+        _txtFind.BackColor = ThemeManager.ControlBg;
+        _txtFind.ForeColor = ThemeManager.Fg;
+        _txtReplaceWith.BackColor = ThemeManager.ControlBg;
+        _txtReplaceWith.ForeColor = ThemeManager.Fg;
+
+        _lstRules.BackColor = ThemeManager.ControlBg;
+        _lstRules.ForeColor = ThemeManager.Fg;
+
+        // 特殊的暗淡文字（覆盖递归设置的统一 ForeColor）
+        _lblReplaceEncoding.ForeColor = ThemeManager.MutedFg;
+        _lblHint.ForeColor = ThemeManager.MutedFg;
+    }
+
+    private void ApplyThemeToSplitContainer()
+    {
+        foreach (Control ctl in Controls)
+            ApplyThemeRecursive(ctl);
+    }
+
+    private void ApplyThemeRecursive(Control ctl)
+    {
+        if (ctl is SplitContainer sc)
+        {
+            sc.BackColor = ThemeManager.IsDarkMode ? ThemeManager.DarkControlBg : SystemColors.Control;
+            foreach (Control child in sc.Panel1.Controls) ApplyThemeRecursive(child);
+            foreach (Control child in sc.Panel2.Controls) ApplyThemeRecursive(child);
+        }
+        else if (ctl is TableLayoutPanel or FlowLayoutPanel)
+        {
+            ctl.BackColor = ThemeManager.Bg;
+            foreach (Control child in ctl.Controls) ApplyThemeRecursive(child);
+        }
+        else if (ctl is Label lbl)
+        {
+            lbl.ForeColor = ThemeManager.Fg;
+        }
+        else if (ctl is Button btn)
+        {
+            btn.BackColor = ControlsHelper.ButtonBg;
+            btn.ForeColor = ControlsHelper.ButtonFg;
+            btn.FlatAppearance.MouseOverBackColor = ControlsHelper.ButtonBg;
+        }
     }
 
     // ================================================================
@@ -265,22 +320,45 @@ public sealed class ReplaceTabControl : UserControl
     private void OnReplaceFileDragDrop(object? sender, DragEventArgs e)
     {
         _txtReplaceFile.BackColor = Color.White;
-        if (e.Data?.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0)
-            SelectReplaceFile(files[0]);
+        if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
+        {
+            var files = (string[])e.Data!.GetData(DataFormats.FileDrop)!;
+            SelectReplaceFiles(files);
+        }
     }
 
-    private void SelectReplaceFile(string path)
+    private void SelectReplaceFiles(string[] files)
     {
-        if (!File.Exists(path)) { ErrorOccurred?.Invoke(Loc.T("MsgFileNotFound", path)); return; }
-        _txtReplaceFile.Text = path;
-        try
+        _selectedFiles.Clear();
+        var valid = new List<string>();
+        foreach (var f in files)
         {
-            _lastReplaceDetection = EncodingDetector.Detect(path);
-            _lblReplaceEncoding.Text = _lastReplaceDetection.DisplayName;
-            _lblReplaceEncoding.ForeColor = SystemColors.ControlText;
-            _btnReplaceProcess.Enabled = true;
+            if (File.Exists(f)) valid.Add(f);
         }
-        catch (Exception ex) { ErrorOccurred?.Invoke(Loc.T("MsgReadFailed", ex.Message)); }
+        if (valid.Count == 0) return;
+
+        _selectedFiles.AddRange(valid);
+
+        if (valid.Count == 1)
+        {
+            _txtReplaceFile.Text = valid[0];
+            try
+            {
+                var detection = EncodingDetector.Detect(valid[0]);
+                _lblReplaceEncoding.Text = detection.DisplayName;
+                _lblReplaceEncoding.ForeColor = SystemColors.ControlText;
+            }
+            catch { }
+        }
+        else
+        {
+            _txtReplaceFile.Text = $"[{valid.Count} files selected]";
+            _lblReplaceEncoding.Text = Loc.T("StatusFilesSelected", valid.Count);
+            _lblReplaceEncoding.ForeColor = SystemColors.ControlText;
+        }
+
+        _btnReplaceProcess.Enabled = true;
+        StatusChanged?.Invoke(Loc.T("StatusFilesSelected", valid.Count));
     }
 
     // ================================================================
@@ -289,9 +367,9 @@ public sealed class ReplaceTabControl : UserControl
 
     private void OnBrowseReplaceFile(object? sender, EventArgs e)
     {
-        using var dlg = OpenTextFileDialog(Loc.T("TabReplace"));
+        using var dlg = ControlsHelper.CreateTextFileDialog(Loc.T("TabReplace"));
         if (dlg.ShowDialog(this) == DialogResult.OK)
-            SelectReplaceFile(dlg.FileName);
+            SelectReplaceFiles(dlg.FileNames);
     }
 
     private void OnRuleSelected(object? sender, EventArgs e)
@@ -358,7 +436,7 @@ public sealed class ReplaceTabControl : UserControl
 
     private void OnReplaceProcess(object? sender, EventArgs e)
     {
-        if (_lastReplaceDetection == null || string.IsNullOrWhiteSpace(_txtReplaceFile.Text)) return;
+        if (_selectedFiles.Count == 0 || string.IsNullOrWhiteSpace(_txtReplaceFile.Text)) return;
         if (_rules.Count == 0) { ErrorOccurred?.Invoke(Loc.T("MsgAddRule")); return; }
 
         try
@@ -367,25 +445,41 @@ public sealed class ReplaceTabControl : UserControl
             _btnReplaceProcess.Text = Loc.T("StatusReplacing");
             StatusChanged?.Invoke(Loc.T("StatusReplacing"));
 
-            string dir = Path.GetDirectoryName(_txtReplaceFile.Text) ?? ".";
-            string name = Path.GetFileNameWithoutExtension(_txtReplaceFile.Text);
-            string ext = Path.GetExtension(_txtReplaceFile.Text);
-            string outputPath = Path.Combine(dir, $"{name}_Processed{ext}");
+            int successCount = 0;
+            foreach (string path in _selectedFiles)
+            {
+                try
+                {
+                    var encoding = EncodingDetector.Detect(path);
+                    string dir = Path.GetDirectoryName(path) ?? ".";
+                    string name = Path.GetFileNameWithoutExtension(path);
+                    string ext = Path.GetExtension(path);
+                    string outputPath = Path.Combine(dir, $"{name}_Processed{ext}");
 
-            string content = File.ReadAllText(_txtReplaceFile.Text, _lastReplaceDetection.Encoding);
-            string replaced = PunctuationReplacer.Apply(content, _rules);
-            File.WriteAllText(outputPath, replaced, new UTF8Encoding(true));
+                    string content = File.ReadAllText(path, encoding.Encoding);
+                    string replaced = PunctuationReplacer.Apply(content, _rules);
+                    File.WriteAllText(outputPath, replaced, new UTF8Encoding(true));
+                    successCount++;
+                }
+                catch (Exception ex)
+                {
+                    ErrorOccurred?.Invoke(Loc.T("MsgReplaceFailed", Path.GetFileName(path), ex.Message));
+                }
+            }
 
-            _lblReplaceOutput.Text = Loc.T("LabelOutput", outputPath);
-            _lblReplaceOutput.ForeColor = Color.Green;
-            StatusChanged?.Invoke(Loc.T("StatusReplaceComplete", outputPath));
+            string msg = successCount == _selectedFiles.Count
+                ? Loc.T("StatusBatchComplete", successCount)
+                : Loc.T("StatusBatchPartial", successCount, _selectedFiles.Count);
+            _lblReplaceOutput.Text = msg;
+            _lblReplaceOutput.ForeColor = successCount == _selectedFiles.Count ? Color.Green : Color.DarkOrange;
+            StatusChanged?.Invoke(msg);
 
-            if (MessageBox.Show(this,
-                Loc.T("MsgReplaceBody", outputPath),
+            if (successCount > 0 && MessageBox.Show(this,
+                Loc.T("MsgBatchBody", successCount),
                 Loc.T("MsgReplaceTitle"),
                 MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
             {
-                RevealInExplorer(outputPath);
+                RevealInExplorer(Path.GetDirectoryName(_selectedFiles[0])!);
             }
         }
         catch (Exception ex) { ErrorOccurred?.Invoke(Loc.T("MsgReplaceFailed", ex.Message)); }
@@ -407,39 +501,10 @@ public sealed class ReplaceTabControl : UserControl
     //  Helpers
     // ================================================================
 
-    private static Label MakeLabel(string text) => new()
-    {
-        Text = text,
-        AutoSize = true,
-        TextAlign = ContentAlignment.MiddleRight,
-        Anchor = AnchorStyles.Right
-    };
+    private static Label MakeLabel(string text) => ControlsHelper.MakeLabel(text);
 
-    private static Button MakePrimaryButton(string text)
-    {
-        var btn = new Button
-        {
-            Text = text,
-            AutoSize = true,
-            Font = new Font("Microsoft YaHei UI", 11f, FontStyle.Bold),
-            BackColor = Color.SteelBlue,
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat,
-            Padding = new Padding(24, 6, 24, 6)
-        };
-        btn.FlatAppearance.BorderSize = 0;
-        return btn;
-    }
+    private static ThemedFlatButton MakePrimaryButton(string text) => ControlsHelper.MakePrimaryButton(text);
 
-    private static void RevealInExplorer(string filePath)
-    {
-        System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{filePath}\"");
-    }
+    private static void RevealInExplorer(string filePath) => ControlsHelper.RevealFolder(filePath);
 
-    private static OpenFileDialog OpenTextFileDialog(string title) => new()
-    {
-        Title = title,
-        Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
-        RestoreDirectory = true
-    };
 }

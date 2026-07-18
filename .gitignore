@@ -34,7 +34,7 @@ replace_rules.json
 *.lnk
 
 ## 开发文档（含 git 操作记录，可能含敏感信息）
-DevDocs/
+doc/Publish.md
 
 ## 测试产物
 TestResults/

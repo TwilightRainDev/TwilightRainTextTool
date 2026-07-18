@@ -70,7 +70,8 @@ Read file → Threshold merge → CJK fix → Punct. truncation fix → Punct. r
 - Rule list with live preview
 - Add, update, and delete rules
 - **JSON persistence** — `replace_rules.json` at runtime, survives restarts
-- Drag-and-drop `.txt` file support
+- Drag-and-drop `.txt` file support (single or batch)
+- **Batch processing** — select multiple files, process all at once
 - Safe output: `*_Processed.*`
 
 #### Tab 4 · About
@@ -128,27 +129,58 @@ dotnet publish -c Release -o bin/Release/publish
 
 ```
 TextTool/
-├── TextTool.csproj              # .NET 7 WinForms, v1.6.1
-├── Program.cs                   # Entry point, registers GBK encoding
-├── MainForm.cs                  # Main window (~1060 lines, 4 tabs)
+├── TextTool.sln                  # Solution file
+├── TextTool.csproj               # .NET 7 WinForms, v2.0.1
+├── Directory.Build.props         # Centralized version (2.0.1)
+├── Program.cs                    # Entry point, registers GBK encoding
+├── MainForm.cs                   # Main window (~165 lines, hosts 4 tabs)
+│
+├── Controls/                     # Tab pages (extracted from MainForm)
+│   ├── MergeTabControl.cs        # Tab 1: Line merge (drag-drop, batch, preview)
+│   ├── JoinTabControl.cs         # Tab 2: File join (directory + pattern)
+│   ├── ReplaceTabControl.cs      # Tab 3: Punct. replace (CRUD, batch processing)
+│   ├── AboutTabControl.cs        # Tab 4: About, language, dark mode, config I/O
+│   └── PreviewForm.cs            # Preview dialog (merge result before saving)
+│
+├── Services/                     # Core logic & infrastructure
+│   ├── ThemeManager.cs           # Semantic color palette (dark/light mode)
+│   ├── ThemedFlatButton.cs       # Flat button with disabled-state ForeColor fix
+│   ├── ControlsHelper.cs         # Shared UI factories (buttons, labels, dialogs)
+│   ├── EncodingDetector.cs       # BOM → UTF-8 → GBK auto-detection (4 KB header)
+│   ├── LineMerger.cs             # Threshold-based line merge algorithm
+│   ├── FileJoiner.cs             # Multi-file directory concatenation
+│   ├── CjkParagraphMerger.cs     # CJK truncation fix + no-merge support
+│   ├── PunctTruncationMerger.cs  # Punctuation truncation fix + no-merge support
+│   ├── PunctuationReplacer.cs    # Find-&-replace engine + ReplaceRuleStore
+│   ├── ProcessingPipeline.cs     # Single-pass pipeline orchestration
+│   └── TextUtils.cs              # Extension methods (EndsWithAny, etc.)
+│
+├── Localization/                 # i18n
+│   ├── Strings.cs                # Loc singleton (auto-detect, switch, persist)
+│   ├── zh_CN.json                # Simplified Chinese locale
+│   ├── zh_TW.json                # Traditional Chinese locale
+│   └── en_US.json                # English locale
+│
 ├── Resources/
-│   ├── icon.ico                 # App icon
-│   └── TwilightRain.jpg         # Avatar in About page
-├── Localization/
-│   ├── Strings.cs               # Loc singleton (init, detect, switch, persist)
-│   ├── zh_CN.json               # Simplified Chinese locale
-│   ├── zh_TW.json               # Traditional Chinese locale
-│   └── en_US.json               # English locale
-├── Services/
-│   ├── EncodingDetector.cs      # GBK / UTF-8 / UTF-16 auto-detection (4 KB header)
-│   ├── LineMerger.cs            # Threshold-based line merge core
-│   ├── FileJoiner.cs            # Multi-file concatenation
-│   ├── CjkParagraphMerger.cs    # CJK truncation fix + no-merge support
-│   ├── PunctTruncationMerger.cs # Punctuation truncation fix + no-merge support
-│   ├── PunctuationReplacer.cs   # Single-line punctuation replacement engine
-│   └── ProcessingPipeline.cs    # Orchestrates all steps in one memory pass
-├── replace_rules.json           # Runtime-generated rules file (auto)
-├── app_config.json              # Language preference (auto)
+│   ├── icon.ico                  # App icon
+│   └── TwilightRain.jpg          # Avatar in About page
+│
+├── TextTool.Tests/               # Unit tests (xUnit, 63 tests)
+│   ├── TextTool.Tests.csproj
+│   ├── TestHelpers.cs
+│   └── Services/                 # One test file per service
+│
+├── doc/                          # Documentation
+│   ├── ARCHITECTURE.md           # Developer architecture guide
+│   ├── Publish.md                # Release checklist
+│   └── adr/                      # Architecture Decision Records (7 ADRs)
+│
+├── .github/workflows/
+│   └── build-test.yml            # CI: build + test on push/PR
+│
+├── replace_rules.json            # Runtime-generated rules file (auto)
+├── app_config.json               # Language & dark mode preference (auto)
+├── LICENSE                       # MIT license
 └── README.md
 ```
 
@@ -176,7 +208,8 @@ TextTool/
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.6.1 | 2026-07-18 | Version centralized into `Directory.Build.props`; About page reads version from assembly at runtime — no more hardcoded version strings |
+| 2.0.1 | 2026-07-18 | ThemeManager semantic palette refactor; shared ControlsHelper factories; Simplify code review fixes; ARCHITECTURE.md |
+| 2.0.0 | 2026-07-18 | Replace tab batch processing; dark mode extended to full app; inverted button scheme; DevDocs moved to doc; ThemedFlatButton fixes disabled button ForeColor |
 | 1.6.0 | (skipped) | Version number reserved; internal refactoring absorbed into 1.6.1 |
 | 1.5.2 | 2026-07-18 | LineMerger now respects the no-merge character set during threshold merging, keeping lines ending with no-merge characters (e.g., `章`, `节`, `.。！？`) as independent paragraphs; renamed for clarity |
 | 1.5.1 | 2026-07-17 | Fixed encoding detector: `IsValidUtf8` no longer falsely rejects files when the 4KB probe boundary cuts a multi-byte UTF-8 character mid-sequence (causing GBK fallback and garbled output) |
@@ -242,7 +275,8 @@ TextTool/
 - 左侧规则列表实时预览
 - 支持添加、更新、删除规则
 - **JSON 持久化** — 自动保存到 `replace_rules.json`，重启不丢失
-- 支持拖放 `.txt` 文件
+- 支持拖放 `.txt` 文件（单文件或批量）
+- **批量处理** — 选择多个文件，一键处理所有
 - 安全输出：`*_Processed.*`
 
 #### Tab 4 · 关于
@@ -291,28 +325,59 @@ dotnet publish -c Release -o bin/Release/publish
 
 ```
 TextTool/
-├── TextTool.csproj              # .NET 7 WinForms, v1.6.1
-├── Program.cs                   # 入口，注册 GBK 编码支持
-├── MainForm.cs                  # 主窗口 (~1060 行, 4 个页签)
+├── TextTool.sln                  # 解决方案文件
+├── TextTool.csproj               # .NET 7 WinForms, v2.0.1
+├── Directory.Build.props         # 统一版本号 (2.0.1)
+├── Program.cs                    # 入口，注册 GBK 编码支持
+├── MainForm.cs                   # 主窗口 (~165 行，承载 4 个页签)
+│
+├── Controls/                     # 页签控件（从 MainForm 拆分）
+│   ├── MergeTabControl.cs        # Tab 1: 行合并（拖放、批量、预览）
+│   ├── JoinTabControl.cs         # Tab 2: 文件拼接（目录 + 匹配模式）
+│   ├── ReplaceTabControl.cs      # Tab 3: 标点替换（CRUD、批量处理）
+│   ├── AboutTabControl.cs        # Tab 4: 关于、语言切换、深色模式、配置导入导出
+│   └── PreviewForm.cs            # 预览对话框（合并结果保存前查看）
+│
+├── Services/                     # 核心逻辑与基础设施
+│   ├── ThemeManager.cs           # 语义化色板（深色/浅色模式）
+│   ├── ThemedFlatButton.cs       # 扁平按钮 + 禁用状态 ForeColor 修复
+│   ├── ControlsHelper.cs         # 共享 UI 工厂（按钮、标签、对话框）
+│   ├── EncodingDetector.cs       # BOM → UTF-8 → GBK 自动检测（仅读 4KB 头部）
+│   ├── LineMerger.cs             # 阈值行合并核心算法
+│   ├── FileJoiner.cs             # 多文件拼接
+│   ├── CjkParagraphMerger.cs     # 中文截断修复 + 不合并规则
+│   ├── PunctTruncationMerger.cs  # 标点截断修复 + 不合并规则
+│   ├── PunctuationReplacer.cs    # 查找替换引擎 + ReplaceRuleStore
+│   ├── ProcessingPipeline.cs     # 流水线编排（单次遍历，一次写出）
+│   └── TextUtils.cs              # 扩展方法（EndsWithAny 等）
+│
+├── Localization/                 # 国际化
+│   ├── Strings.cs                # Loc 单例（自动检测、切换、持久化）
+│   ├── zh_CN.json                # 简体中文语言包
+│   ├── zh_TW.json                # 繁体中文语言包
+│   └── en_US.json                # 英文语言包
+│
 ├── Resources/
-│   ├── icon.ico                 # 程序图标
-│   └── TwilightRain.jpg         # 关于页头像
-├── Localization/
-│   ├── Strings.cs               # Loc 单例（初始化、检测、切换、持久化）
-│   ├── zh_CN.json               # 简体中文语言包
-│   ├── zh_TW.json               # 繁体中文语言包
-│   └── en_US.json               # 英文语言包
-├── Services/
-│   ├── EncodingDetector.cs      # GBK/UTF-8/UTF-16 自动检测（仅读 4KB 头部）
-│   ├── LineMerger.cs            # 阈值行合并核心算法
-│   ├── FileJoiner.cs            # 多文件拼接
-│   ├── CjkParagraphMerger.cs    # 中文截断修复 + 不合并规则
-│   ├── PunctTruncationMerger.cs # 标点截断修复 + 不合并规则
-│   ├── PunctuationReplacer.cs   # 单行标点替换引擎
-│   └── ProcessingPipeline.cs    # 流水线编排（一次内存遍历，一次写入）
-├── replace_rules.json           # 运行时生成的替换规则文件（自动）
-├── app_config.json              # 语言偏好设置（自动）
-└── README.md                    # 本文件
+│   ├── icon.ico                  # 程序图标
+│   └── TwilightRain.jpg          # 关于页头像
+│
+├── TextTool.Tests/               # 单元测试（xUnit，63 项）
+│   ├── TextTool.Tests.csproj
+│   ├── TestHelpers.cs
+│   └── Services/                 # 每个服务对应一个测试文件
+│
+├── doc/                          # 文档
+│   ├── ARCHITECTURE.md           # 开发者架构指南
+│   ├── Publish.md                # 发布清单
+│   └── adr/                      # 架构决策记录（7 份 ADR）
+│
+├── .github/workflows/
+│   └── build-test.yml            # CI：提交/PR 自动构建 + 测试
+│
+├── replace_rules.json            # 运行时生成的替换规则文件（自动）
+├── app_config.json               # 语言与主题偏好（自动）
+├── LICENSE                       # MIT 许可证
+└── README.md                     # 本文件
 ```
 
 ### 技术栈
@@ -339,7 +404,8 @@ TextTool/
 
 | 版本 | 日期 | 更新内容 |
 | :-- | :--- | :------- |
-| 1.6.1 | 2026-07-18 | 版本号统一到 `Directory.Build.props` 集中管理；关于页从程序集运行时读取版本 — 源码中不再有任何硬编码版本号 |
+| 2.0.1 | 2026-07-18 | ThemeManager 语义化色板重构；提取 ControlsHelper 共享工厂；Simplify 代码审查修复；新增 ARCHITECTURE.md 开发文档 |
+| 2.0.0 | 2026-07-18 | 标点替换页签支持批量处理；深色模式拓展到全程序；按钮反转配色方案；DevDocs 移至 doc；ThemedFlatButton 修复禁用按钮字体颜色 |
 | 1.6.0 | (跳过) | 版本号预留；内部重构已并入 1.6.1 |
 | 1.5.2 | 2026-07-18 | LineMerger 阈值合并时不再无视不合并规则，以 noMergeSet 字符结尾的行独立成段（如 `章`、`节`、`.。！？`）；"去除行首逗号"改名为"去除位于行首逗号" |
 | 1.5.1 | 2026-07-17 | 修复编码检测器：`IsValidUtf8` 因 4KB 探测边界截断多字节 UTF-8 字符而误判为 false，导致回退到 GBK 产生乱码 |

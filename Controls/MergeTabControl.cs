@@ -68,7 +68,8 @@ public sealed class MergeTabControl : UserControl
         {
             Anchor = AnchorStyles.Left | AnchorStyles.Right,
             ReadOnly = true,
-            BackColor = Color.White,
+            BackColor = ThemeManager.ControlBg,
+            ForeColor = ThemeManager.Fg,
             AllowDrop = true
         };
         _txtFilePath.DragEnter += OnFileDragEnter;
@@ -169,19 +170,17 @@ public sealed class MergeTabControl : UserControl
         _btnProcess.Click += OnProcess;
         btnRow.Controls.Add(_btnProcess);
 
-        _btnPreview = new Button
+        _btnPreview = new ThemedFlatButton
         {
             Text = "Preview",
             AutoSize = true,
             Enabled = false,
             Font = new Font("Microsoft YaHei UI", 11f, FontStyle.Bold),
-            BackColor = Color.OliveDrab,
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat,
+            BackColor = ControlsHelper.ButtonBg,
+            ForeColor = ControlsHelper.ButtonFg,
             Padding = new Padding(24, 6, 24, 6),
             Margin = new Padding(8, 0, 0, 0)
         };
-        _btnPreview.FlatAppearance.BorderSize = 0;
         _btnPreview.Click += OnPreview;
         btnRow.Controls.Add(_btnPreview);
         layout.Controls.Add(btnRow, 1, 8);
@@ -214,6 +213,58 @@ public sealed class MergeTabControl : UserControl
         _chkTrimLeadingComma.Text = Loc.T("ChkTrimLeadingComma");
         _btnProcess.Text = Loc.T("BtnProcess");
         _btnPreview.Text = Loc.T("BtnPreview");
+    }
+
+    /// <summary>公开给 MainForm 调用以应用当前主题</summary>
+    public void ApplyTheme()
+    {
+        BackColor = ThemeManager.Bg;
+
+        // Labels
+        _lblSourceFile.ForeColor = ThemeManager.Fg;
+        _lblThreshold.ForeColor = ThemeManager.Fg;
+        _lblEncodingTag.ForeColor = ThemeManager.Fg;
+        _lblPostProcess.ForeColor = ThemeManager.Fg;
+        _lblPunctChars.ForeColor = ThemeManager.Fg;
+        _lblNoMergeChars.ForeColor = ThemeManager.Fg;
+
+        _lblEncoding.ForeColor = ThemeManager.MutedFg;
+
+        // TextBoxes
+        _txtFilePath.BackColor = ThemeManager.ControlBg;
+        _txtFilePath.ForeColor = ThemeManager.Fg;
+        _txtPunctChars.BackColor = ThemeManager.ControlBg;
+        _txtPunctChars.ForeColor = ThemeManager.Fg;
+        _txtNoMergeChars.BackColor = ThemeManager.ControlBg;
+        _txtNoMergeChars.ForeColor = ThemeManager.Fg;
+
+        // NumericUpDown
+        _numThreshold.BackColor = ThemeManager.ControlBg;
+        _numThreshold.ForeColor = ThemeManager.Fg;
+
+        // CheckBoxes
+        _chkFixCjk.ForeColor = ThemeManager.Fg;
+        _chkFixPunct.ForeColor = ThemeManager.Fg;
+        _chkApplyReplace.ForeColor = ThemeManager.Fg;
+        _chkNoMerge.ForeColor = ThemeManager.Fg;
+        _chkTrimLeadingComma.ForeColor = ThemeManager.Fg;
+
+        // RadioButtons
+        _rbByte.ForeColor = ThemeManager.Fg;
+        _rbChar.ForeColor = ThemeManager.Fg;
+
+        // Buttons — 反转配色
+        _btnBrowse.BackColor = ControlsHelper.ButtonBg;
+        _btnBrowse.ForeColor = ControlsHelper.ButtonFg;
+        _btnBrowse.FlatAppearance.MouseOverBackColor = ControlsHelper.ButtonBg;
+
+        _btnProcess.BackColor = ControlsHelper.ButtonBg;
+        _btnProcess.ForeColor = ControlsHelper.ButtonFg;
+        _btnProcess.FlatAppearance.MouseOverBackColor = ControlsHelper.ButtonBg;
+
+        _btnPreview.BackColor = ControlsHelper.ButtonBg;
+        _btnPreview.ForeColor = ControlsHelper.ButtonFg;
+        _btnPreview.FlatAppearance.MouseOverBackColor = ControlsHelper.ButtonBg;
     }
 
     // ================================================================
@@ -352,7 +403,7 @@ public sealed class MergeTabControl : UserControl
                 Loc.T("MsgProcessTitle"),
                 MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
             {
-                RevealInExplorer(Path.GetDirectoryName(_selectedFiles[0])!);
+                ControlsHelper.RevealFolder(Path.GetDirectoryName(_selectedFiles[0])!);
             }
         }
         finally { _btnProcess.Enabled = true; _btnProcess.Text = Loc.T("BtnProcess"); }
@@ -382,23 +433,7 @@ public sealed class MergeTabControl : UserControl
     //  Helpers
     // ================================================================
 
-    private static Label MakeLabel(string text) => new() { Text = text, AutoSize = true, TextAlign = ContentAlignment.MiddleRight, Anchor = AnchorStyles.Right };
+    private static Label MakeLabel(string text) => ControlsHelper.MakeLabel(text);
 
-    private static Button MakePrimaryButton(string text)
-    {
-        var btn = new Button
-        {
-            Text = text, AutoSize = true,
-            Font = new Font("Microsoft YaHei UI", 11f, FontStyle.Bold),
-            BackColor = Color.SteelBlue, ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat, Padding = new Padding(24, 6, 24, 6)
-        };
-        btn.FlatAppearance.BorderSize = 0;
-        return btn;
-    }
-
-    private static void RevealInExplorer(string folder)
-    {
-        System.Diagnostics.Process.Start("explorer.exe", folder);
-    }
+    private static ThemedFlatButton MakePrimaryButton(string text) => ControlsHelper.MakePrimaryButton(text);
 }

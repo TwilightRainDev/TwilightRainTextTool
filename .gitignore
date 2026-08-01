@@ -30,6 +30,7 @@ packages/
 ## 运行时生成的文件
 replace_rules.json
 app_config.json
+vn_schemes.json
 
 ## 快捷方式
 *.lnk

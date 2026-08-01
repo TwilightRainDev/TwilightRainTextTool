@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using TextTool.Localization;
 using TextTool.Services;
 
@@ -135,10 +136,10 @@ public sealed class VNCharacterSchemeForm : Form
         {
             string prefix = scheme.IsBuiltIn ? "" : "* ";
             string info = scheme.Characters.Count > 0
-                ? $"{scheme.Characters.Count} 个角色"
-                : "无角色";
+                ? Loc.T("VnSchemeCharCount", scheme.Characters.Count)
+                : Loc.T("VnSchemeCharNone");
             if (scheme.RouteNames.Count > 0)
-                info += $"，{scheme.RouteNames.Count} 条路线";
+                info += Loc.T("VnSchemeRouteCount", scheme.RouteNames.Count);
 
             var node = new TreeNode($"{prefix}{scheme.Name}  —  {scheme.Description}  ({info})")
             {
@@ -154,13 +155,9 @@ public sealed class VNCharacterSchemeForm : Form
             // 路线标题
             if (scheme.RouteNames.Count > 0)
             {
-                if (scheme.Characters.Count > 0 && scheme.RouteNames.Count > 0)
-                {
-                    // 分隔
-                }
                 foreach (var rn in scheme.RouteNames)
                 {
-                    node.Nodes.Add(new TreeNode($"  [路线] {rn}") { Tag = null });
+                    node.Nodes.Add(new TreeNode($"  {Loc.T("VnSchemeRoutePrefix")}{rn}") { Tag = null });
                 }
             }
 
@@ -327,6 +324,7 @@ public sealed class VNEditCharacterSchemeDialog : Form
     private TextBox _txtCharacters = null!;
     private Label _lblRoutesHeader = null!;
     private TextBox _txtRouteNames = null!;
+    private TextBox _txtScenePattern = null!;
     private Button _btnOK = null!;
     private Button _btnCancel = null!;
 
@@ -356,7 +354,7 @@ public sealed class VNEditCharacterSchemeDialog : Form
         {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 7,
+            RowCount = 8,
             Padding = new Padding(12)
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -426,7 +424,17 @@ public sealed class VNEditCharacterSchemeDialog : Form
         layout.SetColumnSpan(_txtRouteNames, 2);
         layout.Controls.Add(_txtRouteNames, 0, 5);
 
-        // Row 6 — OK / Cancel
+        // Row 6 — Scene pattern regex
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
+        layout.Controls.Add(ControlsHelper.MakeLabel(Loc.T("VnSchemeEditScenePattern")), 0, 6);
+        _txtScenePattern = new TextBox
+        {
+            Anchor = AnchorStyles.Left | AnchorStyles.Right,
+            Font = new Font("Consolas", 9f)
+        };
+        layout.Controls.Add(_txtScenePattern, 1, 6);
+
+        // Row 7 — OK / Cancel
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         var btnRow = new FlowLayoutPanel
         {
@@ -455,7 +463,7 @@ public sealed class VNEditCharacterSchemeDialog : Form
         btnRow.Controls.Add(_btnOK);
 
         layout.SetColumnSpan(btnRow, 2);
-        layout.Controls.Add(btnRow, 0, 6);
+        layout.Controls.Add(btnRow, 0, 7);
 
         Controls.Add(layout);
     }
@@ -475,6 +483,7 @@ public sealed class VNEditCharacterSchemeDialog : Form
         _txtDescription.Text = Scheme.Description;
         _txtCharacters.Text = string.Join("\r\n", Scheme.Characters);
         _txtRouteNames.Text = string.Join("\r\n", Scheme.RouteNames);
+        _txtScenePattern.Text = Scheme.ScenePattern ?? "";
     }
 
     private void OnOK(object? sender, EventArgs e)
@@ -503,6 +512,23 @@ public sealed class VNEditCharacterSchemeDialog : Form
             .Where(s => s.Length > 0)
             .Distinct()
             .ToList();
+
+        // 场景正则（单行，空则置 null 走引擎通用模式）
+        string pattern = _txtScenePattern.Text.Trim();
+        if (pattern.Length > 0)
+        {
+            try { new Regex(pattern); }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, Loc.T("VnSchemeEditPatternInvalid", ex.Message), "", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            Scheme.ScenePattern = pattern;
+        }
+        else
+        {
+            Scheme.ScenePattern = null;
+        }
 
         if (Scheme.Characters.Count == 0)
         {

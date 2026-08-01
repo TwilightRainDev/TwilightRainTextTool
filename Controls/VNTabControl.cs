@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using TextTool.Localization;
 using TextTool.Services;
 
@@ -132,7 +133,7 @@ public sealed class VNTabControl : UserControl, IStatusSource
         };
         _btnPresetSchemes = new ThemedFlatButton
         {
-            Text = "预设角色方案勾选",
+            Text = Loc.T("BtnVNPresetSchemes"),
             AutoSize = true,
             BackColor = ControlsHelper.ButtonBg,
             ForeColor = ControlsHelper.ButtonFg,
@@ -327,11 +328,14 @@ public sealed class VNTabControl : UserControl, IStatusSource
             // 从选中的预设方案收集角色名
             HashSet<string> characters = new();
             List<string> routeNames = new();
+            List<string> scenePatterns = new();
             foreach (var scheme in _selectedSchemes)
             {
                 foreach (var ch in scheme.Characters)
                     characters.Add(ch);
                 routeNames.AddRange(scheme.RouteNames);
+                if (!string.IsNullOrWhiteSpace(scheme.ScenePattern))
+                    scenePatterns.Add(scheme.ScenePattern!);
             }
 
             int maxPara = (int)_numMaxPara.Value;
@@ -339,6 +343,8 @@ public sealed class VNTabControl : UserControl, IStatusSource
             bool doFixPunct = _rbAll.Checked || _rbFixPunct.Checked;
 
             int successCount = 0;
+            string? singleContent = null;
+            string? singleOutputPath = null;
             foreach (string path in _selectedFiles)
             {
                 try
@@ -350,10 +356,15 @@ public sealed class VNTabControl : UserControl, IStatusSource
 
                     if (doReformat)
                     {
+                        // 合并所有方案提供的场景正则；无则用引擎通用模式
+                        Regex? scenePattern = scenePatterns.Count > 0
+                            ? new Regex(string.Join("|", scenePatterns))
+                            : null;
                         var reformatter = new VNReformatterService(
-                            characters: characters.Count > 0 ? characters : null,
-                            routeNames: routeNames.Count > 0 ? routeNames : null,
-                            maxParaLength: maxPara);
+                            characters: characters,
+                            routeNames: routeNames,
+                            maxParaLength: maxPara,
+                            scenePattern: scenePattern);
                         content = reformatter.Reformat(content);
                     }
 
@@ -363,13 +374,32 @@ public sealed class VNTabControl : UserControl, IStatusSource
                         content = fixer.Fix(content);
                     }
 
-                    File.WriteAllText(outputPath, content, new UTF8Encoding(true));
+                    // 单文件场景：先预览，用户确认后保存；多文件直接写盘
+                    if (_selectedFiles.Count == 1)
+                    {
+                        singleContent = content;
+                        singleOutputPath = outputPath;
+                    }
+                    else
+                    {
+                        File.WriteAllText(outputPath, content, new UTF8Encoding(true));
+                    }
                     successCount++;
                 }
                 catch (Exception ex)
                 {
                     ErrorOccurred?.Invoke(Loc.T("MsgProcessFailed", Path.GetFileName(path), ex.Message));
                 }
+            }
+
+            // 单文件预览确认
+            if (_selectedFiles.Count == 1 && successCount == 1 && singleContent != null)
+            {
+                using var preview = new PreviewForm(singleContent, singleOutputPath!);
+                if (preview.ShowDialog(this) == DialogResult.OK)
+                    successCount = 1;
+                else
+                    successCount = 0; // 用户取消保存，视为未完成
             }
 
             string msg = successCount == _selectedFiles.Count

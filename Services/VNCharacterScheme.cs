@@ -13,6 +13,12 @@ public class VNCharacterScheme
     public bool IsBuiltIn { get; set; }
     public List<string> Characters { get; set; } = new();
     public List<string> RouteNames { get; set; } = new();
+
+    /// <summary>
+    /// 场景标记正则（可选）。空/未设置时使用引擎通用模式 `── 场景 ──`。
+    /// 例：Steins;Gate 的 `SGFD_[A-Z]+[...]`。
+    /// </summary>
+    public string? ScenePattern { get; set; }
 }
 
 /// <summary>
@@ -40,6 +46,7 @@ public static class VNCharacterSchemeStore
                 Name = "Steins;Gate 默认角色",
                 Description = "命运石之门全角色集（47 个角色 + 7 条路线）",
                 IsBuiltIn = true,
+                ScenePattern = @"SGFD_[A-Z]+[〇零一二三四五六七八九十百千万\d]+",
                 Characters = new List<string>
                 {
                     "伦太郎", "真由理", "红莉栖", "琉华", "萌郁", "铃羽",

@@ -11,29 +11,16 @@ namespace TextTool.Services;
 public sealed class VNReformatterService
 {
     // ================================================================
-    //  默认值（Steins;Gate 角色/路线）
+    //  兜底默认值（通用，非特定作品）
     // ================================================================
 
-    private static readonly HashSet<string> DefaultCharacters = new()
-    {
-        "伦太郎", "真由理", "红莉栖", "琉华", "萌郁", "铃羽",
-        "菲利丝", "至", "达鲁", "天王寺", "桐生萌郁", "漆原琉华",
-        "桥田至", "牧濑红莉栖", "阿万音铃羽", "菲利斯", "比屋定真帆",
-        "陌生人", "中年男子", "打工战士", "四摄氏度", "猫耳", "优雅",
-        "眼镜", "麻花辫", "护士", "岡部", "女性", "男性", "少女",
-        "少年", "店主", "大叔", "阿姨", "男子", "由季", "绹",
-        "漆原父", "编辑", "编辑二", "女子A", "女子B", "随从A", "随从B",
-        "男人", "管家",
-    };
+    // 空角色集：未注入角色时不做角色名识别（对话识别仍依赖「角色」「台词」模式）
+    private static readonly HashSet<string> EmptyCharacters = new();
 
-    private static readonly List<string> DefaultRouteNames = new()
-    {
-        "序章共通线", "牧濑红莉栖线", "椎名真由理线", "漆原琉华线",
-        "桐生萌郁线", "菲利斯线", "阿万音铃羽线",
-    };
+    private static readonly List<string> EmptyRouteNames = new();
 
     private static readonly Regex DefaultScenePattern = new(
-        @"SGFD_[A-Z]+[〇零一二三四五六七八九十百千万\d]+|(?<=── )\S+(?= ──)",
+        @"(?<=── )\S+(?= ──)",
         RegexOptions.Compiled);
 
     // ================================================================
@@ -71,15 +58,22 @@ public sealed class VNReformatterService
         int minParaLength = 80,
         Regex? scenePattern = null)
     {
-        _characters = new HashSet<string>(characters ?? DefaultCharacters);
-        _routeNames = new List<string>(routeNames ?? DefaultRouteNames);
+        _characters = new HashSet<string>(characters ?? EmptyCharacters);
+        _routeNames = new List<string>(routeNames ?? EmptyRouteNames);
         _maxParaLen = maxParaLength;
         _minParaLen = minParaLength;
         _scenePattern = scenePattern ?? DefaultScenePattern;
 
-        // 角色名正则：最长优先匹配
-        var sorted = _characters.OrderByDescending(c => c.Length).Select(Regex.Escape);
-        _charPattern = new Regex("(?:" + string.Join("|", sorted) + ")", RegexOptions.Compiled);
+        // 角色名正则：最长优先匹配；无角色时构建永不匹配的模式，避免空匹配误判
+        if (_characters.Count > 0)
+        {
+            var sorted = _characters.OrderByDescending(c => c.Length).Select(Regex.Escape);
+            _charPattern = new Regex("(?:" + string.Join("|", sorted) + ")", RegexOptions.Compiled);
+        }
+        else
+        {
+            _charPattern = new Regex(@"\b(?!\b)", RegexOptions.Compiled); // 永不匹配
+        }
     }
 
     // ================================================================

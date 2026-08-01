@@ -18,8 +18,14 @@ public sealed class PreviewForm : Form
     private static readonly UTF8Encoding Utf8Bom = new(true);
 
     public PreviewForm(List<string> lines, string outputPath)
+        : this(string.Join(Environment.NewLine, lines), outputPath)
     {
-        _lines = lines;
+    }
+
+    /// <summary>以整段文本创建预览（VN 等以 string 返回结果的场景）。</summary>
+    public PreviewForm(string text, string outputPath)
+    {
+        _lines = text.Split('\n').Select(l => l.TrimEnd('\r')).ToList();
         _outputPath = outputPath;
 
         Text = Loc.T("PreviewTitle");
@@ -35,7 +41,7 @@ public sealed class PreviewForm : Form
             ReadOnly = true,
             ScrollBars = ScrollBars.Both,
             WordWrap = false,
-            Text = string.Join(Environment.NewLine, lines),
+            Text = string.Join(Environment.NewLine, _lines),
             BackColor = Color.WhiteSmoke
         };
 
@@ -98,6 +104,8 @@ public sealed class PreviewForm : Form
             File.WriteAllLines(_outputPath, _lines, Utf8Bom);
             MessageBox.Show(this, Loc.T("MsgSavedTo", _outputPath),
                 Loc.T("MsgSaveTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+            DialogResult = DialogResult.OK;
+            Close();
         }
         catch (Exception ex)
         {

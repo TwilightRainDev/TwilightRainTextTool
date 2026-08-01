@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace TextTool.Tests.Services;
 
@@ -58,7 +59,7 @@ public class VNReformatterServiceTests
     [Fact]
     public void Reformat_CharacterNameQuote_MixedLineSplit()
     {
-        var svc = new VNReformatterService();
+        var svc = new VNReformatterService(characters: new[] { "伦太郎" });
         var result = svc.Reformat("伦太郎「你好」");
 
         Assert.Equal("伦太郎「你好」", result);
@@ -67,7 +68,7 @@ public class VNReformatterServiceTests
     [Fact]
     public void Reformat_CharacterNameCommaQuote_MixedLineSplit()
     {
-        var svc = new VNReformatterService();
+        var svc = new VNReformatterService(characters: new[] { "伦太郎" });
         var result = svc.Reformat("伦太郎，「你好」");
 
         Assert.Equal("伦太郎，「你好」", result);
@@ -76,7 +77,7 @@ public class VNReformatterServiceTests
     [Fact]
     public void Reformat_DialogueAndNarrative_BlankLineBetween()
     {
-        var svc = new VNReformatterService();
+        var svc = new VNReformatterService(characters: new[] { "伦太郎" });
         var result = svc.Reformat("窗外在下雨。\n\n伦太郎「走吧」");
 
         Assert.Equal("窗外在下雨。\n\n伦太郎「走吧」", result);
@@ -98,8 +99,8 @@ public class VNReformatterServiceTests
     [Fact]
     public void Reformat_SGFDCode_DetectedAsScene()
     {
-        // 默认场景正则要求 SGFD_ + 大写字母 + 中文/数字，如 SGFD_OP1
-        var svc = new VNReformatterService();
+        // 场景正则需显式注入（SGFD 模式是 Steins;Gate 方案的属性，非引擎默认）
+        var svc = new VNReformatterService(scenePattern: new Regex(@"SGFD_[A-Z]+[〇零一二三四五六七八九十百千万\d]+"));
         var result = svc.Reformat("SGFD_OP1");
 
         Assert.Equal("─── SGFD_OP1 ───", result);
@@ -117,7 +118,8 @@ public class VNReformatterServiceTests
     [Fact]
     public void Reformat_RouteHeading_RenderedAsHeading()
     {
-        var svc = new VNReformatterService();
+        // 路线名需显式注入（S;G 路线是方案属性，非引擎默认）
+        var svc = new VNReformatterService(routeNames: new[] { "序章共通线" });
         var result = svc.Reformat("序章共通线");
 
         Assert.Equal("# 序章共通线", result);
@@ -140,14 +142,17 @@ public class VNReformatterServiceTests
     [Fact]
     public void Reformat_GoldenSample_FullPipeline()
     {
-        var svc = new VNReformatterService();
-        string input = "── 序章 ──\n\n"
+        var svc = new VNReformatterService(
+            characters: new[] { "伦太郎", "真由理" },
+            routeNames: new[] { "序章共通线" },
+            scenePattern: new Regex(@"SGFD_[A-Z]+[〇零一二三四五六七八九十百千万\d]+"));
+        string input = "SGFD_OP1\n\n"
                      + "伦太郎「终于开始了」\n"
                      + "天开始下起了雨。\n\n"
                      + "真由理「嗯，走吧」\n\n"
                      + "序章共通线";
 
-        string expected = "─── 序章 ───\n\n"
+        string expected = "─── SGFD_OP1 ───\n\n"
                         + "伦太郎「终于开始了」\n\n"
                         + "天开始下起了雨。\n\n"
                         + "真由理「嗯，走吧」\n\n"

@@ -174,5 +174,12 @@
   "VnSchemeEditChars": "角色列表（每行一個角色名）：",
   "VnSchemeEditRoutes": "路線標題（可選，每行一個）：",
   "VnSchemeEditNameEmpty": "請輸入方案名稱",
-  "VnSchemeEditCharsEmpty": "請至少輸入一個角色名"
+  "VnSchemeEditCharsEmpty": "請至少輸入一個角色名",
+
+  "VnSchemeCharCount": "{0} 個角色",
+  "VnSchemeCharNone": "無角色",
+  "VnSchemeRouteCount": "，{0} 條路線",
+  "VnSchemeRoutePrefix": "[路線] ",
+  "VnSchemeEditScenePattern": "場景標記正則（可選）：",
+  "VnSchemeEditPatternInvalid": "正則無效：{0}"
 }

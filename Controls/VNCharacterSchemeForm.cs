@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using TextTool.Localization;
 using TextTool.Services;
@@ -64,6 +65,14 @@ public sealed class VNCharacterSchemeForm : SchemeSelectionFormBase<VNCharacterS
     {
         SelectedSchemes = selected;
     }
+
+    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+
+    protected override List<VNCharacterScheme>? Deserialize(string json) =>
+        JsonSerializer.Deserialize<List<VNCharacterScheme>>(json);
+
+    protected override string Serialize(List<VNCharacterScheme> schemes) =>
+        JsonSerializer.Serialize(schemes, JsonOptions);
 }
 
 // ================================================================

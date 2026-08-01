@@ -1,3 +1,5 @@
+using System.Text;
+using System.Text.Json;
 using TextTool.Localization;
 using TextTool.Services;
 
@@ -15,6 +17,8 @@ public abstract class SchemeSelectionFormBase<T> : Form where T : class
     private Button _btnNewScheme = null!;
     private Button _btnEditScheme = null!;
     private Button _btnDeleteScheme = null!;
+    private Button _btnImport = null!;
+    private Button _btnExport = null!;
     private Button _btnOK = null!;
     private Button _btnCancel = null!;
 
@@ -47,6 +51,12 @@ public abstract class SchemeSelectionFormBase<T> : Form where T : class
 
     /// <summary>用户点击确定：收集选中方案并交给子类转换。</summary>
     protected abstract void OnConfirm(List<T> selected);
+
+    /// <summary>从 JSON 反序列化方案列表。</summary>
+    protected abstract List<T>? Deserialize(string json);
+
+    /// <summary>将方案列表序列化为 JSON。</summary>
+    protected abstract string Serialize(List<T> schemes);
 
     protected SchemeSelectionFormBase(List<T> schemes)
     {
@@ -94,19 +104,28 @@ public abstract class SchemeSelectionFormBase<T> : Form where T : class
         layout.SetColumnSpan(_treeSchemes, 3);
         layout.Controls.Add(_treeSchemes, 0, 0);
 
-        // Row 1 — 新建 / 编辑 / 删除
+        // Row 1 — 新建 / 编辑 / 删除 / 导入 / 导出
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        var actionRow = new FlowLayoutPanel
+        {
+            FlowDirection = FlowDirection.LeftToRight,
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            WrapContents = false
+        };
         _btnNewScheme = CreateFlatBtn(L("New"));
         _btnNewScheme.Click += OnNewScheme;
-        layout.Controls.Add(_btnNewScheme, 0, 1);
-
         _btnEditScheme = CreateFlatBtn(L("Edit"));
         _btnEditScheme.Click += OnEditScheme;
-        layout.Controls.Add(_btnEditScheme, 1, 1);
-
         _btnDeleteScheme = CreateFlatBtn(L("Delete"));
         _btnDeleteScheme.Click += OnDeleteScheme;
-        layout.Controls.Add(_btnDeleteScheme, 2, 1);
+        _btnImport = CreateFlatBtn(L("Import"));
+        _btnImport.Click += OnImport;
+        _btnExport = CreateFlatBtn(L("Export"));
+        _btnExport.Click += OnExport;
+        actionRow.Controls.AddRange(new Control[] { _btnNewScheme, _btnEditScheme, _btnDeleteScheme, _btnImport, _btnExport });
+        layout.SetColumnSpan(actionRow, 3);
+        layout.Controls.Add(actionRow, 0, 1);
 
         // Row 2 — 摘要
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -268,6 +287,76 @@ public abstract class SchemeSelectionFormBase<T> : Form where T : class
         OnConfirm(CollectSelectedSchemes());
         DialogResult = DialogResult.OK;
         Close();
+    }
+
+    // ================================================================
+    //  导入 / 导出
+    // ================================================================
+
+    private void OnExport(object? sender, EventArgs e)
+    {
+        var selected = CollectSelectedSchemes();
+        if (selected.Count == 0)
+        {
+            MessageBox.Show(this, L("ExportHint"), "", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        using var dlg = new SaveFileDialog
+        {
+            Title = L("Export"),
+            Filter = "JSON files (*.json)|*.json",
+            FileName = "schemes.json",
+            RestoreDirectory = true
+        };
+        if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
+        try
+        {
+            File.WriteAllText(dlg.FileName, Serialize(selected), new UTF8Encoding(false));
+            MessageBox.Show(this, Loc.T(KeyPrefix + "ExportDone", selected.Count, dlg.FileName),
+                "", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, Loc.T(KeyPrefix + "ExportFailed", ex.Message),
+                "", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void OnImport(object? sender, EventArgs e)
+    {
+        using var dlg = new OpenFileDialog
+        {
+            Title = L("Import"),
+            Filter = "JSON files (*.json)|*.json",
+            RestoreDirectory = true
+        };
+        if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
+        List<T>? imported;
+        try
+        {
+            imported = Deserialize(File.ReadAllText(dlg.FileName));
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, Loc.T(KeyPrefix + "ImportFailed", ex.Message),
+                "", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
+        if (imported == null || imported.Count == 0)
+        {
+            MessageBox.Show(this, L("ImportEmpty"), "", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        _schemes.AddRange(imported);
+        RebuildTree();
+        UpdateSummary();
+        MessageBox.Show(this, Loc.T(KeyPrefix + "ImportDone", imported.Count),
+            "", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     // ================================================================

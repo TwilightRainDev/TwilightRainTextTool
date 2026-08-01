@@ -1,3 +1,4 @@
+using System.Text.Json;
 using TextTool.Localization;
 using TextTool.Services;
 
@@ -49,6 +50,14 @@ public sealed class SchemeSelectionForm : SchemeSelectionFormBase<ReplaceScheme>
     {
         SelectedRules = selected.SelectMany(s => s.Rules).ToList();
     }
+
+    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+
+    protected override List<ReplaceScheme>? Deserialize(string json) =>
+        JsonSerializer.Deserialize<List<ReplaceScheme>>(json);
+
+    protected override string Serialize(List<ReplaceScheme> schemes) =>
+        JsonSerializer.Serialize(schemes, JsonOptions);
 }
 
 // ================================================================

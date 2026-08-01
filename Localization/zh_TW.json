@@ -34,6 +34,10 @@
   "BtnLightMode": "淺色模式",
   "BtnExportConfig": "匯出設定",
   "BtnImportConfig": "匯入設定",
+  "BtnCheckUpdate": "檢查更新",
+  "UpdateCheckFailed": "無法檢查更新（無網路或倉庫無 release）。",
+  "UpdateAvailable": "發現新版本 {1}（目前 {0}）。\n\n是否開啟下載頁面？",
+  "UpdateUpToDate": "目前已是最新版本（{0}）。",
 
   "RadioByte": "位元組數",
   "RadioChar": "字元數",

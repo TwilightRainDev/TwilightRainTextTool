@@ -35,18 +35,33 @@ jobs:
           name: coverage-${{ github.ref_name }}
           path: TextTool.Tests/TestResults/**/coverage.cobertura.xml
 
-      - name: Publish
+      - name: Publish GUI
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           dotnet publish TextTool/TextTool.csproj -c Release -r win-x64 -o publish/TextTool
-          echo "::notice::Published to publish/TextTool"
+          echo "::notice::Published GUI to publish/TextTool"
 
-      - name: Upload artifact
+      - name: Publish CLI
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: actions/upload-artifact@v4
+        run: |
+          dotnet publish TextTool.Cli/TextTool.Cli.csproj -c Release -r win-x64 -o publish/TextTool.Cli
+          echo "::notice::Published CLI to publish/TextTool.Cli"
+
+      - name: Package zip
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          Compress-Archive -Path publish/TextTool/* -DestinationPath "TextTool-GUI-$version-win-x64.zip"
+          Compress-Archive -Path publish/TextTool.Cli/* -DestinationPath "TextTool-CLI-$version-win-x64.zip"
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
         with:
-          name: TextTool-${{ github.ref_name }}
-          path: publish/TextTool/
+          files: |
+            TextTool-GUI-*.zip
+            TextTool-CLI-*.zip
 
   # 代码质量门禁：格式合规 + 分析器警告
   code-quality:

@@ -34,6 +34,10 @@
   "BtnLightMode": "Light Mode",
   "BtnExportConfig": "Export Config",
   "BtnImportConfig": "Import Config",
+  "BtnCheckUpdate": "Check Update",
+  "UpdateCheckFailed": "Unable to check for updates (offline or no releases).",
+  "UpdateAvailable": "New version {1} available (current: {0}).\n\nOpen download page?",
+  "UpdateUpToDate": "You're up to date ({0}).",
 
   "RadioByte": "By Bytes",
   "RadioChar": "By Characters",

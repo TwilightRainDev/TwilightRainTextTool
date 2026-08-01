@@ -21,6 +21,7 @@ public sealed class AboutTabControl : UserControl
     private Button _btnDarkMode = null!;
     private Button _btnExportConfig = null!;
     private Button _btnImportConfig = null!;
+    private Button _btnCheckUpdate = null!;
 
     public AboutTabControl()
     {
@@ -141,16 +142,20 @@ public sealed class AboutTabControl : UserControl
         centerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         centerPanel.Controls.Add(langRow, 0, 4);
 
-        // Row 5 — Config import/export
+        // Row 5 — Config import/export + Check update
         var configRow = new FlowLayoutPanel { AutoSize = true, Anchor = AnchorStyles.None, FlowDirection = FlowDirection.LeftToRight, WrapContents = false };
         _btnExportConfig = new Button { Text = "Export Config", AutoSize = true, FlatStyle = FlatStyle.Flat, Font = new Font("Microsoft YaHei UI", 9f), Padding = new Padding(12, 4, 12, 4), Margin = new Padding(0, 0, 8, 0) };
         _btnExportConfig.FlatAppearance.BorderSize = 0;
         _btnExportConfig.Click += OnExportConfig;
-        _btnImportConfig = new Button { Text = "Import Config", AutoSize = true, FlatStyle = FlatStyle.Flat, Font = new Font("Microsoft YaHei UI", 9f), Padding = new Padding(12, 4, 12, 4) };
+        _btnImportConfig = new Button { Text = "Import Config", AutoSize = true, FlatStyle = FlatStyle.Flat, Font = new Font("Microsoft YaHei UI", 9f), Padding = new Padding(12, 4, 12, 4), Margin = new Padding(0, 0, 8, 0) };
         _btnImportConfig.FlatAppearance.BorderSize = 0;
         _btnImportConfig.Click += OnImportConfig;
+        _btnCheckUpdate = new Button { Text = "Check Update", AutoSize = true, FlatStyle = FlatStyle.Flat, Font = new Font("Microsoft YaHei UI", 9f), Padding = new Padding(12, 4, 12, 4) };
+        _btnCheckUpdate.FlatAppearance.BorderSize = 0;
+        _btnCheckUpdate.Click += OnCheckUpdate;
         configRow.Controls.Add(_btnExportConfig);
         configRow.Controls.Add(_btnImportConfig);
+        configRow.Controls.Add(_btnCheckUpdate);
         centerPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         centerPanel.Controls.Add(configRow, 0, 5);
 
@@ -259,6 +264,63 @@ public sealed class AboutTabControl : UserControl
     }
 
     // ================================================================
+    //  检查更新
+    // ================================================================
+
+    private async void OnCheckUpdate(object? sender, EventArgs e)
+    {
+        _btnCheckUpdate.Enabled = false;
+        string currentVersion = GetCurrentVersion();
+
+        try
+        {
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+            string? latest = await UpdateChecker.GetLatestVersionAsync(client);
+
+            if (latest == null)
+            {
+                MessageBox.Show(this, Loc.T("UpdateCheckFailed"),
+                    Loc.T("MsgSuccessTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else if (UpdateChecker.IsNewer(currentVersion, latest))
+            {
+                var result = MessageBox.Show(this,
+                    Loc.T("UpdateAvailable", currentVersion, latest),
+                    Loc.T("MsgSuccessTitle"),
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+                if (result == DialogResult.Yes)
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = UpdateChecker.RepositoryUrl + "/releases",
+                        UseShellExecute = true
+                    });
+                }
+            }
+            else
+            {
+                MessageBox.Show(this, Loc.T("UpdateUpToDate", currentVersion),
+                    Loc.T("MsgSuccessTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+        catch
+        {
+            MessageBox.Show(this, Loc.T("UpdateCheckFailed"),
+                Loc.T("MsgSuccessTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        finally
+        {
+            _btnCheckUpdate.Enabled = true;
+        }
+    }
+
+    private static string GetCurrentVersion()
+    {
+        var v = typeof(AboutTabControl).Assembly.GetName().Version;
+        return v != null ? $"{v.Major}.{v.Minor}.{v.Build}" : "0.0.0";
+    }
+
+    // ================================================================
     //  事件
     // ================================================================
 
@@ -286,6 +348,7 @@ public sealed class AboutTabControl : UserControl
         _btnDarkMode.Text = ThemeManager.IsDarkMode ? Loc.T("BtnLightMode") : Loc.T("BtnDarkMode");
         _btnExportConfig.Text = Loc.T("BtnExportConfig");
         _btnImportConfig.Text = Loc.T("BtnImportConfig");
+        _btnCheckUpdate.Text = Loc.T("BtnCheckUpdate");
 
         RebuildLanguageCombo();
     }

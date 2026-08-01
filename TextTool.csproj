@@ -24,6 +24,8 @@
     <EmbeddedResource Remove="TextTool.Tests\**" />
     <Compile Remove="TextTool.Core\**" />
     <EmbeddedResource Remove="TextTool.Core\**" />
+    <Compile Remove="TextTool.Cli\**" />
+    <EmbeddedResource Remove="TextTool.Cli\**" />
   </ItemGroup>
 
   <ItemGroup>

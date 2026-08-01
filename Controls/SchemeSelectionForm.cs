@@ -7,301 +7,48 @@ namespace TextTool.Controls;
 /// 预设替换方案勾选窗口 — 展示所有方案（内置+自定义），
 /// 用户勾选后确定，将所选方案的规则追加到当前规则列表。
 /// </summary>
-public sealed class SchemeSelectionForm : Form
+public sealed class SchemeSelectionForm : SchemeSelectionFormBase<ReplaceScheme>
 {
-    private TreeView _treeSchemes = null!;
-    private Label _lblSummary = null!;
-    private Button _btnNewScheme = null!;
-    private Button _btnEditScheme = null!;
-    private Button _btnDeleteScheme = null!;
-    private Button _btnOK = null!;
-    private Button _btnCancel = null!;
-
-    private readonly List<ReplaceScheme> _schemes;
-
     /// <summary>用户点击确定后，此处为选中的全部规则（去重后）</summary>
     public List<ReplaceRule> SelectedRules { get; private set; } = new();
 
     public SchemeSelectionForm(List<ReplaceScheme> schemes)
+        : base(schemes)
     {
-        _schemes = schemes;
-        Font = new Font("Microsoft YaHei UI", 10f);
-        InitializeComponent();
-        BuildTree();
-        UpdateSummary();
     }
 
-    private void InitializeComponent()
+    protected override string KeyPrefix => "Scheme";
+
+    protected override bool IsBuiltIn(ReplaceScheme scheme) => scheme.IsBuiltIn;
+
+    protected override string GetNodeText(ReplaceScheme scheme, string prefix) =>
+        $"{prefix}{scheme.Name}  —  {scheme.Description}";
+
+    protected override IEnumerable<string> GetChildTexts(ReplaceScheme scheme) =>
+        scheme.Rules.Select(rule => $"  {rule.Find}  →  {rule.Replace}");
+
+    protected override string GetSchemeName(ReplaceScheme scheme) => scheme.Name;
+
+    protected override int GetItemCount(ReplaceScheme scheme) => scheme.Rules.Count;
+
+    protected override ReplaceScheme CreateNewScheme() => new()
     {
-        Text = Loc.T("SchemeWinTitle");
-        Size = new Size(620, 520);
-        StartPosition = FormStartPosition.CenterParent;
-        MinimizeBox = false;
-        MaximizeBox = false;
-        ShowInTaskbar = false;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
+        Name = "",
+        Description = "",
+        IsBuiltIn = false,
+        Rules = new List<ReplaceRule>()
+    };
 
-        var layout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 3,
-            RowCount = 4,
-            Padding = new Padding(12)
-        };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-
-        // Row 0 — TreeView (fills)
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        _treeSchemes = new TreeView
-        {
-            CheckBoxes = true,
-            Dock = DockStyle.Fill,
-            BorderStyle = BorderStyle.FixedSingle,
-            Font = Font
-        };
-        _treeSchemes.AfterCheck += OnTreeAfterCheck;
-        _treeSchemes.DoubleClick += OnTreeDoubleClick;
-        layout.SetColumnSpan(_treeSchemes, 3);
-        layout.Controls.Add(_treeSchemes, 0, 0);
-
-        // Row 1 — Action buttons (New / Edit / Delete)
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-
-        _btnNewScheme = CreateFlatBtn(Loc.T("SchemeNew"));
-        _btnNewScheme.Click += OnNewScheme;
-        layout.Controls.Add(_btnNewScheme, 0, 1);
-
-        _btnEditScheme = CreateFlatBtn(Loc.T("SchemeEdit"));
-        _btnEditScheme.Click += OnEditScheme;
-        layout.Controls.Add(_btnEditScheme, 1, 1);
-
-        _btnDeleteScheme = CreateFlatBtn(Loc.T("SchemeDelete"));
-        _btnDeleteScheme.Click += OnDeleteScheme;
-        layout.Controls.Add(_btnDeleteScheme, 2, 1);
-
-        // Row 2 — Summary line
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        _lblSummary = new Label
-        {
-            AutoSize = true,
-            Margin = new Padding(0, 8, 0, 0),
-            Font = new Font(Font.Name, 9f)
-        };
-        layout.SetColumnSpan(_lblSummary, 3);
-        layout.Controls.Add(_lblSummary, 0, 2);
-
-        // Row 3 — OK / Cancel
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        var bottomPanel = new FlowLayoutPanel
-        {
-            FlowDirection = FlowDirection.RightToLeft,
-            AutoSize = true,
-            Dock = DockStyle.Fill,
-            Margin = new Padding(0, 8, 0, 0)
-        };
-        _btnCancel = CreateFlatBtn(Loc.T("SchemeCancel"));
-        _btnCancel.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
-        _btnOK = CreateFlatBtn(Loc.T("SchemeOK"));
-        _btnOK.Click += OnOK;
-        bottomPanel.Controls.Add(_btnCancel);
-        bottomPanel.Controls.Add(_btnOK);
-        layout.SetColumnSpan(bottomPanel, 3);
-        layout.Controls.Add(bottomPanel, 2, 3);
-
-        Controls.Add(layout);
-        ApplyTheme();
-    }
-
-    // ================================================================
-    //  Theme
-    // ================================================================
-
-    private void ApplyTheme()
-    {
-        ControlsHelper.ApplyTheme(this);
-
-        // 特殊覆盖
-        _lblSummary.ForeColor = ThemeManager.MutedFg;
-    }
-
-    // ================================================================
-    //  Tree construction
-    // ================================================================
-
-    private void BuildTree()
-    {
-        _treeSchemes.Nodes.Clear();
-        foreach (var scheme in _schemes)
-        {
-            string prefix = scheme.IsBuiltIn ? "" : "* ";
-            var node = new TreeNode($"{prefix}{scheme.Name}  —  {scheme.Description}")
-            {
-                Tag = scheme,
-                Checked = false
-            };
-
-            foreach (var rule in scheme.Rules)
-            {
-                var ruleNode = new TreeNode($"  {rule.Find}  →  {rule.Replace}")
-                {
-                    Tag = null // 子节点仅用于展示
-                };
-                node.Nodes.Add(ruleNode);
-            }
-
-            _treeSchemes.Nodes.Add(node);
-            node.Expand(); // 默认展开，方便查看规则
-        }
-    }
-
-    /// <summary>重新构建树（增删方案后调用）</summary>
-    private void RebuildTree()
-    {
-        // 记住当前各方案的勾选状态
-        var checkedNames = new HashSet<string>();
-        foreach (TreeNode node in _treeSchemes.Nodes)
-        {
-            if (node.Checked && node.Tag is ReplaceScheme s)
-                checkedNames.Add(s.Name);
-        }
-
-        BuildTree();
-
-        // 恢复勾选状态
-        foreach (TreeNode node in _treeSchemes.Nodes)
-        {
-            if (node.Tag is ReplaceScheme s && checkedNames.Contains(s.Name))
-                node.Checked = true;
-        }
-    }
-
-    // ================================================================
-    //  Events
-    // ================================================================
-
-    private void OnTreeAfterCheck(object? sender, TreeViewEventArgs e)
-    {
-        var node = e.Node;
-        if (node == null || node.Nodes.Count == 0) return;
-
-        // 临时取消订阅避免级联触发
-        _treeSchemes.AfterCheck -= OnTreeAfterCheck;
-        foreach (TreeNode child in node.Nodes)
-            child.Checked = node.Checked;
-        _treeSchemes.AfterCheck += OnTreeAfterCheck;
-
-        UpdateSummary();
-    }
-
-    private void OnTreeDoubleClick(object? sender, EventArgs e)
-    {
-        if (_treeSchemes.SelectedNode?.Tag is ReplaceScheme scheme)
-            EditScheme(scheme);
-    }
-
-    private void OnNewScheme(object? sender, EventArgs e)
-    {
-        using var dlg = new EditSchemeDialog(new ReplaceScheme
-        {
-            Name = "",
-            Description = "",
-            IsBuiltIn = false,
-            Rules = new List<ReplaceRule>()
-        });
-        if (dlg.ShowDialog(this) == DialogResult.OK)
-        {
-            _schemes.Add(dlg.Scheme);
-            RebuildTree();
-            UpdateSummary();
-        }
-    }
-
-    private void OnEditScheme(object? sender, EventArgs e)
-    {
-        if (_treeSchemes.SelectedNode?.Tag is ReplaceScheme scheme)
-            EditScheme(scheme);
-        else
-            MessageBox.Show(this, Loc.T("SchemeSelectHint"), "", MessageBoxButtons.OK, MessageBoxIcon.Information);
-    }
-
-    private void EditScheme(ReplaceScheme scheme)
+    protected override bool TryEditScheme(ReplaceScheme scheme)
     {
         using var dlg = new EditSchemeDialog(scheme);
-        if (dlg.ShowDialog(this) == DialogResult.OK)
-        {
-            // dlg.Scheme 与 scheme 是同一对象引用，对话框内已直接修改。无需赋值。
-            RebuildTree();
-            UpdateSummary();
-        }
+        return dlg.ShowDialog(this) == DialogResult.OK;
     }
 
-    private void OnDeleteScheme(object? sender, EventArgs e)
+    protected override void OnConfirm(List<ReplaceScheme> selected)
     {
-        if (_treeSchemes.SelectedNode?.Tag is ReplaceScheme scheme)
-        {
-            if (MessageBox.Show(this,
-                    string.Format(Loc.T("SchemeDeleteConfirm"), scheme.Name),
-                    "", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-            {
-                _schemes.Remove(scheme);
-                RebuildTree();
-                UpdateSummary();
-            }
-        }
-        else
-        {
-            MessageBox.Show(this, Loc.T("SchemeSelectHint"), "", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
+        SelectedRules = selected.SelectMany(s => s.Rules).ToList();
     }
-
-    private void OnOK(object? sender, EventArgs e)
-    {
-        SelectedRules = CollectSelectedRules();
-        DialogResult = DialogResult.OK;
-        Close();
-    }
-
-    // ================================================================
-    //  Helpers
-    // ================================================================
-
-    private List<ReplaceRule> CollectSelectedRules()
-    {
-        var rules = new List<ReplaceRule>();
-        foreach (TreeNode node in _treeSchemes.Nodes)
-        {
-            if (node.Checked && node.Tag is ReplaceScheme scheme)
-            {
-                rules.AddRange(scheme.Rules);
-            }
-        }
-        return rules;
-    }
-
-    private void UpdateSummary()
-    {
-        int schemeCount = 0;
-        int ruleCount = 0;
-        foreach (TreeNode node in _treeSchemes.Nodes)
-        {
-            if (node.Checked && node.Tag is ReplaceScheme scheme)
-            {
-                schemeCount++;
-                ruleCount += scheme.Rules.Count;
-            }
-        }
-        _lblSummary.Text = string.Format(Loc.T("SchemeSummary"), schemeCount, ruleCount);
-    }
-
-    private static ThemedFlatButton CreateFlatBtn(string text) => new()
-    {
-        Text = text,
-        AutoSize = true,
-        Margin = new Padding(0, 6, 6, 0),
-        FlatAppearance = { BorderSize = 0 }
-    };
 }
 
 // ================================================================

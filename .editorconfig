@@ -63,17 +63,18 @@ dotnet_naming_rule.properties_should_be_pascalcase.symbols = properties
 dotnet_naming_rule.properties_should_be_pascalcase.style = pascal_case_style
 dotnet_naming_symbols.properties.applicable_kinds = property
 
-# 常量与静态只读字段 → PascalCase（项目约定：EmptyCharacters / Utf8Bom / ProbeSize）
+# 常量 → PascalCase（仅真正的 const 字段）
 dotnet_naming_rule.constants_should_be_pascalcase.severity = warning
 dotnet_naming_rule.constants_should_be_pascalcase.symbols = constants
 dotnet_naming_rule.constants_should_be_pascalcase.style = pascal_case_style
 dotnet_naming_symbols.constants.applicable_kinds = constant
 
+# 静态只读字段 → PascalCase（项目约定：SentenceEnders / Utf8Bom / ProbeSize）
 dotnet_naming_rule.static_readonly_fields_should_be_pascalcase.severity = warning
 dotnet_naming_rule.static_readonly_fields_should_be_pascalcase.symbols = static_readonly_fields
 dotnet_naming_rule.static_readonly_fields_should_be_pascalcase.style = pascal_case_style
 dotnet_naming_symbols.static_readonly_fields.applicable_kinds = field
-dotnet_naming_symbols.static_readonly_fields.required_modifiers = static
+dotnet_naming_symbols.static_readonly_fields.required_modifiers = static, readonly
 
 # 静态可变字段 → PascalCase（项目约定：Loc.Strings / Loc.CurrentLanguage）
 dotnet_naming_rule.static_fields_should_be_pascalcase.severity = warning
@@ -83,13 +84,12 @@ dotnet_naming_symbols.static_fields.applicable_kinds = field
 dotnet_naming_symbols.static_fields.required_modifiers = static
 dotnet_naming_symbols.static_fields.excluded_modifiers = readonly
 
-# 私有实例字段 → _camelCase（项目约定：_txtFilePath / _selectedFiles）
-dotnet_naming_rule.private_instance_fields_should_be_camelcase.severity = warning
-dotnet_naming_rule.private_instance_fields_should_be_camelcase.symbols = private_instance_fields
-dotnet_naming_rule.private_instance_fields_should_be_camelcase.style = private_field_style
-dotnet_naming_symbols.private_instance_fields.applicable_kinds = field
-dotnet_naming_symbols.private_instance_fields.required_modifiers = private
-dotnet_naming_symbols.private_instance_fields.excluded_modifiers = static
+# 实例字段（含 protected/internal）→ _camelCase（项目约定：_txtFilePath / _selectedFiles）
+dotnet_naming_rule.instance_fields_should_be_camelcase.severity = warning
+dotnet_naming_rule.instance_fields_should_be_camelcase.symbols = instance_fields
+dotnet_naming_rule.instance_fields_should_be_camelcase.style = private_field_style
+dotnet_naming_symbols.instance_fields.applicable_kinds = field
+dotnet_naming_symbols.instance_fields.excluded_modifiers = static, const
 dotnet_naming_style.private_field_style.capitalization = camel_case
 dotnet_naming_style.private_field_style.required_prefix = _
 

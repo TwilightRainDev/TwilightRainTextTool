@@ -30,6 +30,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="default_schemes.json" />
+    <EmbeddedResource Include="default_vn_schemes.json" />
   </ItemGroup>
 
   <ItemGroup>

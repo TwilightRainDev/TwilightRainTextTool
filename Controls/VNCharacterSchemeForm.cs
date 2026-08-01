@@ -7,305 +7,63 @@ namespace TextTool.Controls;
 /// <summary>
 /// 视觉小说角色预设方案勾选窗口 — 展示所有方案（内置+自定义），
 /// 用户勾选后确定，将所选方案的角色名合并到处理引擎中。
-/// 对标 ReplaceTabControl 的 SchemeSelectionForm。
+/// 复用 SchemeSelectionFormBase 泛型基类，差异点为 i18n 前缀与节点文本。
 /// </summary>
-public sealed class VNCharacterSchemeForm : Form
+public sealed class VNCharacterSchemeForm : SchemeSelectionFormBase<VNCharacterScheme>
 {
-    private TreeView _treeSchemes = null!;
-    private Label _lblSummary = null!;
-    private Button _btnNewScheme = null!;
-    private Button _btnEditScheme = null!;
-    private Button _btnDeleteScheme = null!;
-    private Button _btnOK = null!;
-    private Button _btnCancel = null!;
-
-    private readonly List<VNCharacterScheme> _schemes;
-
     /// <summary>用户点击确定后，此处为选中的全部方案列表</summary>
     public List<VNCharacterScheme> SelectedSchemes { get; private set; } = new();
 
     public VNCharacterSchemeForm(List<VNCharacterScheme> schemes)
+        : base(schemes)
     {
-        _schemes = schemes;
-        Font = new Font("Microsoft YaHei UI", 10f);
-        InitializeComponent();
-        BuildTree();
-        UpdateSummary();
     }
 
-    private void InitializeComponent()
+    protected override string KeyPrefix => "VnScheme";
+
+    protected override bool IsBuiltIn(VNCharacterScheme scheme) => scheme.IsBuiltIn;
+
+    protected override string GetNodeText(VNCharacterScheme scheme, string prefix)
     {
-        Text = Loc.T("VnSchemeWinTitle");
-        Size = new Size(620, 520);
-        StartPosition = FormStartPosition.CenterParent;
-        MinimizeBox = false;
-        MaximizeBox = false;
-        ShowInTaskbar = false;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-
-        var layout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 3,
-            RowCount = 4,
-            Padding = new Padding(12)
-        };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-
-        // Row 0 — TreeView
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        _treeSchemes = new TreeView
-        {
-            CheckBoxes = true,
-            Dock = DockStyle.Fill,
-            BorderStyle = BorderStyle.FixedSingle,
-            Font = Font
-        };
-        _treeSchemes.AfterCheck += OnTreeAfterCheck;
-        _treeSchemes.DoubleClick += OnTreeDoubleClick;
-        layout.SetColumnSpan(_treeSchemes, 3);
-        layout.Controls.Add(_treeSchemes, 0, 0);
-
-        // Row 1 — Action buttons
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        _btnNewScheme = CreateFlatBtn(Loc.T("VnSchemeNew"));
-        _btnNewScheme.Click += OnNewScheme;
-        layout.Controls.Add(_btnNewScheme, 0, 1);
-
-        _btnEditScheme = CreateFlatBtn(Loc.T("VnSchemeEdit"));
-        _btnEditScheme.Click += OnEditScheme;
-        layout.Controls.Add(_btnEditScheme, 1, 1);
-
-        _btnDeleteScheme = CreateFlatBtn(Loc.T("VnSchemeDelete"));
-        _btnDeleteScheme.Click += OnDeleteScheme;
-        layout.Controls.Add(_btnDeleteScheme, 2, 1);
-
-        // Row 2 — Summary
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        _lblSummary = new Label
-        {
-            AutoSize = true,
-            Margin = new Padding(0, 8, 0, 0),
-            Font = new Font(Font.Name, 9f)
-        };
-        layout.SetColumnSpan(_lblSummary, 3);
-        layout.Controls.Add(_lblSummary, 0, 2);
-
-        // Row 3 — OK / Cancel
-        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        var bottomPanel = new FlowLayoutPanel
-        {
-            FlowDirection = FlowDirection.RightToLeft,
-            AutoSize = true,
-            Dock = DockStyle.Fill,
-            Margin = new Padding(0, 8, 0, 0)
-        };
-        _btnCancel = CreateFlatBtn(Loc.T("VnSchemeCancel"));
-        _btnCancel.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
-        _btnOK = CreateFlatBtn(Loc.T("VnSchemeOK"));
-        _btnOK.Click += OnOK;
-        bottomPanel.Controls.Add(_btnCancel);
-        bottomPanel.Controls.Add(_btnOK);
-        layout.SetColumnSpan(bottomPanel, 3);
-        layout.Controls.Add(bottomPanel, 2, 3);
-
-        Controls.Add(layout);
-        ApplyTheme();
+        string info = scheme.Characters.Count > 0
+            ? Loc.T("VnSchemeCharCount", scheme.Characters.Count)
+            : Loc.T("VnSchemeCharNone");
+        if (scheme.RouteNames.Count > 0)
+            info += Loc.T("VnSchemeRouteCount", scheme.RouteNames.Count);
+        return $"{prefix}{scheme.Name}  —  {scheme.Description}  ({info})";
     }
 
-    // ================================================================
-    //  Theme
-    // ================================================================
-
-    private void ApplyTheme()
+    protected override IEnumerable<string> GetChildTexts(VNCharacterScheme scheme)
     {
-        ControlsHelper.ApplyTheme(this);
-        _lblSummary.ForeColor = ThemeManager.MutedFg;
+        foreach (var ch in scheme.Characters)
+            yield return $"  {ch}";
+        foreach (var rn in scheme.RouteNames)
+            yield return $"  {Loc.T("VnSchemeRoutePrefix")}{rn}";
     }
 
-    // ================================================================
-    //  Tree construction
-    // ================================================================
+    protected override string GetSchemeName(VNCharacterScheme scheme) => scheme.Name;
 
-    private void BuildTree()
+    protected override int GetItemCount(VNCharacterScheme scheme) => scheme.Characters.Count;
+
+    protected override VNCharacterScheme CreateNewScheme() => new()
     {
-        _treeSchemes.Nodes.Clear();
-        foreach (var scheme in _schemes)
-        {
-            string prefix = scheme.IsBuiltIn ? "" : "* ";
-            string info = scheme.Characters.Count > 0
-                ? Loc.T("VnSchemeCharCount", scheme.Characters.Count)
-                : Loc.T("VnSchemeCharNone");
-            if (scheme.RouteNames.Count > 0)
-                info += Loc.T("VnSchemeRouteCount", scheme.RouteNames.Count);
+        Name = "",
+        Description = "",
+        IsBuiltIn = false,
+        Characters = new List<string>(),
+        RouteNames = new List<string>()
+    };
 
-            var node = new TreeNode($"{prefix}{scheme.Name}  —  {scheme.Description}  ({info})")
-            {
-                Tag = scheme,
-                Checked = false
-            };
-
-            // 子节点：角色列表
-            foreach (var ch in scheme.Characters)
-            {
-                node.Nodes.Add(new TreeNode($"  {ch}") { Tag = null });
-            }
-            // 路线标题
-            if (scheme.RouteNames.Count > 0)
-            {
-                foreach (var rn in scheme.RouteNames)
-                {
-                    node.Nodes.Add(new TreeNode($"  {Loc.T("VnSchemeRoutePrefix")}{rn}") { Tag = null });
-                }
-            }
-
-            _treeSchemes.Nodes.Add(node);
-            node.Expand();
-        }
-    }
-
-    private void RebuildTree()
-    {
-        var checkedNames = new HashSet<string>();
-        foreach (TreeNode node in _treeSchemes.Nodes)
-        {
-            if (node.Checked && node.Tag is VNCharacterScheme s)
-                checkedNames.Add(s.Name);
-        }
-
-        BuildTree();
-
-        foreach (TreeNode node in _treeSchemes.Nodes)
-        {
-            if (node.Tag is VNCharacterScheme s && checkedNames.Contains(s.Name))
-                node.Checked = true;
-        }
-    }
-
-    // ================================================================
-    //  Events
-    // ================================================================
-
-    private void OnTreeAfterCheck(object? sender, TreeViewEventArgs e)
-    {
-        var node = e.Node;
-        if (node == null || node.Nodes.Count == 0) return;
-
-        _treeSchemes.AfterCheck -= OnTreeAfterCheck;
-        foreach (TreeNode child in node.Nodes)
-            child.Checked = node.Checked;
-        _treeSchemes.AfterCheck += OnTreeAfterCheck;
-
-        UpdateSummary();
-    }
-
-    private void OnTreeDoubleClick(object? sender, EventArgs e)
-    {
-        if (_treeSchemes.SelectedNode?.Tag is VNCharacterScheme scheme)
-            EditScheme(scheme);
-    }
-
-    private void OnNewScheme(object? sender, EventArgs e)
-    {
-        using var dlg = new VNEditCharacterSchemeDialog(new VNCharacterScheme
-        {
-            Name = "",
-            Description = "",
-            IsBuiltIn = false,
-            Characters = new List<string>(),
-            RouteNames = new List<string>()
-        });
-        if (dlg.ShowDialog(this) == DialogResult.OK)
-        {
-            _schemes.Add(dlg.Scheme);
-            RebuildTree();
-            UpdateSummary();
-        }
-    }
-
-    private void OnEditScheme(object? sender, EventArgs e)
-    {
-        if (_treeSchemes.SelectedNode?.Tag is VNCharacterScheme scheme)
-            EditScheme(scheme);
-        else
-            MessageBox.Show(this, Loc.T("VnSchemeSelectHint"), "", MessageBoxButtons.OK, MessageBoxIcon.Information);
-    }
-
-    private void EditScheme(VNCharacterScheme scheme)
+    protected override bool TryEditScheme(VNCharacterScheme scheme)
     {
         using var dlg = new VNEditCharacterSchemeDialog(scheme);
-        if (dlg.ShowDialog(this) == DialogResult.OK)
-        {
-            RebuildTree();
-            UpdateSummary();
-        }
+        return dlg.ShowDialog(this) == DialogResult.OK;
     }
 
-    private void OnDeleteScheme(object? sender, EventArgs e)
+    protected override void OnConfirm(List<VNCharacterScheme> selected)
     {
-        if (_treeSchemes.SelectedNode?.Tag is VNCharacterScheme scheme)
-        {
-            if (MessageBox.Show(this,
-                    string.Format(Loc.T("VnSchemeDeleteConfirm"), scheme.Name),
-                    "", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-            {
-                _schemes.Remove(scheme);
-                RebuildTree();
-                UpdateSummary();
-            }
-        }
-        else
-        {
-            MessageBox.Show(this, Loc.T("VnSchemeSelectHint"), "", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
+        SelectedSchemes = selected;
     }
-
-    private void OnOK(object? sender, EventArgs e)
-    {
-        SelectedSchemes = CollectSelectedSchemes();
-        DialogResult = DialogResult.OK;
-        Close();
-    }
-
-    // ================================================================
-    //  Helpers
-    // ================================================================
-
-    private List<VNCharacterScheme> CollectSelectedSchemes()
-    {
-        var result = new List<VNCharacterScheme>();
-        foreach (TreeNode node in _treeSchemes.Nodes)
-        {
-            if (node.Checked && node.Tag is VNCharacterScheme scheme)
-                result.Add(scheme);
-        }
-        return result;
-    }
-
-    private void UpdateSummary()
-    {
-        int schemeCount = 0;
-        int charCount = 0;
-        foreach (TreeNode node in _treeSchemes.Nodes)
-        {
-            if (node.Checked && node.Tag is VNCharacterScheme scheme)
-            {
-                schemeCount++;
-                charCount += scheme.Characters.Count;
-            }
-        }
-        _lblSummary.Text = string.Format(Loc.T("VnSchemeSummary"), schemeCount, charCount);
-    }
-
-    private static ThemedFlatButton CreateFlatBtn(string text) => new()
-    {
-        Text = text,
-        AutoSize = true,
-        Margin = new Padding(0, 6, 6, 0),
-        FlatAppearance = { BorderSize = 0 }
-    };
 }
 
 // ================================================================

@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 
@@ -36,8 +37,30 @@ public static class VNCharacterSchemeStore
     public static void Save(List<VNCharacterScheme> schemes) =>
         JsonFileStore.Save("vn_schemes.json", schemes);
 
-    /// <summary>获取内置默认方案（每次返回新实例）</summary>
+    /// <summary>获取内置默认方案（每次返回新实例）。</summary>
     public static List<VNCharacterScheme> GetDefaultSchemes()
+    {
+        // 尝试从嵌入式资源加载（对齐 ReplaceSchemeStore 模式）
+        try
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            using var stream = assembly.GetManifestResourceStream("TextTool.default_vn_schemes.json");
+            if (stream != null)
+            {
+                using var reader = new StreamReader(stream, Encoding.UTF8);
+                string json = reader.ReadToEnd();
+                var schemes = JsonSerializer.Deserialize<List<VNCharacterScheme>>(json);
+                if (schemes != null && schemes.Count > 0)
+                    return schemes;
+            }
+        }
+        catch { /* 资源加载失败则回退到内联数据 */ }
+
+        return GetHardcodedSchemes();
+    }
+
+    /// <summary>内联兜底方案（嵌入式资源不存在时使用）。</summary>
+    private static List<VNCharacterScheme> GetHardcodedSchemes()
     {
         return new List<VNCharacterScheme>
         {

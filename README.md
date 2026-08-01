@@ -157,26 +157,34 @@ TextTool/
 │   ├── AboutTabControl.cs        # Tab 5: About, language, dark mode, config I/O
 │   └── PreviewForm.cs            # Preview dialog (merge result before saving)
 │
-├── Services/                     # Core logic & infrastructure
-│   ├── ThemeManager.cs           # Semantic color palette (dark/light mode)
-│   ├── ThemedFlatButton.cs       # Flat button with disabled-state ForeColor fix
-│   ├── ControlsHelper.cs         # Shared UI factories (buttons, labels, dialogs)
-│   ├── EncodingDetector.cs       # BOM → UTF-8 → GBK auto-detection (4 KB header)
-│   ├── LineMerger.cs             # Threshold-based line merge algorithm
-│   ├── FileJoiner.cs             # Multi-file directory concatenation
-│   ├── CjkParagraphMerger.cs     # CJK truncation fix + no-merge support
-│   ├── PunctTruncationMerger.cs  # Punctuation truncation fix + no-merge support
-│   ├── PunctuationReplacer.cs    # Find-&-replace engine + ReplaceRuleStore
-│   ├── ProcessingPipeline.cs     # Single-pass pipeline orchestration
-│   ├── VNReformatterService.cs   # VN script reformatting engine (lines→paragraphs)
-│   ├── PunctFixerService.cs      # Dialogue punctuation completion
-│   ├── VNCharacterScheme.cs      # Character/route preset scheme model & store
-│   ├── JsonFileStore.cs          # Generic JSON file persistence
-│   ├── PathHelper.cs             # Shared file path utilities
-│   ├── IStatusSource.cs          # Status event interface for tabs
-│   └── TextUtils.cs              # Extension methods (EndsWithAny, etc.)
+├── TextTool.Core/                 # Pure logic class library (no UI deps)
+│   ├── EncodingDetector.cs        # BOM → UTF-8 → GBK auto-detection (+ strict mode)
+│   ├── LineMerger.cs              # Threshold-based line merge algorithm
+│   ├── FileJoiner.cs              # Multi-file directory concatenation
+│   ├── CjkParagraphMerger.cs      # CJK truncation fix + no-merge support
+│   ├── PunctTruncationMerger.cs   # Punctuation truncation fix + no-merge support
+│   ├── PunctuationReplacer.cs     # Find-&-replace engine + ReplaceRuleStore
+│   ├── ProcessingPipeline.cs      # Single-pass pipeline orchestration
+│   ├── VNReformatterService.cs    # VN script reformatting engine (lines→paragraphs)
+│   ├── PunctFixerService.cs       # Dialogue punctuation completion
+│   ├── VNCharacterScheme.cs       # Character/route preset scheme model & store
+│   ├── BackupHelper.cs            # Auto-backup before overwrite (with rotation)
+│   ├── UpdateChecker.cs           # GitHub latest-release version check
+│   ├── DialogueLine.cs            # Shared dialogue-line regex detection
+│   ├── JsonFileStore.cs           # Generic JSON file persistence
+│   ├── PathHelper.cs              # Shared file path utilities
+│   └── TextUtils.cs               # Extension methods (EndsWithAny, etc.)
 │
-├── Localization/                 # i18n
+├── TextTool.Cli/                  # Command-line entry (texttool.exe)
+│   └── Program.cs                 # merge / replace / vn / join subcommands
+│
+├── Services/                      # UI-adjacent services
+│   ├── ThemeManager.cs            # Semantic color palette (dark/light mode)
+│   ├── ThemedFlatButton.cs        # Flat button with disabled-state ForeColor fix
+│   ├── ControlsHelper.cs          # Shared UI factories (buttons, labels, dialogs)
+│   └── IStatusSource.cs           # Status event interface for tabs
+│
+├── Localization/                  # i18n
 │   ├── Strings.cs                # Loc singleton (auto-detect, switch, persist)
 │   ├── zh_CN.json                # Simplified Chinese locale
 │   ├── zh_TW.json                # Traditional Chinese locale
@@ -186,7 +194,7 @@ TextTool/
 │   ├── icon.ico                  # App icon
 │   └── TwilightRain.jpg          # Avatar in About page
 │
-├── TextTool.Tests/               # Unit tests (xUnit, 91 tests)
+├── TextTool.Tests/               # Unit tests (xUnit, 114 tests)
 │   ├── TextTool.Tests.csproj
 │   ├── TestHelpers.cs
 │   └── Services/                 # One test file per service
@@ -197,13 +205,8 @@ TextTool/
 │   └── adr/                      # Architecture Decision Records (7 ADRs)
 │
 ├── .github/workflows/
-│   └── build-test.yml            # CI: build + test on push/PR
+│   └── build-test.yml            # CI: build + test + format + publish on release
 │
-├── replace_rules.json            # Runtime-generated rules file (auto)
-├── app_config.json               # Language & dark mode preference (auto)
-├── LICENSE                       # MIT license
-└── README.md
-```
 
 ### Tech Stack
 
@@ -229,7 +232,7 @@ TextTool/
 
  | Version | Date | Update Content |
  | :-- | :--- | :------- |
- | 2.3.0 | 2026-08-01 | Migrated to .NET 8 LTS; VN engine de-hardcoded from Steins;Gate defaults (character/route/scene-regex moved to presets); VN tab single-file preview; i18n holes fixed |
+ | 2.3.0 | 2026-08-01 | Migrated to .NET 8 LTS; VN engine de-hardcoded from Steins;Gate defaults (character/route/scene-regex moved to presets); VN tab single-file preview; i18n holes fixed; async batch processing with cancel; shared dialogue regex; strict encoding detection (full-file re-verify); .editorconfig + analyzers + pre-commit; unified scheme form base class; auto-backup before overwrite; scheme export/import; TextTool.Core library + CLI (merge/replace/vn/join); auto GitHub Release + check for updates |
  | 2.2.0 | 2026-07-20 | Visual Novel tab: reformat VN scripts from hard-wrapped lines to natural paragraphs (dialogue/narrative/scene/route detection), dialogue punctuation completion, character/route preset schemes; unit tests for VN engine |
  | 2.1.0 | 2026-07-19 | Codebase optimization: unified theme traverser, generic JSON store, unified config, StringBuilder performance; dangerous overwrite mode; embedded default schemes |
  | 2.0.2 | 2026-07-18 | Preset replacement scheme selection; UI/business layer decoupling; emoji icons removal |
@@ -376,24 +379,32 @@ TextTool/
 │   ├── AboutTabControl.cs        # Tab 5: 关于、语言切换、深色模式、配置导入导出
 │   └── PreviewForm.cs            # 预览对话框（合并结果保存前查看）
 │
-├── Services/                     # 核心逻辑与基础设施
-│   ├── ThemeManager.cs           # 语义化色板（深色/浅色模式）
-│   ├── ThemedFlatButton.cs       # 扁平按钮 + 禁用状态 ForeColor 修复
-│   ├── ControlsHelper.cs         # 共享 UI 工厂（按钮、标签、对话框）
-│   ├── EncodingDetector.cs       # BOM → UTF-8 → GBK 自动检测（仅读 4KB 头部）
-│   ├── LineMerger.cs             # 阈值行合并核心算法
-│   ├── FileJoiner.cs             # 多文件拼接
-│   ├── CjkParagraphMerger.cs     # 中文截断修复 + 不合并规则
-│   ├── PunctTruncationMerger.cs  # 标点截断修复 + 不合并规则
-│   ├── PunctuationReplacer.cs    # 查找替换引擎 + ReplaceRuleStore
-│   ├── ProcessingPipeline.cs     # 流水线编排（单次遍历，一次写出）
-│   ├── VNReformatterService.cs   # VN 脚本排版引擎（行→段落）
-│   ├── PunctFixerService.cs      # 对话标点补齐
-│   ├── VNCharacterScheme.cs      # 角色/路线预设方案模型与存储
-│   ├── JsonFileStore.cs          # 泛型 JSON 文件持久化
-│   ├── PathHelper.cs             # 共享文件路径工具
-│   ├── IStatusSource.cs          # 页签状态事件接口
-│   └── TextUtils.cs              # 扩展方法（EndsWithAny 等）
+├── TextTool.Core/                 # 纯逻辑类库（无 UI 依赖）
+│   ├── EncodingDetector.cs        # BOM → UTF-8 → GBK 自动检测（含严格模式）
+│   ├── LineMerger.cs              # 阈值行合并核心算法
+│   ├── FileJoiner.cs              # 多文件拼接
+│   ├── CjkParagraphMerger.cs      # 中文截断修复 + 不合并规则
+│   ├── PunctTruncationMerger.cs   # 标点截断修复 + 不合并规则
+│   ├── PunctuationReplacer.cs     # 查找替换引擎 + ReplaceRuleStore
+│   ├── ProcessingPipeline.cs      # 流水线编排（单次遍历，一次写出）
+│   ├── VNReformatterService.cs    # VN 脚本排版引擎（行→段落）
+│   ├── PunctFixerService.cs       # 对话标点补齐
+│   ├── VNCharacterScheme.cs       # 角色/路线预设方案模型与存储
+│   ├── BackupHelper.cs            # 覆盖写前自动备份（含轮换）
+│   ├── UpdateChecker.cs           # GitHub 最新 release 版本检查
+│   ├── DialogueLine.cs            # 共享对话行正则检测
+│   ├── JsonFileStore.cs           # 泛型 JSON 文件持久化
+│   ├── PathHelper.cs              # 共享文件路径工具
+│   └── TextUtils.cs               # 扩展方法（EndsWithAny 等）
+│
+├── TextTool.Cli/                  # 命令行入口（texttool.exe）
+│   └── Program.cs                 # merge / replace / vn / join 子命令
+│
+├── Services/                      # UI 相关服务
+│   ├── ThemeManager.cs            # 语义化色板（深色/浅色模式）
+│   ├── ThemedFlatButton.cs        # 扁平按钮 + 禁用状态 ForeColor 修复
+│   ├── ControlsHelper.cs          # 共享 UI 工厂（按钮、标签、对话框）
+│   └── IStatusSource.cs           # 页签状态事件接口
 │
 ├── Localization/                 # 国际化
 │   ├── Strings.cs                # Loc 单例（自动检测、切换、持久化）
@@ -405,7 +416,7 @@ TextTool/
 │   ├── icon.ico                  # 程序图标
 │   └── TwilightRain.jpg          # 关于页头像
 │
-├── TextTool.Tests/               # 单元测试（xUnit，91 项）
+├── TextTool.Tests/               # 单元测试（xUnit，114 项）
 │   ├── TextTool.Tests.csproj
 │   ├── TestHelpers.cs
 │   └── Services/                 # 每个服务对应一个测试文件
@@ -416,7 +427,7 @@ TextTool/
 │   └── adr/                      # 架构决策记录（7 份 ADR）
 │
 ├── .github/workflows/
-│   └── build-test.yml            # CI：提交/PR 自动构建 + 测试
+│   └── build-test.yml            # CI：构建 + 测试 + 格式 + 发布
 │
 ├── replace_rules.json            # 运行时生成的替换规则文件（自动）
 ├── app_config.json               # 语言与主题偏好（自动）
@@ -448,7 +459,7 @@ TextTool/
 
 | 版本 | 日期 | 更新内容 |
 | :-- | :--- | :------- |
-| 2.3.0 | 2026-08-01 | 迁移至 .NET 8 LTS；VN 引擎去 Steins;Gate 硬编码（角色/路线/场景正则迁至预设方案）；VN 页签单文件预览；i18n 漏洞修复 |
+| 2.3.0 | 2026-08-01 | 迁移至 .NET 8 LTS；VN 引擎去 Steins;Gate 硬编码（角色/路线/场景正则迁至预设方案）；VN 页签单文件预览；i18n 漏洞修复；异步批处理+取消；共享对话正则；编码严格检测（全文件二次验证）；.editorconfig+分析器+pre-commit；方案表单共享基类；覆盖写前自动备份；方案导出/导入；TextTool.Core 类库 + CLI（merge/replace/vn/join）；自动 GitHub Release + 检查更新 |
 | 2.2.0 | 2026-07-20 | 新增「视觉小说」页签：将 VN 脚本从固定宽度硬换行排版为自然段落（对话/叙事/场景/路线识别）、对话补全标点、角色/路线预设方案；VN 引擎单元测试 |
 | 2.1.0 | 2026-07-19 | 代码库优化：统一主题遍历器、泛型JSON存储、统一配置管理、StringBuilder性能优化；危险覆盖模式；嵌入式默认方案 |
 | 2.0.2 | 2026-07-18 | 预设替换方案勾选；UI/业务层解耦；emoji 图标移除 |

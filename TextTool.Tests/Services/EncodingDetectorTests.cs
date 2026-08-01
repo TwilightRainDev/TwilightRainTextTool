@@ -131,6 +131,75 @@ public class EncodingDetectorTests
     }
 
     // ================================================================
+    //  DetectStrict — 全文件二次验证
+    // ================================================================
+
+    [Fact]
+    public void DetectStrict_LargeGbkWithUtf8Header_ReturnsGbk()
+    {
+        using var tf = new TempFile();
+        // 前 5000 字节 ASCII（头部 4KB 完全合法 UTF-8）→ 快速路径误判 UTF-8
+        var bytes = new List<byte>(Enumerable.Repeat((byte)0x61, 5000));
+        // 尾部 0x81 0x40：合法 GBK 字符，但 0x81 是非法 UTF-8 起始字节（裸续接）
+        bytes.Add(0x81);
+        bytes.Add(0x40);
+        File.WriteAllBytes(tf.Path, bytes.ToArray());
+
+        Assert.Equal("UTF-8", EncodingDetector.Detect(tf.Path).DisplayName);
+        Assert.Equal("GBK (ANSI)", EncodingDetector.DetectStrict(tf.Path).DisplayName);
+    }
+
+    [Fact]
+    public void DetectStrict_LargeValidUtf8_ReturnsUtf8()
+    {
+        using var tf = new TempFile();
+        // 5KB ASCII + 一个中文 UTF-8 序列（跨越快速路径之外）
+        var bytes = new List<byte>(Enumerable.Repeat((byte)0x61, 5000));
+        bytes.AddRange(new byte[] { 0xE4, 0xB8, 0x96, 0xE7, 0x95, 0x8C }); // "世界"
+        File.WriteAllBytes(tf.Path, bytes.ToArray());
+
+        Assert.Equal("UTF-8", EncodingDetector.DetectStrict(tf.Path).DisplayName);
+    }
+
+    [Fact]
+    public void DetectStrict_Utf8Bom_TrustsQuickPath()
+    {
+        using var tf = new TempFile();
+        File.WriteAllBytes(tf.Path, new byte[] { 0xEF, 0xBB, 0xBF, 0x68, 0x65, 0x6C, 0x6C, 0x6F });
+        var result = EncodingDetector.DetectStrict(tf.Path);
+
+        Assert.Equal("UTF-8 (BOM)", result.DisplayName);
+    }
+
+    [Fact]
+    public void DetectStrict_Utf8SeqSplitAcrossBlockBoundary_IsValid()
+    {
+        using var tf = new TempFile();
+        // 构造一个 3 字节 UTF-8 序列恰好跨越 64KB 块边界：前块末尾放起始字节，
+        // 后块开头放续接字节。
+        var bytes = new List<byte>(Enumerable.Repeat((byte)0x61, 64 * 1024 - 1));
+        bytes.Add(0xE4); // 起始字节在块末尾
+        bytes.Add(0xB8); // 续接在下一块
+        bytes.Add(0x96); // 续接在下一块
+        File.WriteAllBytes(tf.Path, bytes.ToArray());
+
+        Assert.Equal("UTF-8", EncodingDetector.DetectStrict(tf.Path).DisplayName);
+    }
+
+    [Fact]
+    public void DetectStrict_TruncatedUtf8AtEof_ReturnsGbk()
+    {
+        using var tf = new TempFile();
+        // 5KB ASCII + 末尾孤立的起始字节（不完整 UTF-8 序列）
+        var bytes = new List<byte>(Enumerable.Repeat((byte)0x61, 5000));
+        bytes.Add(0xE4); // 缺少两个续接字节
+        File.WriteAllBytes(tf.Path, bytes.ToArray());
+
+        Assert.Equal("UTF-8", EncodingDetector.Detect(tf.Path).DisplayName);
+        Assert.Equal("GBK (ANSI)", EncodingDetector.DetectStrict(tf.Path).DisplayName);
+    }
+
+    // ================================================================
     //  Helper
     // ================================================================
 

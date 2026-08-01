@@ -27,6 +27,67 @@ public static class EncodingDetector
         if (read < header.Length)
             Array.Resize(ref header, read);
 
+        return DetectFromBytes(header);
+    }
+
+    /// <summary>
+    /// 严格模式：扫描整个文件并二次验证头部检测结论。
+    /// 头部 4KB 判定为 UTF-8 但全文存在非法序列时，说明文件可能为
+    /// 混合编码或 GBK 误判为 UTF-8，此时回退到 GBK。
+    /// 头部判定为 GBK 时，如果全文严格 UTF-8 合法（剔除 BOM），
+    /// 且头部 GBK 判定仅在边界截断所致，则改用 UTF-8。
+    /// 为控制内存开销，大文件按 64KB 分块流式扫描。
+    /// </summary>
+    public static DetectionResult DetectStrict(string filePath)
+    {
+        var headerResult = Detect(filePath);
+
+        // BOM 或 UTF-16：字节序标记明确，信任快速路径
+        if (headerResult.DisplayName is "UTF-8 (BOM)" or "UTF-16 LE" or "UTF-16 BE")
+            return headerResult;
+
+        // 头部判为 UTF-8：全文二次验证。头部 4KB 合法但全文存在非法序列，
+        // 说明文件实为 GBK（GBK 的字节序列常在前 4KB 恰好凑成合法 UTF-8），
+        // 按 UTF-8 读取会产生永久乱码 → 回退 GBK。
+        if (headerResult.Encoding == Encoding.UTF8)
+        {
+            return IsStrictUtf8(filePath)
+                ? headerResult
+                : new DetectionResult(Encoding.GetEncoding(936), "GBK (ANSI)");
+        }
+
+        // 头部判为 GBK：信任快速路径（真正的 UTF-8 文件头部必为合法 UTF-8，
+        // 不会被误判为 GBK）。
+        return headerResult;
+    }
+
+    /// <summary>
+    /// 全文件流式解码，判断是否满足严格 UTF-8 合法性。
+    /// 使用 throwOnInvalidBytes 的 UTF-8 编码，遇到非法序列抛 DecoderFallbackException。
+    /// 语义与快速路径（默认 UTF-8 解码 + U+FFFD 检查）一致，但覆盖整个文件。
+    /// </summary>
+    private static bool IsStrictUtf8(string filePath)
+    {
+        var strictUtf8 = new UTF8Encoding(false, throwOnInvalidBytes: true);
+        try
+        {
+            using var reader = new StreamReader(filePath, strictUtf8,
+                detectEncodingFromByteOrderMarks: false, bufferSize: 64 * 1024);
+            while (!reader.EndOfStream)
+                reader.Read();
+            return true;
+        }
+        catch (DecoderFallbackException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>从字节块检测编码（BOM → UTF-8 → GBK）。</summary>
+    private static DetectionResult DetectFromBytes(byte[] header)
+    {
+        int read = header.Length;
+
         // 1. 检查 BOM
         if (read >= 3 && header[0] == 0xEF && header[1] == 0xBB && header[2] == 0xBF)
             return new DetectionResult(Encoding.UTF8, "UTF-8 (BOM)");

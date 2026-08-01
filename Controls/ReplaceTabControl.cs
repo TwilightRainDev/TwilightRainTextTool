@@ -438,7 +438,7 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource
             files,
             (path, _) =>
             {
-                var encoding = EncodingDetector.Detect(path);
+                var encoding = EncodingDetector.DetectStrict(path);
                 string outputPath = PathHelper.GetProcessedPath(path);
                 string content = File.ReadAllText(path, encoding.Encoding);
                 string replaced = PunctuationReplacer.Apply(content, rules);

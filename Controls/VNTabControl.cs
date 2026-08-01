@@ -367,7 +367,7 @@ public sealed class VNTabControl : UserControl, IStatusSource
             files,
             (path, _) =>
             {
-                var encoding = EncodingDetector.Detect(path);
+                var encoding = EncodingDetector.DetectStrict(path);
                 string outputPath = PathHelper.GetProcessedPath(path);
 
                 string content = File.ReadAllText(path, encoding.Encoding);

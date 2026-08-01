@@ -21,7 +21,7 @@ public static class FileJoiner
 
         foreach (string file in files)
         {
-            var detection = EncodingDetector.Detect(file);
+            var detection = EncodingDetector.DetectStrict(file);
             string content = File.ReadAllText(file, detection.Encoding);
             writer.Write(content);
 

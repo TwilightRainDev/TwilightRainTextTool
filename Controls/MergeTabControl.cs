@@ -441,7 +441,7 @@ public sealed class MergeTabControl : UserControl, IStatusSource
 
     private ProcessingResult RunPipeline(string path, MergeOptions options, PostProcessOptions postProcess, bool overwrite)
     {
-        var encoding = EncodingDetector.Detect(path);
+        var encoding = EncodingDetector.DetectStrict(path);
         return ProcessingPipeline.Run(path, encoding.Encoding, options, postProcess, overwrite);
     }
 

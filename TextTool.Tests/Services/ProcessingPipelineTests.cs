@@ -88,6 +88,23 @@ public class ProcessingPipelineTests
         Assert.True(File.Exists(result.OutputPath));
     }
 
+    [Fact]
+    public void Run_OverwriteMode_CreatesBackup()
+    {
+        using var tf = new TempFile();
+        File.WriteAllText(tf.Path, "original content", Encoding.UTF8);
+
+        var encoding = EncodingDetector.Detect(tf.Path);
+        var result = ProcessingPipeline.Run(tf.Path, encoding.Encoding,
+            new MergeOptions { Threshold = 100, Mode = MergeMode.CharCount },
+            NoOps(), overwrite: true);
+
+        // 覆盖模式写回原文件 + 自动备份
+        Assert.Equal(tf.Path, result.OutputPath);
+        Assert.True(File.Exists(tf.Path + ".bak"));
+        Assert.Equal("original content", File.ReadAllText(tf.Path + ".bak"));
+    }
+
     // ================================================================
     //  Verbose Option helper for readability
     // ================================================================

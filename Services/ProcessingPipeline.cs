@@ -92,8 +92,10 @@ public static class ProcessingPipeline
             replaceApplied = true;
         }
 
-        // 一次性写入 UTF-8 with BOM（危险模式直接覆盖原文件）
+        // 一次性写入 UTF-8 with BOM（危险模式直接覆盖原文件，写前自动备份）
         string finalPath = overwrite ? inputPath : outputPath;
+        if (overwrite && File.Exists(inputPath))
+            BackupHelper.CreateBackup(inputPath);
         File.WriteAllLines(finalPath, lines, Utf8Bom);
 
         return new ProcessingResult(lines, finalPath, cjkApplied, punctApplied, trimApplied, replaceApplied);

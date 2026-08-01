@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace TextTool.Services;
 
@@ -9,9 +8,6 @@ namespace TextTool.Services;
 /// </summary>
 public sealed class PunctFixerService
 {
-    private static readonly Regex DialoguePattern = new(
-        @"「[^」]*」「", RegexOptions.Compiled);
-
     private readonly HashSet<char> _terminalChars;
 
     /// <param name="terminalChars">被视为句末标点的字符集合，匹配则跳过补点。</param>
@@ -74,5 +70,5 @@ public sealed class PunctFixerService
     }
 
     private static bool IsDialogueLine(string s) =>
-        s.StartsWith('「') && DialoguePattern.IsMatch(s);
+        DialogueLine.IsDialogueLine(s);
 }

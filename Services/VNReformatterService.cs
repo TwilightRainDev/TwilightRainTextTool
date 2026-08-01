@@ -41,9 +41,6 @@ public sealed class VNReformatterService
         '、', '…', '—', '～', '·', '.', '!', '?', ';', ':',
     };
 
-    private static readonly Regex DialogueLineRegex = new(
-        @"「[^」]*」「", RegexOptions.Compiled);
-
     private static readonly Regex RepeatedEnder = new(
         @"([。！？])\1{2,}", RegexOptions.Compiled);
 
@@ -165,7 +162,7 @@ public sealed class VNReformatterService
     }
 
     private bool IsDialogueLine(string s) =>
-        s.StartsWith('「') && DialogueLineRegex.IsMatch(s);
+        DialogueLine.IsDialogueLine(s);
 
     private bool IsSceneMarker(string s) =>
         _scenePattern.IsMatch(s);
@@ -182,7 +179,7 @@ public sealed class VNReformatterService
 
     private bool HasDialogue(string s)
     {
-        if (DialogueLineRegex.IsMatch(s)) return true;
+        if (DialogueLine.Pattern.IsMatch(s)) return true;
         if (!s.Contains('「')) return false;
 
         foreach (Match m in _charPattern.Matches(s))
@@ -202,7 +199,7 @@ public sealed class VNReformatterService
     private (string Narr, string Dial) ExtractDialogue(string s)
     {
         // 「角色」「台词」模式
-        var m = DialogueLineRegex.Match(s);
+        var m = DialogueLine.Pattern.Match(s);
         if (m.Success)
             return (s[..m.Index], s[m.Index..]);
 

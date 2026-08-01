@@ -8,5 +8,11 @@
       AssemblyFileVersion = 1.6.1.0
     -->
     <Version>2.3.0</Version>
+
+    <!-- 代码质量（P2-3）：启用内置分析器 + 未定义严重度的规则默认不开 -->
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisMode>Default</AnalysisMode>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 </Project>

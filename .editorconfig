@@ -1,0 +1,149 @@
+# 根级配置 — 适用于所有文件
+root = true
+
+# 换行符统一为 LF（git 端）
+[*]
+charset = utf-8
+end_of_line = lf
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# ================================================================
+#  C# 代码格式
+# ================================================================
+[*.cs]
+indent_style = space
+indent_size = 4
+tab_width = 4
+
+# 花括号
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+# 项目既有风格：object initializer 成员紧凑排列（同行，不强制换行）
+# 注意：new_line_before_* 系列只接受 true/false，不带 severity 后缀
+csharp_new_line_before_members_in_object_initializers = false
+csharp_new_line_before_members_in_anonymous_types = false
+
+# 括号/空格
+csharp_space_after_cast = false
+csharp_space_around_binary_operators = before_and_after
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_method_declaration_empty_parameter_list_parentheses = false
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_method_call_empty_parameter_list_parentheses = false
+csharp_space_between_parentheses = false
+
+# 空行规则
+csharp_blank_lines_after_closing_brace = true
+
+# using 排序：系统优先
+dotnet_sort_system_directives_first = true
+csharp_using_directive_placement = outside_namespace
+
+# ================================================================
+#  命名规范（对齐项目既有约定）
+# ================================================================
+
+# 类型、方法、属性、事件、常量 → PascalCase
+dotnet_naming_rule.types_and_namespaces_should_be_pascalcase.severity = warning
+dotnet_naming_rule.types_and_namespaces_should_be_pascalcase.symbols = types_and_namespaces
+dotnet_naming_rule.types_and_namespaces_should_be_pascalcase.style = pascal_case_style
+dotnet_naming_symbols.types_and_namespaces.applicable_kinds = class, struct, interface, enum, namespace, delegate
+dotnet_naming_style.pascal_case_style.capitalization = pascal_case
+
+dotnet_naming_rule.methods_should_be_pascalcase.severity = warning
+dotnet_naming_rule.methods_should_be_pascalcase.symbols = methods_and_localfuncs
+dotnet_naming_rule.methods_should_be_pascalcase.style = pascal_case_style
+dotnet_naming_symbols.methods_and_localfuncs.applicable_kinds = method, local_function
+
+dotnet_naming_rule.properties_should_be_pascalcase.severity = warning
+dotnet_naming_rule.properties_should_be_pascalcase.symbols = properties
+dotnet_naming_rule.properties_should_be_pascalcase.style = pascal_case_style
+dotnet_naming_symbols.properties.applicable_kinds = property
+
+# 常量与静态只读字段 → PascalCase（项目约定：EmptyCharacters / Utf8Bom / ProbeSize）
+dotnet_naming_rule.constants_should_be_pascalcase.severity = warning
+dotnet_naming_rule.constants_should_be_pascalcase.symbols = constants
+dotnet_naming_rule.constants_should_be_pascalcase.style = pascal_case_style
+dotnet_naming_symbols.constants.applicable_kinds = constant
+
+dotnet_naming_rule.static_readonly_fields_should_be_pascalcase.severity = warning
+dotnet_naming_rule.static_readonly_fields_should_be_pascalcase.symbols = static_readonly_fields
+dotnet_naming_rule.static_readonly_fields_should_be_pascalcase.style = pascal_case_style
+dotnet_naming_symbols.static_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.static_readonly_fields.required_modifiers = static
+
+# 静态可变字段 → PascalCase（项目约定：Loc.Strings / Loc.CurrentLanguage）
+dotnet_naming_rule.static_fields_should_be_pascalcase.severity = warning
+dotnet_naming_rule.static_fields_should_be_pascalcase.symbols = static_fields
+dotnet_naming_rule.static_fields_should_be_pascalcase.style = pascal_case_style
+dotnet_naming_symbols.static_fields.applicable_kinds = field
+dotnet_naming_symbols.static_fields.required_modifiers = static
+dotnet_naming_symbols.static_fields.excluded_modifiers = readonly
+
+# 私有实例字段 → _camelCase（项目约定：_txtFilePath / _selectedFiles）
+dotnet_naming_rule.private_instance_fields_should_be_camelcase.severity = warning
+dotnet_naming_rule.private_instance_fields_should_be_camelcase.symbols = private_instance_fields
+dotnet_naming_rule.private_instance_fields_should_be_camelcase.style = private_field_style
+dotnet_naming_symbols.private_instance_fields.applicable_kinds = field
+dotnet_naming_symbols.private_instance_fields.required_modifiers = private
+dotnet_naming_symbols.private_instance_fields.excluded_modifiers = static
+dotnet_naming_style.private_field_style.capitalization = camel_case
+dotnet_naming_style.private_field_style.required_prefix = _
+
+# 局部变量与参数 → camelCase
+dotnet_naming_rule.locals_should_be_camelcase.severity = warning
+dotnet_naming_rule.locals_should_be_camelcase.symbols = locals
+dotnet_naming_rule.locals_should_be_camelcase.style = camel_case_style
+dotnet_naming_symbols.locals.applicable_kinds = local, parameter
+dotnet_naming_style.camel_case_style.capitalization = camel_case
+
+# 接口前缀 I
+dotnet_naming_rule.interfaces_should_begin_with_i.severity = warning
+dotnet_naming_rule.interfaces_should_begin_with_i.symbols = interfaces
+dotnet_naming_rule.interfaces_should_begin_with_i.style = interface_style
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+dotnet_naming_style.interface_style.required_prefix = I
+dotnet_naming_style.interface_style.capitalization = pascal_case
+
+# ================================================================
+#  代码风格（供 dotnet format 使用）
+# ================================================================
+
+# 优先使用 var
+csharp_style_var_for_built_in_types = false
+csharp_style_var_when_type_is_apparent = false:suggestion
+csharp_style_var_elsewhere = false:suggestion
+
+# 表达式倾向
+csharp_style_expression_bodied_methods = false:none
+csharp_style_expression_bodied_constructors = false:none
+csharp_style_expression_bodied_operators = false:none
+csharp_style_expression_bodied_properties = false:none
+csharp_style_expression_bodied_indexers = false:none
+csharp_style_expression_bodied_accessors = false:none
+
+# 其他
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_throw_expression = false:none
+csharp_style_conditional_delegate_call = false:none
+csharp_style_namespace_declarations = file_scoped:suggestion
+dotnet_style_qualification_for_field = false
+dotnet_style_qualification_for_property = false
+dotnet_style_qualification_for_method = false
+dotnet_style_qualification_for_event = false
+dotnet_style_predefined_type_for_locals_parameters_members = true
+dotnet_style_predefined_type_for_member_access = true
+dotnet_style_require_expression_body_for_accessors = false:none
+dotnet_style_require_expression_body_for_methods = false:none
+
+# ================================================================
+#  Analyzer 规则严重度（C# / CA 规则）
+# ================================================================
+dotnet_diagnostic.CA1051.severity = none   # 公开可见字段（现多为控件，暂不强约束）
+dotnet_diagnostic.CA1031.severity = none   # 捕获通用异常（文件 IO 场景可接受）
+dotnet_diagnostic.CA2007.severity = none   # 不强制 ConfigureAwait（WinForms 同步上下文）
+
+# 纯内存/无意义的主项目规则（保留默认）

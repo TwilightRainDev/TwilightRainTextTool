@@ -47,3 +47,25 @@ jobs:
         with:
           name: TextTool-${{ github.ref_name }}
           path: publish/TextTool/
+
+  # 代码质量门禁：格式合规 + 分析器警告
+  code-quality:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+          cache: true
+
+      - name: Restore
+        run: dotnet restore TextTool.sln
+
+      - name: Format check
+        run: dotnet format TextTool.sln --verify-no-changes --no-restore
+
+      - name: Build (warnings as errors)
+        run: dotnet build TextTool.sln -c Release --no-restore -warnaserror

@@ -21,11 +21,11 @@ public class LanguageInfo
 /// </summary>
 public static class Loc
 {
-    private static Dictionary<string, string> _strings = new();
-    private static string _currentLang = "zh_CN";
+    private static Dictionary<string, string> Strings = new();
+    private static string CurrentLanguage = "zh_CN";
 
     /// <summary>当前语言代码</summary>
-    public static string CurrentLang => _currentLang;
+    public static string CurrentLang => CurrentLanguage;
 
     /// <summary>语言切换时触发</summary>
     public static event Action? LanguageChanged;
@@ -85,14 +85,14 @@ public static class Loc
         if (File.Exists(path))
         {
             string json = File.ReadAllText(path, Encoding.UTF8);
-            _strings = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new();
+            Strings = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new();
         }
         else
         {
-            _strings = new Dictionary<string, string>();
+            Strings = new Dictionary<string, string>();
         }
 
-        _currentLang = lang;
+        CurrentLanguage = lang;
         ThemeManager.SaveAll(); // 统一由 ThemeManager 持久化全部配置
         LanguageChanged?.Invoke();
     }
@@ -102,7 +102,7 @@ public static class Loc
     /// </summary>
     public static string T(string key)
     {
-        return _strings.TryGetValue(key, out var value) ? value : $"[{key}]";
+        return Strings.TryGetValue(key, out var value) ? value : $"[{key}]";
     }
 
     /// <summary>

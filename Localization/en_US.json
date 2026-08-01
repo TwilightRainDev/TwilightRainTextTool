@@ -3,6 +3,7 @@
   "TabMerge": "Line Merge",
   "TabJoin": "File Join",
   "TabReplace": "Punct. Replace",
+  "TabVN": "Visual Novel",
   "TabAbout": "About",
 
   "LabelSourceFile": "Source File:",
@@ -44,6 +45,7 @@
   "ChkNoMerge": "Line-ending punct. no-merge",
   "LabelNoMergeChars": "Custom punct.:",
   "ChkTrimLeadingComma": "Trim leading comma",
+  "ChkOverwrite": "Dangerous Overwrite Mode (overwrite original)",
 
   "EncodingNotSelected": "(No file selected)",
 
@@ -91,6 +93,9 @@
   "MsgAddRule": "Please add at least one replacement rule.",
   "MsgReplaceFailed": "Replace failed: {0}",
 
+  "MsgOverwriteTitle": "Dangerous Operation",
+  "MsgOverwriteBody": "This will overwrite the original file directly. Original data cannot be recovered. Continue?",
+
   "SchemeWinTitle": "Preset Replacement Schemes",
   "SchemeNew": "New Scheme",
   "SchemeEdit": "Edit Scheme",
@@ -129,10 +134,45 @@
   "AboutTitle": "TwilightRain's Text Tool",
   "AboutVersion": "Version {0}",
   "AboutAuthor": "Author: TwilightRain",
-  "AboutDescription": "An all-in-one text processing tool:\nLine Merge, File Join, CJK Truncation Fix,\nand Punctuation Replacement.",
+  "AboutDescription": "An all-in-one text processing tool:\nLine Merge, File Join, CJK Truncation Fix,\nPunct. Replacement, VN Reformat.",
   "AboutLanguage": "Language:",
 
   "LangZhCN": "简体中文",
   "LangZhTW": "繁體中文",
-  "LangEnUS": "English"
+  "LangEnUS": "English",
+
+  "LabelVNFile": "Source File:",
+  "LabelVNEncoding": "Detected Encoding:",
+  "LabelVNMode": "Mode:",
+  "RadioVNAll": "All-in-One (Reformat + Fix Punct.)",
+  "RadioVNReformat": "Reformat Only",
+  "RadioVNFixPunct": "Fix Punct. Only",
+  "LabelVNMaxPara": "Max Paragraph Length:",
+  "BtnVNPresetSchemes": "Preset Character Schemes",
+  "BtnVNProcess": "Process Visual Novel",
+  "StatusVNProcessing": "Processing visual novel text...",
+  "StatusVNComplete": "Done! Output: {0}",
+  "StatusVNFailed": "Processing failed: {0}",
+  "StatusVNPresetSummary": "{0} scheme(s) selected, {1} character(s) total",
+  "StatusVNPresetNone": "(no character scheme selected — will use default Steins;Gate set)",
+  "StatusVNPresetApplied": "Applied {0} character scheme(s), {1} character(s) total",
+  "MsgVNDoneTitle": "Processing Complete",
+  "MsgVNDoneBody": "Processing complete!\n\nOutput file:\n{0}\n\nOpen output folder?",
+
+  "VnSchemeWinTitle": "Preset Character Schemes",
+  "VnSchemeNew": "New Scheme",
+  "VnSchemeEdit": "Edit Scheme",
+  "VnSchemeDelete": "Delete Scheme",
+  "VnSchemeOK": "OK",
+  "VnSchemeCancel": "Cancel",
+  "VnSchemeSummary": "{0} scheme(s) selected, {1} character(s) total",
+  "VnSchemeSelectHint": "Please select a scheme first",
+  "VnSchemeDeleteConfirm": "Delete scheme \"{0}\"?",
+  "VnSchemeEditTitle": "Edit Character Scheme",
+  "VnSchemeEditName": "Name:",
+  "VnSchemeEditDesc": "Description:",
+  "VnSchemeEditChars": "Characters (one per line):",
+  "VnSchemeEditRoutes": "Route Names (optional, one per line):",
+  "VnSchemeEditNameEmpty": "Please enter a scheme name",
+  "VnSchemeEditCharsEmpty": "Please enter at least one character"
 }

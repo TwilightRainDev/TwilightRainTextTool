@@ -105,7 +105,7 @@ public sealed class AboutTabControl : UserControl
         // Row 3 — Description
         _lblAboutDesc = new Label
         {
-            Text = "An all-in-one text processing tool:\nLine Merge, File Join, CJK Fix, Punct. Replace",
+            Text = "An all-in-one text processing tool:\nLine Merge, File Join, CJK Fix, Punct. Replace, VN Reformat",
             Font = new Font("Microsoft YaHei UI", 9f),
             ForeColor = ThemeManager.IsDarkMode ? ThemeManager.DarkFg : Color.DimGray,
             AutoSize = true, Anchor = AnchorStyles.None,
@@ -173,73 +173,13 @@ public sealed class AboutTabControl : UserControl
     /// <summary>公开给 MainForm 调用以应用当前主题</summary>
     public void ApplyTheme()
     {
-        BackColor = ThemeManager.Bg;
-        ForeColor = ThemeManager.Fg;
+        ControlsHelper.ApplyTheme(this);
 
-        // 按钮文字
+        // 特殊覆盖
         _btnDarkMode.Text = ThemeManager.IsDarkMode ? Loc.T("BtnLightMode") : Loc.T("BtnDarkMode");
         _btnDarkMode.BackColor = ThemeManager.IsDarkMode ? ThemeManager.DarkControlBg : SystemColors.Control;
-        _btnDarkMode.ForeColor = ThemeManager.Fg;
-
-        // 配置导入/导出按钮采用反转配色
-        _btnExportConfig.BackColor = ControlsHelper.ButtonBg;
-        _btnExportConfig.ForeColor = ControlsHelper.ButtonFg;
-        _btnImportConfig.BackColor = ControlsHelper.ButtonBg;
-        _btnImportConfig.ForeColor = ControlsHelper.ButtonFg;
-
-        // 递归应用到子控件
-        foreach (Control c in Controls)
-            ApplyThemeToControl(c);
-    }
-
-    private void ApplyThemeToControl(Control control)
-    {
-        if (control is TableLayoutPanel tlp)
-        {
-            foreach (Control child in tlp.Controls)
-                ApplyThemeToControlRecursive(child);
-        }
-    }
-
-    private void ApplyThemeToControlRecursive(Control ctl)
-    {
-        if (ctl is Label lbl)
-        {
-            if (lbl == _lblAboutVersion)
-                lbl.ForeColor = ThemeManager.MutedFg;
-            else if (lbl == _lblAboutDesc)
-                lbl.ForeColor = ThemeManager.IsDarkMode ? Color.FromArgb(180, 180, 180) : Color.DimGray;
-            else
-                lbl.ForeColor = ThemeManager.Fg;
-        }
-        else if (ctl is LinkLabel link)
-        {
-            link.LinkColor = ThemeManager.IsDarkMode ? Color.LightBlue : Color.SteelBlue;
-            link.ActiveLinkColor = ThemeManager.IsDarkMode ? Color.DeepSkyBlue : Color.DarkBlue;
-        }
-        else if (ctl is ComboBox combo)
-        {
-            combo.BackColor = ThemeManager.ControlBg;
-            combo.ForeColor = ThemeManager.Fg;
-        }
-        else if (ctl is Button btn)
-        {
-            // 已在 ApplyTheme() 中固定配色的按钮跳过
-            if (btn == _btnDarkMode || btn == _btnExportConfig || btn == _btnImportConfig)
-                return;
-            btn.BackColor = ThemeManager.IsDarkMode ? ThemeManager.DarkControlBg : SystemColors.Control;
-            btn.ForeColor = ThemeManager.Fg;
-        }
-        else if (ctl is FlowLayoutPanel flp)
-        {
-            foreach (Control child in flp.Controls)
-                ApplyThemeToControlRecursive(child);
-        }
-        else if (ctl is TableLayoutPanel tp)
-        {
-            foreach (Control child in tp.Controls)
-                ApplyThemeToControlRecursive(child);
-        }
+        _lblAboutVersion.ForeColor = ThemeManager.MutedFg;
+        _lblAboutDesc.ForeColor = ThemeManager.IsDarkMode ? Color.FromArgb(180, 180, 180) : Color.DimGray;
     }
 
     // ================================================================
@@ -294,7 +234,19 @@ public sealed class AboutTabControl : UserControl
 
             if (dlg.FileNames.Any(f => Path.GetFileName(f) == "app_config.json"))
             {
-                string lang = LoadLanguageFromConfig();
+                // 从新导入的 app_config.json 中读取语言偏好
+                string importedConfig = Path.Combine(dstDir, "app_config.json");
+                string? lang = null;
+                try
+                {
+                    if (File.Exists(importedConfig))
+                    {
+                        var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(importedConfig, Encoding.UTF8));
+                        if (doc.RootElement.TryGetProperty("language", out var langProp))
+                            lang = langProp.GetString();
+                    }
+                }
+                catch { }
                 if (!string.IsNullOrEmpty(lang))
                     Loc.SetLanguage(lang);
             }
@@ -304,22 +256,6 @@ public sealed class AboutTabControl : UserControl
             StatusChanged?.Invoke(Loc.T("ConfigImported"));
         }
         catch (Exception ex) { ErrorOccurred?.Invoke(Loc.T("MsgConfigImportFailed", ex.Message)); }
-    }
-
-    private static string LoadLanguageFromConfig()
-    {
-        try
-        {
-            string path = Path.Combine(AppContext.BaseDirectory, "app_config.json");
-            if (File.Exists(path))
-            {
-                var doc = JsonDocument.Parse(File.ReadAllText(path, Encoding.UTF8));
-                if (doc.RootElement.TryGetProperty("language", out var lang))
-                    return lang.GetString() ?? "";
-            }
-        }
-        catch { }
-        return "";
     }
 
     // ================================================================

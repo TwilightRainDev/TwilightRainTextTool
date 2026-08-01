@@ -13,9 +13,13 @@ public sealed class PreviewForm : Form
     private readonly Button _btnSave;
     private readonly Button _btnClose;
     private readonly string _outputPath;
+    private readonly List<string> _lines;
+
+    private static readonly UTF8Encoding Utf8Bom = new(true);
 
     public PreviewForm(List<string> lines, string outputPath)
     {
+        _lines = lines;
         _outputPath = outputPath;
 
         Text = Loc.T("PreviewTitle");
@@ -91,9 +95,7 @@ public sealed class PreviewForm : Form
     {
         try
         {
-            File.WriteAllLines(_outputPath, _txtPreview.Text.Split(
-                new[] { Environment.NewLine }, StringSplitOptions.None),
-                new UTF8Encoding(true));
+            File.WriteAllLines(_outputPath, _lines, Utf8Bom);
             MessageBox.Show(this, Loc.T("MsgSavedTo", _outputPath),
                 Loc.T("MsgSaveTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
         }

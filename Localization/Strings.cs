@@ -31,11 +31,12 @@ public static class Loc
     public static event Action? LanguageChanged;
 
     /// <summary>
-    /// 初始化：加载保存的语言偏好或自动检测系统语言
+    /// 初始化：从 ThemeManager（已统一读取的配置）获取语言偏好，
+    /// 若无则自动检测系统语言。
     /// </summary>
     public static void Init()
     {
-        string saved = ThemeManager.InitialLanguage ?? LoadSavedLanguage();
+        string saved = ThemeManager.CurrentLanguage ?? "";
         SetLanguage(string.IsNullOrEmpty(saved) ? DetectSystemLanguage() : saved);
     }
 
@@ -92,7 +93,7 @@ public static class Loc
         }
 
         _currentLang = lang;
-        SaveLanguage(lang);
+        ThemeManager.SaveAll(); // 统一由 ThemeManager 持久化全部配置
         LanguageChanged?.Invoke();
     }
 
@@ -111,38 +112,5 @@ public static class Loc
     {
         string format = T(key);
         return string.Format(format, args);
-    }
-
-    // ================================================================
-    //  持久化
-    // ================================================================
-
-    private static string ConfigPath =>
-        Path.Combine(AppContext.BaseDirectory, "app_config.json");
-
-    private static void SaveLanguage(string lang)
-    {
-        try
-        {
-            // 委托 ThemeManager 持久化全部配置（语言 + 深色模式）
-            ThemeManager.SaveAll();
-        }
-        catch { /* 写入失败不阻断程序 */ }
-    }
-
-    private static string LoadSavedLanguage()
-    {
-        try
-        {
-            if (File.Exists(ConfigPath))
-            {
-                string json = File.ReadAllText(ConfigPath, Encoding.UTF8);
-                var config = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
-                if (config != null && config.TryGetValue("language", out var lang))
-                    return lang;
-            }
-        }
-        catch { /* 配置文件损坏则忽略 */ }
-        return "";
     }
 }

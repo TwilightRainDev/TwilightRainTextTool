@@ -4,10 +4,11 @@ using TextTool.Services;
 namespace TextTool.Controls;
 
 /// <summary>
-/// 预设替换方案勾选窗口 — 展示所有方案（内置+自定义），
-/// 用户勾选后确定，将所选方案的规则追加到当前规则列表。
+/// 视觉小说角色预设方案勾选窗口 — 展示所有方案（内置+自定义），
+/// 用户勾选后确定，将所选方案的角色名合并到处理引擎中。
+/// 对标 ReplaceTabControl 的 SchemeSelectionForm。
 /// </summary>
-public sealed class SchemeSelectionForm : Form
+public sealed class VNCharacterSchemeForm : Form
 {
     private TreeView _treeSchemes = null!;
     private Label _lblSummary = null!;
@@ -17,12 +18,12 @@ public sealed class SchemeSelectionForm : Form
     private Button _btnOK = null!;
     private Button _btnCancel = null!;
 
-    private readonly List<ReplaceScheme> _schemes;
+    private readonly List<VNCharacterScheme> _schemes;
 
-    /// <summary>用户点击确定后，此处为选中的全部规则（去重后）</summary>
-    public List<ReplaceRule> SelectedRules { get; private set; } = new();
+    /// <summary>用户点击确定后，此处为选中的全部方案列表</summary>
+    public List<VNCharacterScheme> SelectedSchemes { get; private set; } = new();
 
-    public SchemeSelectionForm(List<ReplaceScheme> schemes)
+    public VNCharacterSchemeForm(List<VNCharacterScheme> schemes)
     {
         _schemes = schemes;
         Font = new Font("Microsoft YaHei UI", 10f);
@@ -33,7 +34,7 @@ public sealed class SchemeSelectionForm : Form
 
     private void InitializeComponent()
     {
-        Text = Loc.T("SchemeWinTitle");
+        Text = Loc.T("VnSchemeWinTitle");
         Size = new Size(620, 520);
         StartPosition = FormStartPosition.CenterParent;
         MinimizeBox = false;
@@ -52,7 +53,7 @@ public sealed class SchemeSelectionForm : Form
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
-        // Row 0 — TreeView (fills)
+        // Row 0 — TreeView
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         _treeSchemes = new TreeView
         {
@@ -66,22 +67,21 @@ public sealed class SchemeSelectionForm : Form
         layout.SetColumnSpan(_treeSchemes, 3);
         layout.Controls.Add(_treeSchemes, 0, 0);
 
-        // Row 1 — Action buttons (New / Edit / Delete)
+        // Row 1 — Action buttons
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-
-        _btnNewScheme = CreateFlatBtn(Loc.T("SchemeNew"));
+        _btnNewScheme = CreateFlatBtn(Loc.T("VnSchemeNew"));
         _btnNewScheme.Click += OnNewScheme;
         layout.Controls.Add(_btnNewScheme, 0, 1);
 
-        _btnEditScheme = CreateFlatBtn(Loc.T("SchemeEdit"));
+        _btnEditScheme = CreateFlatBtn(Loc.T("VnSchemeEdit"));
         _btnEditScheme.Click += OnEditScheme;
         layout.Controls.Add(_btnEditScheme, 1, 1);
 
-        _btnDeleteScheme = CreateFlatBtn(Loc.T("SchemeDelete"));
+        _btnDeleteScheme = CreateFlatBtn(Loc.T("VnSchemeDelete"));
         _btnDeleteScheme.Click += OnDeleteScheme;
         layout.Controls.Add(_btnDeleteScheme, 2, 1);
 
-        // Row 2 — Summary line
+        // Row 2 — Summary
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         _lblSummary = new Label
         {
@@ -101,9 +101,9 @@ public sealed class SchemeSelectionForm : Form
             Dock = DockStyle.Fill,
             Margin = new Padding(0, 8, 0, 0)
         };
-        _btnCancel = CreateFlatBtn(Loc.T("SchemeCancel"));
+        _btnCancel = CreateFlatBtn(Loc.T("VnSchemeCancel"));
         _btnCancel.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
-        _btnOK = CreateFlatBtn(Loc.T("SchemeOK"));
+        _btnOK = CreateFlatBtn(Loc.T("VnSchemeOK"));
         _btnOK.Click += OnOK;
         bottomPanel.Controls.Add(_btnCancel);
         bottomPanel.Controls.Add(_btnOK);
@@ -121,8 +121,6 @@ public sealed class SchemeSelectionForm : Form
     private void ApplyTheme()
     {
         ControlsHelper.ApplyTheme(this);
-
-        // 特殊覆盖
         _lblSummary.ForeColor = ThemeManager.MutedFg;
     }
 
@@ -136,43 +134,55 @@ public sealed class SchemeSelectionForm : Form
         foreach (var scheme in _schemes)
         {
             string prefix = scheme.IsBuiltIn ? "" : "* ";
-            var node = new TreeNode($"{prefix}{scheme.Name}  —  {scheme.Description}")
+            string info = scheme.Characters.Count > 0
+                ? $"{scheme.Characters.Count} 个角色"
+                : "无角色";
+            if (scheme.RouteNames.Count > 0)
+                info += $"，{scheme.RouteNames.Count} 条路线";
+
+            var node = new TreeNode($"{prefix}{scheme.Name}  —  {scheme.Description}  ({info})")
             {
                 Tag = scheme,
                 Checked = false
             };
 
-            foreach (var rule in scheme.Rules)
+            // 子节点：角色列表
+            foreach (var ch in scheme.Characters)
             {
-                var ruleNode = new TreeNode($"  {rule.Find}  →  {rule.Replace}")
+                node.Nodes.Add(new TreeNode($"  {ch}") { Tag = null });
+            }
+            // 路线标题
+            if (scheme.RouteNames.Count > 0)
+            {
+                if (scheme.Characters.Count > 0 && scheme.RouteNames.Count > 0)
                 {
-                    Tag = null // 子节点仅用于展示
-                };
-                node.Nodes.Add(ruleNode);
+                    // 分隔
+                }
+                foreach (var rn in scheme.RouteNames)
+                {
+                    node.Nodes.Add(new TreeNode($"  [路线] {rn}") { Tag = null });
+                }
             }
 
             _treeSchemes.Nodes.Add(node);
-            node.Expand(); // 默认展开，方便查看规则
+            node.Expand();
         }
     }
 
-    /// <summary>重新构建树（增删方案后调用）</summary>
     private void RebuildTree()
     {
-        // 记住当前各方案的勾选状态
         var checkedNames = new HashSet<string>();
         foreach (TreeNode node in _treeSchemes.Nodes)
         {
-            if (node.Checked && node.Tag is ReplaceScheme s)
+            if (node.Checked && node.Tag is VNCharacterScheme s)
                 checkedNames.Add(s.Name);
         }
 
         BuildTree();
 
-        // 恢复勾选状态
         foreach (TreeNode node in _treeSchemes.Nodes)
         {
-            if (node.Tag is ReplaceScheme s && checkedNames.Contains(s.Name))
+            if (node.Tag is VNCharacterScheme s && checkedNames.Contains(s.Name))
                 node.Checked = true;
         }
     }
@@ -186,7 +196,6 @@ public sealed class SchemeSelectionForm : Form
         var node = e.Node;
         if (node == null || node.Nodes.Count == 0) return;
 
-        // 临时取消订阅避免级联触发
         _treeSchemes.AfterCheck -= OnTreeAfterCheck;
         foreach (TreeNode child in node.Nodes)
             child.Checked = node.Checked;
@@ -197,18 +206,19 @@ public sealed class SchemeSelectionForm : Form
 
     private void OnTreeDoubleClick(object? sender, EventArgs e)
     {
-        if (_treeSchemes.SelectedNode?.Tag is ReplaceScheme scheme)
+        if (_treeSchemes.SelectedNode?.Tag is VNCharacterScheme scheme)
             EditScheme(scheme);
     }
 
     private void OnNewScheme(object? sender, EventArgs e)
     {
-        using var dlg = new EditSchemeDialog(new ReplaceScheme
+        using var dlg = new VNEditCharacterSchemeDialog(new VNCharacterScheme
         {
             Name = "",
             Description = "",
             IsBuiltIn = false,
-            Rules = new List<ReplaceRule>()
+            Characters = new List<string>(),
+            RouteNames = new List<string>()
         });
         if (dlg.ShowDialog(this) == DialogResult.OK)
         {
@@ -220,18 +230,17 @@ public sealed class SchemeSelectionForm : Form
 
     private void OnEditScheme(object? sender, EventArgs e)
     {
-        if (_treeSchemes.SelectedNode?.Tag is ReplaceScheme scheme)
+        if (_treeSchemes.SelectedNode?.Tag is VNCharacterScheme scheme)
             EditScheme(scheme);
         else
-            MessageBox.Show(this, Loc.T("SchemeSelectHint"), "", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(this, Loc.T("VnSchemeSelectHint"), "", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
-    private void EditScheme(ReplaceScheme scheme)
+    private void EditScheme(VNCharacterScheme scheme)
     {
-        using var dlg = new EditSchemeDialog(scheme);
+        using var dlg = new VNEditCharacterSchemeDialog(scheme);
         if (dlg.ShowDialog(this) == DialogResult.OK)
         {
-            // dlg.Scheme 与 scheme 是同一对象引用，对话框内已直接修改。无需赋值。
             RebuildTree();
             UpdateSummary();
         }
@@ -239,10 +248,10 @@ public sealed class SchemeSelectionForm : Form
 
     private void OnDeleteScheme(object? sender, EventArgs e)
     {
-        if (_treeSchemes.SelectedNode?.Tag is ReplaceScheme scheme)
+        if (_treeSchemes.SelectedNode?.Tag is VNCharacterScheme scheme)
         {
             if (MessageBox.Show(this,
-                    string.Format(Loc.T("SchemeDeleteConfirm"), scheme.Name),
+                    string.Format(Loc.T("VnSchemeDeleteConfirm"), scheme.Name),
                     "", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
                 _schemes.Remove(scheme);
@@ -252,13 +261,13 @@ public sealed class SchemeSelectionForm : Form
         }
         else
         {
-            MessageBox.Show(this, Loc.T("SchemeSelectHint"), "", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(this, Loc.T("VnSchemeSelectHint"), "", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 
     private void OnOK(object? sender, EventArgs e)
     {
-        SelectedRules = CollectSelectedRules();
+        SelectedSchemes = CollectSelectedSchemes();
         DialogResult = DialogResult.OK;
         Close();
     }
@@ -267,32 +276,30 @@ public sealed class SchemeSelectionForm : Form
     //  Helpers
     // ================================================================
 
-    private List<ReplaceRule> CollectSelectedRules()
+    private List<VNCharacterScheme> CollectSelectedSchemes()
     {
-        var rules = new List<ReplaceRule>();
+        var result = new List<VNCharacterScheme>();
         foreach (TreeNode node in _treeSchemes.Nodes)
         {
-            if (node.Checked && node.Tag is ReplaceScheme scheme)
-            {
-                rules.AddRange(scheme.Rules);
-            }
+            if (node.Checked && node.Tag is VNCharacterScheme scheme)
+                result.Add(scheme);
         }
-        return rules;
+        return result;
     }
 
     private void UpdateSummary()
     {
         int schemeCount = 0;
-        int ruleCount = 0;
+        int charCount = 0;
         foreach (TreeNode node in _treeSchemes.Nodes)
         {
-            if (node.Checked && node.Tag is ReplaceScheme scheme)
+            if (node.Checked && node.Tag is VNCharacterScheme scheme)
             {
                 schemeCount++;
-                ruleCount += scheme.Rules.Count;
+                charCount += scheme.Characters.Count;
             }
         }
-        _lblSummary.Text = string.Format(Loc.T("SchemeSummary"), schemeCount, ruleCount);
+        _lblSummary.Text = string.Format(Loc.T("VnSchemeSummary"), schemeCount, charCount);
     }
 
     private static ThemedFlatButton CreateFlatBtn(string text) => new()
@@ -305,28 +312,28 @@ public sealed class SchemeSelectionForm : Form
 }
 
 // ================================================================
-//  方案编辑对话框
+//  角色方案编辑对话框
 // ================================================================
 
 /// <summary>
-/// 编辑单个方案的对话框（名称 + 规则列表）
+/// 编辑单个角色方案的对话框（名称 + 角色列表 + 路线名）。
+/// 对标 EditSchemeDialog 但用多行文本框替代规则编辑器。
 /// </summary>
-public sealed class EditSchemeDialog : Form
+public sealed class VNEditCharacterSchemeDialog : Form
 {
     private TextBox _txtName = null!;
     private TextBox _txtDescription = null!;
-    private ListBox _lstRules = null!;
-    private TextBox _txtFind = null!;
-    private TextBox _txtReplace = null!;
-    private Button _btnAddRule = null!;
-    private Button _btnDeleteRule = null!;
+    private Label _lblCharsHeader = null!;
+    private TextBox _txtCharacters = null!;
+    private Label _lblRoutesHeader = null!;
+    private TextBox _txtRouteNames = null!;
     private Button _btnOK = null!;
     private Button _btnCancel = null!;
 
     /// <summary>编辑后的方案</summary>
-    public ReplaceScheme Scheme { get; }
+    public VNCharacterScheme Scheme { get; }
 
-    public EditSchemeDialog(ReplaceScheme scheme)
+    public VNEditCharacterSchemeDialog(VNCharacterScheme scheme)
     {
         Scheme = scheme;
         Font = new Font("Microsoft YaHei UI", 10f);
@@ -337,8 +344,8 @@ public sealed class EditSchemeDialog : Form
 
     private void InitializeComponent()
     {
-        Text = Loc.T("SchemeEditTitle");
-        Size = new Size(520, 420);
+        Text = Loc.T("VnSchemeEditTitle");
+        Size = new Size(520, 460);
         StartPosition = FormStartPosition.CenterParent;
         MinimizeBox = false;
         MaximizeBox = false;
@@ -349,7 +356,7 @@ public sealed class EditSchemeDialog : Form
         {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 6,
+            RowCount = 7,
             Padding = new Padding(12)
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -357,119 +364,80 @@ public sealed class EditSchemeDialog : Form
 
         // Row 0 — Name
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
-        layout.Controls.Add(ControlsHelper.MakeLabel(Loc.T("SchemeEditName")), 0, 0);
-        _txtName = new TextBox
-        {
-            Anchor = AnchorStyles.Left | AnchorStyles.Right,
-            Font = Font
-        };
+        layout.Controls.Add(ControlsHelper.MakeLabel(Loc.T("VnSchemeEditName")), 0, 0);
+        _txtName = new TextBox { Anchor = AnchorStyles.Left | AnchorStyles.Right, Font = Font };
         layout.Controls.Add(_txtName, 1, 0);
 
         // Row 1 — Description
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
-        layout.Controls.Add(ControlsHelper.MakeLabel(Loc.T("SchemeEditDesc")), 0, 1);
-        _txtDescription = new TextBox
-        {
-            Anchor = AnchorStyles.Left | AnchorStyles.Right,
-            Font = Font
-        };
+        layout.Controls.Add(ControlsHelper.MakeLabel(Loc.T("VnSchemeEditDesc")), 0, 1);
+        _txtDescription = new TextBox { Anchor = AnchorStyles.Left | AnchorStyles.Right, Font = Font };
         layout.Controls.Add(_txtDescription, 1, 1);
 
-        // Row 2 — Rules list header
+        // Row 2 — Characters header
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        var lblRulesHeader = new Label
+        _lblCharsHeader = new Label
         {
-            Text = Loc.T("SchemeEditRules"),
+            Text = Loc.T("VnSchemeEditChars"),
             AutoSize = true,
             Margin = new Padding(0, 6, 0, 2),
             Font = new Font(Font.Name, 10f, FontStyle.Bold)
         };
-        layout.SetColumnSpan(lblRulesHeader, 2);
-        layout.Controls.Add(lblRulesHeader, 0, 2);
+        layout.SetColumnSpan(_lblCharsHeader, 2);
+        layout.Controls.Add(_lblCharsHeader, 0, 2);
 
-        // Row 3 — Rules list
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        _lstRules = new ListBox
+        // Row 3 — Characters textbox (multi-line)
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 60));
+        _txtCharacters = new TextBox
         {
             Dock = DockStyle.Fill,
-            IntegralHeight = false,
-            Font = new Font("Consolas", 9f)
+            Multiline = true,
+            ScrollBars = ScrollBars.Vertical,
+            Font = new Font("Microsoft YaHei UI", 9f),
+            AcceptsReturn = true,
+            WordWrap = false
         };
-        _lstRules.SelectedIndexChanged += OnRuleSelected;
-        layout.SetColumnSpan(_lstRules, 2);
-        layout.Controls.Add(_lstRules, 0, 3);
+        layout.SetColumnSpan(_txtCharacters, 2);
+        layout.Controls.Add(_txtCharacters, 0, 3);
 
-        // Row 4 — Find / Replace + Add/Delete buttons
+        // Row 4 — Route names header
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        var editorPanel = new TableLayoutPanel
+        _lblRoutesHeader = new Label
+        {
+            Text = Loc.T("VnSchemeEditRoutes"),
+            AutoSize = true,
+            Margin = new Padding(0, 6, 0, 2),
+            Font = new Font(Font.Name, 10f, FontStyle.Bold)
+        };
+        layout.SetColumnSpan(_lblRoutesHeader, 2);
+        layout.Controls.Add(_lblRoutesHeader, 0, 4);
+
+        // Row 5 — Route names textbox (multi-line)
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 40));
+        _txtRouteNames = new TextBox
         {
             Dock = DockStyle.Fill,
-            ColumnCount = 4,
-            RowCount = 1,
-            Margin = new Padding(0, 4, 0, 0)
+            Multiline = true,
+            ScrollBars = ScrollBars.Vertical,
+            Font = new Font("Microsoft YaHei UI", 9f),
+            AcceptsReturn = true,
+            WordWrap = false
         };
-        editorPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        editorPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        editorPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        editorPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        layout.SetColumnSpan(_txtRouteNames, 2);
+        layout.Controls.Add(_txtRouteNames, 0, 5);
 
-        editorPanel.Controls.Add(new Label
-        {
-            Text = Loc.T("SchemeEditFind"),
-            AutoSize = true,
-            TextAlign = ContentAlignment.MiddleLeft,
-            Anchor = AnchorStyles.Left
-        }, 0, 0);
-        _txtFind = new TextBox { Anchor = AnchorStyles.Left | AnchorStyles.Right, Font = new Font("Consolas", 9f) };
-        editorPanel.Controls.Add(_txtFind, 1, 0);
-
-        editorPanel.Controls.Add(new Label
-        {
-            Text = Loc.T("SchemeEditReplace"),
-            AutoSize = true,
-            TextAlign = ContentAlignment.MiddleLeft,
-            Anchor = AnchorStyles.Left,
-            Margin = new Padding(8, 0, 0, 0)
-        }, 2, 0);
-        _txtReplace = new TextBox { Anchor = AnchorStyles.Left | AnchorStyles.Right, Font = new Font("Consolas", 9f) };
-        editorPanel.Controls.Add(_txtReplace, 3, 0);
-
-        layout.SetColumnSpan(editorPanel, 2);
-        layout.Controls.Add(editorPanel, 0, 4);
-
-        // Row 5 — Add/Delete + OK/Cancel
+        // Row 6 — OK / Cancel
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         var btnRow = new FlowLayoutPanel
         {
-            FlowDirection = FlowDirection.LeftToRight,
+            FlowDirection = FlowDirection.RightToLeft,
             AutoSize = true,
             Dock = DockStyle.Fill,
-            Margin = new Padding(0, 4, 0, 0)
+            Margin = new Padding(0, 8, 0, 0)
         };
-        _btnAddRule = new ThemedFlatButton
-        {
-            Text = Loc.T("SchemeEditAdd"),
-            AutoSize = true,
-            FlatAppearance = { BorderSize = 0 }
-        };
-        _btnAddRule.Click += OnAddRule;
-        btnRow.Controls.Add(_btnAddRule);
-
-        _btnDeleteRule = new ThemedFlatButton
-        {
-            Text = Loc.T("SchemeEditDelete"),
-            AutoSize = true,
-            Margin = new Padding(8, 0, 0, 0),
-            FlatAppearance = { BorderSize = 0 }
-        };
-        _btnDeleteRule.Click += OnDeleteRule;
-        btnRow.Controls.Add(_btnDeleteRule);
-
-        btnRow.Controls.Add(new Label { AutoSize = true, Text = "" });
-
         _btnCancel = new ThemedFlatButton
         {
-            Text = Loc.T("SchemeCancel"),
+            Text = Loc.T("VnSchemeCancel"),
             AutoSize = true,
             FlatAppearance = { BorderSize = 0 }
         };
@@ -478,7 +446,7 @@ public sealed class EditSchemeDialog : Form
 
         _btnOK = new ThemedFlatButton
         {
-            Text = Loc.T("SchemeOK"),
+            Text = Loc.T("VnSchemeOK"),
             AutoSize = true,
             Margin = new Padding(6, 0, 0, 0),
             FlatAppearance = { BorderSize = 0 }
@@ -487,7 +455,7 @@ public sealed class EditSchemeDialog : Form
         btnRow.Controls.Add(_btnOK);
 
         layout.SetColumnSpan(btnRow, 2);
-        layout.Controls.Add(btnRow, 0, 5);
+        layout.Controls.Add(btnRow, 0, 6);
 
         Controls.Add(layout);
     }
@@ -498,84 +466,50 @@ public sealed class EditSchemeDialog : Form
     }
 
     // ================================================================
-    //  Data loading
+    //  Data
     // ================================================================
 
     private void LoadScheme()
     {
         _txtName.Text = Scheme.Name;
         _txtDescription.Text = Scheme.Description;
-        RefreshRuleList();
-    }
-
-    private void RefreshRuleList()
-    {
-        _lstRules.Items.Clear();
-        foreach (var rule in Scheme.Rules)
-            _lstRules.Items.Add($"{rule.Find}  →  {rule.Replace}");
-    }
-
-    // ================================================================
-    //  Events
-    // ================================================================
-
-    private void OnRuleSelected(object? sender, EventArgs e)
-    {
-        if (_lstRules.SelectedIndex >= 0 && _lstRules.SelectedIndex < Scheme.Rules.Count)
-        {
-            var rule = Scheme.Rules[_lstRules.SelectedIndex];
-            _txtFind.Text = rule.Find;
-            _txtReplace.Text = rule.Replace;
-        }
-    }
-
-    private void OnAddRule(object? sender, EventArgs e)
-    {
-        string find = _txtFind.Text;
-        string replace = _txtReplace.Text;
-        if (string.IsNullOrEmpty(find))
-        {
-            MessageBox.Show(this, Loc.T("MsgEnterFind"), "", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return;
-        }
-
-        if (_lstRules.SelectedIndex >= 0 && _lstRules.SelectedIndex < Scheme.Rules.Count)
-        {
-            // 更新现有规则
-            Scheme.Rules[_lstRules.SelectedIndex] = new ReplaceRule { Find = find, Replace = replace };
-        }
-        else
-        {
-            // 添加新规则
-            Scheme.Rules.Add(new ReplaceRule { Find = find, Replace = replace });
-        }
-
-        RefreshRuleList();
-        _txtFind.Clear();
-        _txtReplace.Clear();
-    }
-
-    private void OnDeleteRule(object? sender, EventArgs e)
-    {
-        if (_lstRules.SelectedIndex < 0 || _lstRules.SelectedIndex >= Scheme.Rules.Count)
-            return;
-
-        Scheme.Rules.RemoveAt(_lstRules.SelectedIndex);
-        RefreshRuleList();
-        _txtFind.Clear();
-        _txtReplace.Clear();
+        _txtCharacters.Text = string.Join("\r\n", Scheme.Characters);
+        _txtRouteNames.Text = string.Join("\r\n", Scheme.RouteNames);
     }
 
     private void OnOK(object? sender, EventArgs e)
     {
         if (string.IsNullOrWhiteSpace(_txtName.Text))
         {
-            MessageBox.Show(this, Loc.T("SchemeEditNameEmpty"), "", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, Loc.T("VnSchemeEditNameEmpty"), "", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
         Scheme.Name = _txtName.Text.Trim();
         Scheme.Description = _txtDescription.Text.Trim();
+
+        // 解析角色（每行一个，去空）
+        Scheme.Characters = _txtCharacters.Text
+            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => s.Trim())
+            .Where(s => s.Length > 0)
+            .Distinct()
+            .ToList();
+
+        // 解析路线名（每行一个，去空）
+        Scheme.RouteNames = _txtRouteNames.Text
+            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => s.Trim())
+            .Where(s => s.Length > 0)
+            .Distinct()
+            .ToList();
+
+        if (Scheme.Characters.Count == 0)
+        {
+            MessageBox.Show(this, Loc.T("VnSchemeEditCharsEmpty"), "", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
         DialogResult = DialogResult.OK;
         Close();
     }

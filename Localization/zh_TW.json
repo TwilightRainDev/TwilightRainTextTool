@@ -3,6 +3,7 @@
   "TabMerge": "行合併",
   "TabJoin": "檔案拼接",
   "TabReplace": "標點替換",
+  "TabVN": "視覺小說",
   "TabAbout": "關於",
 
   "LabelSourceFile": "來源檔案：",
@@ -44,6 +45,7 @@
   "ChkNoMerge": "行尾部標點不合併",
   "LabelNoMergeChars": "自定義標點：",
   "ChkTrimLeadingComma": "去除位於行首逗號",
+  "ChkOverwrite": "危險覆蓋模式（直接寫回原始檔案）",
 
   "EncodingNotSelected": "（尚未選擇檔案）",
 
@@ -91,6 +93,9 @@
   "MsgAddRule": "請至少新增一條替換規則。",
   "MsgReplaceFailed": "替換失敗：{0}",
 
+  "MsgOverwriteTitle": "危險操作",
+  "MsgOverwriteBody": "開啟後將直接覆蓋原始檔案，原始資料將無法復原。是否繼續？",
+
   "SchemeWinTitle": "預設替換方案勾選",
   "SchemeNew": "新建方案",
   "SchemeEdit": "編輯方案",
@@ -129,10 +134,45 @@
   "AboutTitle": "TwilightRain 的文字工具",
   "AboutVersion": "版本 {0}",
   "AboutAuthor": "作者：TwilightRain",
-  "AboutDescription": "集行合併、檔案拼接、中文截斷修復、\n標點替換於一體的文字處理工具。",
+  "AboutDescription": "集行合併、檔案拼接、中文截斷修復、\n標點替換、視覺小說排版於一體的文字處理工具。",
   "AboutLanguage": "語言：",
 
   "LangZhCN": "简体中文",
   "LangZhTW": "繁體中文",
-  "LangEnUS": "English"
+  "LangEnUS": "English",
+
+  "LabelVNFile": "來源檔案：",
+  "LabelVNEncoding": "偵測編碼：",
+  "LabelVNMode": "處理模式：",
+  "RadioVNAll": "一條龍（排版+補標點）",
+  "RadioVNReformat": "僅排版",
+  "RadioVNFixPunct": "僅補標點",
+  "LabelVNMaxPara": "最大段落字數：",
+  "BtnVNPresetSchemes": "預設角色方案勾選",
+  "BtnVNProcess": "執行視覺小說排版",
+  "StatusVNProcessing": "正在排版視覺小說文字...",
+  "StatusVNComplete": "排版完成！輸出：{0}",
+  "StatusVNFailed": "排版失敗：{0}",
+  "StatusVNPresetSummary": "已勾選 {0} 個方案，共 {1} 個角色",
+  "StatusVNPresetNone": "（未選擇角色方案，將使用預設 Steins;Gate 角色集）",
+  "StatusVNPresetApplied": "已套用 {0} 個角色方案，共 {1} 個角色",
+  "MsgVNDoneTitle": "排版完成",
+  "MsgVNDoneBody": "排版完成！\n\n輸出檔案：\n{0}\n\n是否開啟輸出資料夾？",
+
+  "VnSchemeWinTitle": "預設角色方案勾選",
+  "VnSchemeNew": "新建方案",
+  "VnSchemeEdit": "編輯方案",
+  "VnSchemeDelete": "刪除方案",
+  "VnSchemeOK": "確定",
+  "VnSchemeCancel": "取消",
+  "VnSchemeSummary": "已勾選 {0} 個方案，共 {1} 個角色",
+  "VnSchemeSelectHint": "請先選擇一個方案",
+  "VnSchemeDeleteConfirm": "確定刪除方案「{0}」？",
+  "VnSchemeEditTitle": "編輯角色方案",
+  "VnSchemeEditName": "方案名稱：",
+  "VnSchemeEditDesc": "方案說明：",
+  "VnSchemeEditChars": "角色列表（每行一個角色名）：",
+  "VnSchemeEditRoutes": "路線標題（可選，每行一個）：",
+  "VnSchemeEditNameEmpty": "請輸入方案名稱",
+  "VnSchemeEditCharsEmpty": "請至少輸入一個角色名"
 }

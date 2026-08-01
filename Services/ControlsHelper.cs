@@ -63,4 +63,92 @@ internal static class ControlsHelper
         Multiselect = true,
         RestoreDirectory = true
     };
+
+    // ================================================================
+    //  统一拖放事件处理（H2-1）
+    // ================================================================
+
+    /// <summary>拖放进入：判断是否为文件拖放，高亮控件</summary>
+    public static void SetupFileDragEnter(DragEventArgs e, Control target)
+    {
+        e.Effect = e.Data?.GetDataPresent(DataFormats.FileDrop) == true
+            ? DragDropEffects.Copy : DragDropEffects.None;
+        if (e.Effect == DragDropEffects.Copy)
+            target.BackColor = Color.LemonChiffon;
+    }
+
+    /// <summary>拖放悬浮：保持复制光标</summary>
+    public static void SetupFileDragOver(DragEventArgs e)
+    {
+        if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
+            e.Effect = DragDropEffects.Copy;
+    }
+
+    /// <summary>拖放离开：恢复控件背景色（主题感知）</summary>
+    public static void ResetFileDragLeave(Control target)
+    {
+        target.BackColor = ThemeManager.ControlBg;
+    }
+
+    // ================================================================
+    //  统一主题遍历器（H1-1）
+    // ================================================================
+
+    /// <summary>
+    /// 统一对控件树应用当前主题配色。
+    /// 遍历所有子控件，按类型设置对应配色规则。
+    /// 特殊覆盖（如 _chkOverwrite 橙色、_lblEncoding 灰色）由调用方在之后覆盖。
+    /// </summary>
+    public static void ApplyTheme(Control root)
+    {
+        ApplyThemeToControlTree(root);
+    }
+
+    private static void ApplyThemeToControlTree(Control ctl)
+    {
+        switch (ctl)
+        {
+            // 注意：必须子类在前、基类在后
+            case LinkLabel ll:
+                ll.LinkColor = ThemeManager.IsDarkMode ? Color.LightBlue : Color.SteelBlue;
+                ll.ActiveLinkColor = ThemeManager.IsDarkMode ? Color.DeepSkyBlue : Color.DarkBlue;
+                break;
+            case Label lbl:
+                lbl.ForeColor = ThemeManager.Fg;
+                break;
+            case Button btn:
+                btn.BackColor = ButtonBg;
+                btn.ForeColor = ButtonFg;
+                if (btn.FlatAppearance != null)
+                    btn.FlatAppearance.MouseOverBackColor = ButtonBg;
+                break;
+            case TextBox txt:
+            case ListBox lb:
+            case ComboBox cmb:
+            case NumericUpDown nud:
+                ctl.BackColor = ThemeManager.ControlBg;
+                ctl.ForeColor = ThemeManager.Fg;
+                break;
+            case CheckBox chk:
+            case RadioButton rb:
+                ctl.ForeColor = ThemeManager.Fg;
+                break;
+            case SplitContainer sc:
+                sc.BackColor = ThemeManager.IsDarkMode ? ThemeManager.DarkControlBg : SystemColors.Control;
+                ApplyThemeToControlTree(sc.Panel1);
+                ApplyThemeToControlTree(sc.Panel2);
+                return;
+            case TableLayoutPanel tlp:
+            case FlowLayoutPanel flp:
+                // 容器递归子控件，不改变自身背景
+                break;
+            case Panel p:
+                p.BackColor = ThemeManager.Bg;
+                break;
+        }
+
+        if (ctl.HasChildren)
+            foreach (Control child in ctl.Controls)
+                ApplyThemeToControlTree(child);
+    }
 }

@@ -26,6 +26,8 @@ public record PostProcessOptions(
 /// </summary>
 public static class ProcessingPipeline
 {
+    private static readonly UTF8Encoding Utf8Bom = new(true);
+
     /// <summary>
     /// 执行完整处理流水线。
     /// </summary>
@@ -34,10 +36,12 @@ public static class ProcessingPipeline
     /// <param name="mergeOpts">行合并配置</param>
     /// <param name="postProcess">后处理选项</param>
     /// <returns>处理结果记录</returns>
+    /// <param name="overwrite">若为 true 则直接覆盖原文件（危险模式）</param>
     public static ProcessingResult Run(
         string inputPath, Encoding encoding,
         MergeOptions mergeOpts,
-        PostProcessOptions postProcess)
+        PostProcessOptions postProcess,
+        bool overwrite = false)
     {
         // 预编译 set（一次性构造，所有 Merger 共享，需在 Step 1 前准备好供 LineMerger 使用）
         HashSet<char>? noMergeSet = postProcess.NoMerge && !string.IsNullOrEmpty(postProcess.NoMergeChars)
@@ -88,10 +92,11 @@ public static class ProcessingPipeline
             replaceApplied = true;
         }
 
-        // 一次性写入 UTF-8 with BOM
-        File.WriteAllLines(outputPath, lines, new UTF8Encoding(true));
+        // 一次性写入 UTF-8 with BOM（危险模式直接覆盖原文件）
+        string finalPath = overwrite ? inputPath : outputPath;
+        File.WriteAllLines(finalPath, lines, Utf8Bom);
 
-        return new ProcessingResult(lines, outputPath, cjkApplied, punctApplied, trimApplied, replaceApplied);
+        return new ProcessingResult(lines, finalPath, cjkApplied, punctApplied, trimApplied, replaceApplied);
     }
 }
 

@@ -41,8 +41,8 @@ public static class ThemeManager
     /// <summary>主题切换时触发</summary>
     public static event Action<bool>? ThemeChanged;
 
-    /// <summary>Init() 从配置文件中读到的语言偏好，供 Loc.Init() 使用以避免重复读文件</summary>
-    internal static string? InitialLanguage { get; private set; }
+    /// <summary>当前持久化的语言偏好（由 Init() 读取，供 Loc.Init() 使用）</summary>
+    public static string? CurrentLanguage { get; private set; }
 
     private static string ConfigPath =>
         Path.Combine(AppContext.BaseDirectory, "app_config.json");
@@ -62,7 +62,7 @@ public static class ThemeManager
                 if (doc.RootElement.TryGetProperty("darkMode", out var dm))
                     IsDarkMode = dm.GetBoolean();
                 if (doc.RootElement.TryGetProperty("language", out var lang))
-                    InitialLanguage = lang.GetString();
+                    CurrentLanguage = lang.GetString();
             }
         }
         catch { }

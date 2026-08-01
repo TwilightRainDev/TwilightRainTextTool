@@ -30,6 +30,7 @@ Drag-and-drop a text file, pick your options, click **Process** — done.
 | **Line Merge** | Merge short lines up to a configurable threshold, with optional post-processing |
 | **File Join** | Concatenate all matching files in a directory into one |
 | **Punct. Replace** | Freely configurable find-&-replace rules with reordering, persisted as JSON |
+| **Visual Novel** | Reformat VN scripts to natural paragraphs, complete dialogue punctuation, character/route presets |
 | **About** | Version, author, avatar, GitHub link, language selector |
 
 #### Tab 1 · Line Merge
@@ -74,7 +75,19 @@ Read file → Threshold merge → CJK fix → Punct. truncation fix → Punct. r
 - **Batch processing** — select multiple files, process all at once
 - Safe output: `*_Processed.*`
 
-#### Tab 4 · About
+#### Tab 4 · Visual Novel
+
+- **Reformat** — rebuild VN scripts from fixed-width hard-wrapped lines into natural paragraphs
+- Auto-classifies lines into **dialogue / narrative / scene markers / route headings**
+- Recognizes `「角色」「台词」` and `角色名「台词」` / `角色名，「台词」` dialogue patterns
+- **Dialogue punctuation completion** — appends `。` to dialogue lines missing sentence-end punctuation
+- **Character & route presets** — bundled Steins;Gate / Attack on Titan / Kara no Kyoukai / Subahibi schemes, editable via dialog
+- Max paragraph length adjustable (100–2000)
+- Long narrative paragraphs auto-split at sentence boundaries
+- Three modes: **All-in-One** (reformat + fix punct.), **Reformat only**, **Fix Punct. only**
+- Safe output: `*_Processed.*`
+
+#### Tab 5 · About
 
 - Program icon (64×64) + **TwilightRain avatar** (64×64) side by side
 - App name + version side by side
@@ -130,16 +143,18 @@ dotnet publish -c Release -o bin/Release/publish
 ```
 TextTool/
 ├── TextTool.sln                  # Solution file
-├── TextTool.csproj               # .NET 7 WinForms, v2.0.2
-├── Directory.Build.props         # Centralized version (2.0.2)
+├── TextTool.csproj               # .NET 7 WinForms, v2.2.0
+├── Directory.Build.props         # Centralized version (2.2.0)
 ├── Program.cs                    # Entry point, registers GBK encoding
-├── MainForm.cs                   # Main window (~165 lines, hosts 4 tabs)
+├── MainForm.cs                   # Main window (~177 lines, hosts 5 tabs)
 │
 ├── Controls/                     # Tab pages (extracted from MainForm)
 │   ├── MergeTabControl.cs        # Tab 1: Line merge (drag-drop, batch, preview)
 │   ├── JoinTabControl.cs         # Tab 2: File join (directory + pattern)
 │   ├── ReplaceTabControl.cs      # Tab 3: Punct. replace (CRUD, batch processing)
-│   ├── AboutTabControl.cs        # Tab 4: About, language, dark mode, config I/O
+│   ├── VNTabControl.cs           # Tab 4: Visual novel (reformat, punct. fix, presets)
+│   ├── VNCharacterSchemeForm.cs  # Character/route preset selection & editing
+│   ├── AboutTabControl.cs        # Tab 5: About, language, dark mode, config I/O
 │   └── PreviewForm.cs            # Preview dialog (merge result before saving)
 │
 ├── Services/                     # Core logic & infrastructure
@@ -153,6 +168,12 @@ TextTool/
 │   ├── PunctTruncationMerger.cs  # Punctuation truncation fix + no-merge support
 │   ├── PunctuationReplacer.cs    # Find-&-replace engine + ReplaceRuleStore
 │   ├── ProcessingPipeline.cs     # Single-pass pipeline orchestration
+│   ├── VNReformatterService.cs   # VN script reformatting engine (lines→paragraphs)
+│   ├── PunctFixerService.cs      # Dialogue punctuation completion
+│   ├── VNCharacterScheme.cs      # Character/route preset scheme model & store
+│   ├── JsonFileStore.cs          # Generic JSON file persistence
+│   ├── PathHelper.cs             # Shared file path utilities
+│   ├── IStatusSource.cs          # Status event interface for tabs
 │   └── TextUtils.cs              # Extension methods (EndsWithAny, etc.)
 │
 ├── Localization/                 # i18n
@@ -165,7 +186,7 @@ TextTool/
 │   ├── icon.ico                  # App icon
 │   └── TwilightRain.jpg          # Avatar in About page
 │
-├── TextTool.Tests/               # Unit tests (xUnit, 63 tests)
+├── TextTool.Tests/               # Unit tests (xUnit, 91 tests)
 │   ├── TextTool.Tests.csproj
 │   ├── TestHelpers.cs
 │   └── Services/                 # One test file per service
@@ -208,6 +229,8 @@ TextTool/
 
  | Version | Date | Update Content |
  | :-- | :--- | :------- |
+ | 2.2.0 | 2026-07-20 | Visual Novel tab: reformat VN scripts from hard-wrapped lines to natural paragraphs (dialogue/narrative/scene/route detection), dialogue punctuation completion, character/route preset schemes; unit tests for VN engine |
+ | 2.1.0 | 2026-07-19 | Codebase optimization: unified theme traverser, generic JSON store, unified config, StringBuilder performance; dangerous overwrite mode; embedded default schemes |
  | 2.0.2 | 2026-07-18 | Preset replacement scheme selection; UI/business layer decoupling; emoji icons removal |
  | 2.0.1 | 2026-07-18 | Semantic color palette refactoring; extracted shared factory; code review fixes; added development documentation |
  | 2.0.0 | 2026-07-18 | Batch processing support for punctuation replacement tab; dark mode expansion; button color scheme inversion; fixed disabled button font color |
@@ -235,6 +258,7 @@ TextTool/
 | **行合并** | 短行自动拼接至指定阈值，可选多重后处理 |
 | **文件拼接** | 将目录中所有匹配文件合并为一个 |
 | **标点替换** | 自由配置查找/替换规则，支持排序，JSON 持久化 |
+| **视觉小说** | 将 VN 脚本重排为自然段落、补全对话标点、角色/路线预设方案 |
 | **关于** | 版本、作者、头像、GitHub 链接、语言切换 |
 
 #### Tab 1 · 行合并
@@ -279,7 +303,19 @@ TextTool/
 - **批量处理** — 选择多个文件，一键处理所有
 - 安全输出：`*_Processed.*`
 
-#### Tab 4 · 关于
+#### Tab 4 · 视觉小说
+
+- **排版** — 将 VN 脚本从固定宽度硬换行重建为自然段落
+- 自动识别 **对话 / 叙事 / 场景标记 / 路线标题** 四类行
+- 识别 `「角色」「台词」` 与 `角色名「台词」` / `角色名，「台词」` 对话模式
+- **对话补标点** — 为缺少句末标点的对话行补全 `。`
+- **角色/路线预设方案** — 内置命运石之门 / 进击的巨人 / 空之境界 / 樱之诗方案，支持对话框编辑
+- 最大段落字数可调（100–2000）
+- 超长叙事段落在句界自动拆分
+- 三种模式：**一条龙**（排版+补标点）、**仅排版**、**仅补标点**
+- 安全输出：`*_Processed.*`
+
+#### Tab 5 · 关于
 
 - 程序图标 (64×64) + **TwilightRain 头像** (64×64) 并排显示
 - 程序名称 + 版本号并排
@@ -306,7 +342,6 @@ TextTool/
 - **.NET 7 Desktop Runtime**（Windows WinForms）
 - 从 [dotnet.microsoft.com/download/dotnet/7.0](https://dotnet.microsoft.com/download/dotnet/7.0) 下载安装 **.NET Desktop Runtime 7.0（x64）**
 - 缺少运行时会弹出引导对话框
-- 到底是什么人喜欢在发行版里封装依赖啊喂，多来几个把盘都挤爆了。1M以内的极简工具封装成500MB是大运送信纸吧QAQ。
 
 ### 运行方式
 
@@ -326,16 +361,18 @@ dotnet publish -c Release -o bin/Release/publish
 ```
 TextTool/
 ├── TextTool.sln                  # 解决方案文件
-├── TextTool.csproj               # .NET 7 WinForms, v2.0.2
-├── Directory.Build.props         # 统一版本号 (2.0.2)
+├── TextTool.csproj               # .NET 7 WinForms, v2.2.0
+├── Directory.Build.props         # 统一版本号 (2.2.0)
 ├── Program.cs                    # 入口，注册 GBK 编码支持
-├── MainForm.cs                   # 主窗口 (~165 行，承载 4 个页签)
+├── MainForm.cs                   # 主窗口 (~177 行，承载 5 个页签)
 │
 ├── Controls/                     # 页签控件（从 MainForm 拆分）
 │   ├── MergeTabControl.cs        # Tab 1: 行合并（拖放、批量、预览）
 │   ├── JoinTabControl.cs         # Tab 2: 文件拼接（目录 + 匹配模式）
 │   ├── ReplaceTabControl.cs      # Tab 3: 标点替换（CRUD、批量处理）
-│   ├── AboutTabControl.cs        # Tab 4: 关于、语言切换、深色模式、配置导入导出
+│   ├── VNTabControl.cs           # Tab 4: 视觉小说（排版、补标点、预设方案）
+│   ├── VNCharacterSchemeForm.cs  # 角色/路线预设方案勾选与编辑
+│   ├── AboutTabControl.cs        # Tab 5: 关于、语言切换、深色模式、配置导入导出
 │   └── PreviewForm.cs            # 预览对话框（合并结果保存前查看）
 │
 ├── Services/                     # 核心逻辑与基础设施
@@ -349,6 +386,12 @@ TextTool/
 │   ├── PunctTruncationMerger.cs  # 标点截断修复 + 不合并规则
 │   ├── PunctuationReplacer.cs    # 查找替换引擎 + ReplaceRuleStore
 │   ├── ProcessingPipeline.cs     # 流水线编排（单次遍历，一次写出）
+│   ├── VNReformatterService.cs   # VN 脚本排版引擎（行→段落）
+│   ├── PunctFixerService.cs      # 对话标点补齐
+│   ├── VNCharacterScheme.cs      # 角色/路线预设方案模型与存储
+│   ├── JsonFileStore.cs          # 泛型 JSON 文件持久化
+│   ├── PathHelper.cs             # 共享文件路径工具
+│   ├── IStatusSource.cs          # 页签状态事件接口
 │   └── TextUtils.cs              # 扩展方法（EndsWithAny 等）
 │
 ├── Localization/                 # 国际化
@@ -361,7 +404,7 @@ TextTool/
 │   ├── icon.ico                  # 程序图标
 │   └── TwilightRain.jpg          # 关于页头像
 │
-├── TextTool.Tests/               # 单元测试（xUnit，63 项）
+├── TextTool.Tests/               # 单元测试（xUnit，91 项）
 │   ├── TextTool.Tests.csproj
 │   ├── TestHelpers.cs
 │   └── Services/                 # 每个服务对应一个测试文件
@@ -404,6 +447,8 @@ TextTool/
 
 | 版本 | 日期 | 更新内容 |
 | :-- | :--- | :------- |
+| 2.2.0 | 2026-07-20 | 新增「视觉小说」页签：将 VN 脚本从固定宽度硬换行排版为自然段落（对话/叙事/场景/路线识别）、对话补全标点、角色/路线预设方案；VN 引擎单元测试 |
+| 2.1.0 | 2026-07-19 | 代码库优化：统一主题遍历器、泛型JSON存储、统一配置管理、StringBuilder性能优化；危险覆盖模式；嵌入式默认方案 |
 | 2.0.2 | 2026-07-18 | 预设替换方案勾选；UI/业务层解耦；emoji 图标移除 |
 | 2.0.1 | 2026-07-18 | 语义化色板重构；提取共享工厂；代码审查修复；新增开发文档 |
 | 2.0.0 | 2026-07-18 | 标点替换页签支持批量处理；深色模式拓展；按钮反转配色方案；修复禁用按钮字体颜色 |

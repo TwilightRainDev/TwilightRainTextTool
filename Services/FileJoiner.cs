@@ -26,7 +26,7 @@ public static class FileJoiner
             writer.Write(content);
 
             // 确保文件间有换行分隔
-            if (!content.EndsWith("\n") && !content.EndsWith("\r\n"))
+            if (!content.EndsWith("\n"))
                 writer.WriteLine();
         }
 

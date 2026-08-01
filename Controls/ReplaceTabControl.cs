@@ -7,7 +7,7 @@ namespace TextTool.Controls;
 /// <summary>
 /// "标点替换" 页签：规则管理 + 对单个文件执行替换。
 /// </summary>
-public sealed class ReplaceTabControl : UserControl
+public sealed class ReplaceTabControl : UserControl, IStatusSource
 {
     public event Action<string>? StatusChanged;
     public event Action<string>? ErrorOccurred;
@@ -257,60 +257,11 @@ public sealed class ReplaceTabControl : UserControl
     /// <summary>公开给 MainForm 调用以应用当前主题</summary>
     public void ApplyTheme()
     {
-        BackColor = ThemeManager.Bg;
+        ControlsHelper.ApplyTheme(this);
 
-        // 递归遍历控件子树设置统一配色（Label → Fg, Button → ButtonBg/ButtonFg, Panel → Bg）
-        ApplyThemeToSplitContainer();
-
-        // TextBox / ListBox（递归不处理这些控件类型）
-        _txtReplaceFile.BackColor = ThemeManager.ControlBg;
-        _txtReplaceFile.ForeColor = ThemeManager.Fg;
-        _txtFind.BackColor = ThemeManager.ControlBg;
-        _txtFind.ForeColor = ThemeManager.Fg;
-        _txtReplaceWith.BackColor = ThemeManager.ControlBg;
-        _txtReplaceWith.ForeColor = ThemeManager.Fg;
-
-        _lstRules.BackColor = ThemeManager.ControlBg;
-        _lstRules.ForeColor = ThemeManager.Fg;
-
-        // 特殊的暗淡文字（覆盖递归设置的统一 ForeColor）
+        // 特殊覆盖（暗淡提示文字）
         _lblReplaceEncoding.ForeColor = ThemeManager.MutedFg;
         _lblHint.ForeColor = ThemeManager.MutedFg;
-
-        // 预设方案按钮
-        _btnPresetSchemes.BackColor = ControlsHelper.ButtonBg;
-        _btnPresetSchemes.ForeColor = ControlsHelper.ButtonFg;
-    }
-
-    private void ApplyThemeToSplitContainer()
-    {
-        foreach (Control ctl in Controls)
-            ApplyThemeRecursive(ctl);
-    }
-
-    private void ApplyThemeRecursive(Control ctl)
-    {
-        if (ctl is SplitContainer sc)
-        {
-            sc.BackColor = ThemeManager.IsDarkMode ? ThemeManager.DarkControlBg : SystemColors.Control;
-            foreach (Control child in sc.Panel1.Controls) ApplyThemeRecursive(child);
-            foreach (Control child in sc.Panel2.Controls) ApplyThemeRecursive(child);
-        }
-        else if (ctl is TableLayoutPanel or FlowLayoutPanel)
-        {
-            ctl.BackColor = ThemeManager.Bg;
-            foreach (Control child in ctl.Controls) ApplyThemeRecursive(child);
-        }
-        else if (ctl is Label lbl)
-        {
-            lbl.ForeColor = ThemeManager.Fg;
-        }
-        else if (ctl is Button btn)
-        {
-            btn.BackColor = ControlsHelper.ButtonBg;
-            btn.ForeColor = ControlsHelper.ButtonFg;
-            btn.FlatAppearance.MouseOverBackColor = ControlsHelper.ButtonBg;
-        }
     }
 
     // ================================================================
@@ -319,26 +270,17 @@ public sealed class ReplaceTabControl : UserControl
 
     private void OnFileDragEnter(object? sender, DragEventArgs e)
     {
-        if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
-        {
-            e.Effect = DragDropEffects.Copy;
-            _txtReplaceFile.BackColor = Color.LemonChiffon;
-        }
-        else
-        {
-            e.Effect = DragDropEffects.None;
-        }
+        ControlsHelper.SetupFileDragEnter(e, _txtReplaceFile);
     }
 
     private void OnFileDragOver(object? sender, DragEventArgs e)
     {
-        if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
-            e.Effect = DragDropEffects.Copy;
+        ControlsHelper.SetupFileDragOver(e);
     }
 
     private void OnFileDragLeave(object? sender, EventArgs e)
     {
-        _txtReplaceFile.BackColor = Color.White;
+        ControlsHelper.ResetFileDragLeave(_txtReplaceFile);
     }
 
     private void OnReplaceFileDragDrop(object? sender, DragEventArgs e)
@@ -475,10 +417,7 @@ public sealed class ReplaceTabControl : UserControl
                 try
                 {
                     var encoding = EncodingDetector.Detect(path);
-                    string dir = Path.GetDirectoryName(path) ?? ".";
-                    string name = Path.GetFileNameWithoutExtension(path);
-                    string ext = Path.GetExtension(path);
-                    string outputPath = Path.Combine(dir, $"{name}_Processed{ext}");
+                    string outputPath = PathHelper.GetProcessedPath(path);
 
                     string content = File.ReadAllText(path, encoding.Encoding);
                     string replaced = PunctuationReplacer.Apply(content, _rules);

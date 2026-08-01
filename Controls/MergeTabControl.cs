@@ -8,7 +8,7 @@ namespace TextTool.Controls;
 /// "行合并" 页签：文件选择 → 阈值设置 → 后处理选项 → 执行流水线。
 /// 支持拖放多文件（批量处理）和预览。
 /// </summary>
-public sealed class MergeTabControl : UserControl
+public sealed class MergeTabControl : UserControl, IStatusSource
 {
     public event Action<string>? StatusChanged;
     public event Action<string>? ErrorOccurred;
@@ -38,6 +38,7 @@ public sealed class MergeTabControl : UserControl
     private Label _lblNoMergeChars = null!;
     private TextBox _txtNoMergeChars = null!;
     private CheckBox _chkTrimLeadingComma = null!;
+    private CheckBox _chkOverwrite = null!;   // 危险覆盖模式
 
     private readonly List<string> _selectedFiles = new();
     private DetectionResult? _lastDetection;
@@ -53,7 +54,7 @@ public sealed class MergeTabControl : UserControl
         {
             Dock = DockStyle.Fill,
             ColumnCount = 3,
-            RowCount = 10,
+            RowCount = 11,
             Padding = new Padding(16, 16, 16, 8)
         };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -156,7 +157,14 @@ public sealed class MergeTabControl : UserControl
         layout.SetColumnSpan(_chkTrimLeadingComma, 2);
         layout.Controls.Add(_chkTrimLeadingComma, 1, 7);
 
-        // Row 8 — Buttons (Process + Preview)
+        // Row 8 — Dangerous overwrite mode
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+        _chkOverwrite = new CheckBox { Text = Loc.T("ChkOverwrite"), Checked = false, AutoSize = true, Anchor = AnchorStyles.Left, ForeColor = Color.OrangeRed };
+        _chkOverwrite.CheckedChanged += OnOverwriteChecked;
+        layout.SetColumnSpan(_chkOverwrite, 2);
+        layout.Controls.Add(_chkOverwrite, 1, 8);
+
+        // Row 9 — Buttons (Process + Preview)
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
         var btnRow = new FlowLayoutPanel
         {
@@ -183,13 +191,13 @@ public sealed class MergeTabControl : UserControl
         };
         _btnPreview.Click += OnPreview;
         btnRow.Controls.Add(_btnPreview);
-        layout.Controls.Add(btnRow, 1, 8);
+        layout.Controls.Add(btnRow, 1, 9);
 
-        // Row 9 — Output
+        // Row 10 — Output
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
         _lblOutput = new Label { Text = "", ForeColor = Color.Green, Anchor = AnchorStyles.Left };
         layout.SetColumnSpan(_lblOutput, 2);
-        layout.Controls.Add(_lblOutput, 1, 9);
+        layout.Controls.Add(_lblOutput, 1, 10);
 
         Controls.Add(layout);
     }
@@ -211,6 +219,7 @@ public sealed class MergeTabControl : UserControl
         _chkNoMerge.Text = Loc.T("ChkNoMerge");
         _lblNoMergeChars.Text = Loc.T("LabelNoMergeChars");
         _chkTrimLeadingComma.Text = Loc.T("ChkTrimLeadingComma");
+        _chkOverwrite.Text = Loc.T("ChkOverwrite");
         _btnProcess.Text = Loc.T("BtnProcess");
         _btnPreview.Text = Loc.T("BtnPreview");
     }
@@ -218,53 +227,11 @@ public sealed class MergeTabControl : UserControl
     /// <summary>公开给 MainForm 调用以应用当前主题</summary>
     public void ApplyTheme()
     {
-        BackColor = ThemeManager.Bg;
+        ControlsHelper.ApplyTheme(this);
 
-        // Labels
-        _lblSourceFile.ForeColor = ThemeManager.Fg;
-        _lblThreshold.ForeColor = ThemeManager.Fg;
-        _lblEncodingTag.ForeColor = ThemeManager.Fg;
-        _lblPostProcess.ForeColor = ThemeManager.Fg;
-        _lblPunctChars.ForeColor = ThemeManager.Fg;
-        _lblNoMergeChars.ForeColor = ThemeManager.Fg;
-
+        // 特殊覆盖（统一遍历器无法处理的逻辑）
+        _chkOverwrite.ForeColor = Color.OrangeRed;
         _lblEncoding.ForeColor = ThemeManager.MutedFg;
-
-        // TextBoxes
-        _txtFilePath.BackColor = ThemeManager.ControlBg;
-        _txtFilePath.ForeColor = ThemeManager.Fg;
-        _txtPunctChars.BackColor = ThemeManager.ControlBg;
-        _txtPunctChars.ForeColor = ThemeManager.Fg;
-        _txtNoMergeChars.BackColor = ThemeManager.ControlBg;
-        _txtNoMergeChars.ForeColor = ThemeManager.Fg;
-
-        // NumericUpDown
-        _numThreshold.BackColor = ThemeManager.ControlBg;
-        _numThreshold.ForeColor = ThemeManager.Fg;
-
-        // CheckBoxes
-        _chkFixCjk.ForeColor = ThemeManager.Fg;
-        _chkFixPunct.ForeColor = ThemeManager.Fg;
-        _chkApplyReplace.ForeColor = ThemeManager.Fg;
-        _chkNoMerge.ForeColor = ThemeManager.Fg;
-        _chkTrimLeadingComma.ForeColor = ThemeManager.Fg;
-
-        // RadioButtons
-        _rbByte.ForeColor = ThemeManager.Fg;
-        _rbChar.ForeColor = ThemeManager.Fg;
-
-        // Buttons — 反转配色
-        _btnBrowse.BackColor = ControlsHelper.ButtonBg;
-        _btnBrowse.ForeColor = ControlsHelper.ButtonFg;
-        _btnBrowse.FlatAppearance.MouseOverBackColor = ControlsHelper.ButtonBg;
-
-        _btnProcess.BackColor = ControlsHelper.ButtonBg;
-        _btnProcess.ForeColor = ControlsHelper.ButtonFg;
-        _btnProcess.FlatAppearance.MouseOverBackColor = ControlsHelper.ButtonBg;
-
-        _btnPreview.BackColor = ControlsHelper.ButtonBg;
-        _btnPreview.ForeColor = ControlsHelper.ButtonFg;
-        _btnPreview.FlatAppearance.MouseOverBackColor = ControlsHelper.ButtonBg;
     }
 
     // ================================================================
@@ -273,26 +240,17 @@ public sealed class MergeTabControl : UserControl
 
     private void OnFileDragEnter(object? sender, DragEventArgs e)
     {
-        if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
-        {
-            e.Effect = DragDropEffects.Copy;
-            _txtFilePath.BackColor = Color.LemonChiffon;
-        }
-        else
-        {
-            e.Effect = DragDropEffects.None;
-        }
+        ControlsHelper.SetupFileDragEnter(e, _txtFilePath);
     }
 
     private void OnFileDragOver(object? sender, DragEventArgs e)
     {
-        if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
-            e.Effect = DragDropEffects.Copy;
+        ControlsHelper.SetupFileDragOver(e);
     }
 
     private void OnFileDragLeave(object? sender, EventArgs e)
     {
-        _txtFilePath.BackColor = Color.White;
+        ControlsHelper.ResetFileDragLeave(_txtFilePath);
     }
 
     private void OnFileDragDrop(object? sender, DragEventArgs e)
@@ -331,24 +289,13 @@ public sealed class MergeTabControl : UserControl
         StatusChanged?.Invoke(Loc.T("StatusFilesSelected", valid.Count));
     }
 
-    private void SelectSingleFile(string path)
-    {
-        SelectFiles(new[] { path });
-    }
-
     // ================================================================
     //  Button events
     // ================================================================
 
     private void OnBrowseFile(object? sender, EventArgs e)
     {
-        using var dlg = new OpenFileDialog
-        {
-            Title = Loc.T("TabMerge"),
-            Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
-            Multiselect = true,
-            RestoreDirectory = true
-        };
+        using var dlg = ControlsHelper.CreateTextFileDialog(Loc.T("TabMerge"));
         if (dlg.ShowDialog(this) == DialogResult.OK)
             SelectFiles(dlg.FileNames);
     }
@@ -360,11 +307,25 @@ public sealed class MergeTabControl : UserControl
 
         try
         {
-            var result = RunPipeline(path);
+            // 预览始终不覆盖原文件（即使危险模式已勾选）
+            var result = RunPipeline(path, overwrite: false);
             using var preview = new PreviewForm(result.Lines, result.OutputPath);
             preview.ShowDialog(this);
         }
         catch (Exception ex) { ErrorOccurred?.Invoke(Loc.T("MsgProcessFailed", ex.Message)); }
+    }
+
+    private void OnOverwriteChecked(object? sender, EventArgs e)
+    {
+        if (_chkOverwrite.Checked)
+        {
+            var result = MessageBox.Show(this,
+                Loc.T("MsgOverwriteBody"),
+                Loc.T("MsgOverwriteTitle"),
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (result != DialogResult.Yes)
+                _chkOverwrite.Checked = false; // 取消勾选
+        }
     }
 
     private void OnProcess(object? sender, EventArgs e)
@@ -382,7 +343,7 @@ public sealed class MergeTabControl : UserControl
             {
                 try
                 {
-                    RunPipeline(path);
+                    RunPipeline(path, overwrite: _chkOverwrite.Checked);
                     successCount++;
                 }
                 catch (Exception ex)
@@ -409,7 +370,7 @@ public sealed class MergeTabControl : UserControl
         finally { _btnProcess.Enabled = true; _btnProcess.Text = Loc.T("BtnProcess"); }
     }
 
-    private ProcessingResult RunPipeline(string path)
+    private ProcessingResult RunPipeline(string path, bool overwrite = false)
     {
         var encoding = EncodingDetector.Detect(path);
         var options = new MergeOptions
@@ -426,7 +387,7 @@ public sealed class MergeTabControl : UserControl
             ApplyReplace: _chkApplyReplace.Checked,
             TrimLeadingComma: _chkTrimLeadingComma.Checked,
             Rules: ReplaceRules ?? new List<ReplaceRule>());
-        return ProcessingPipeline.Run(path, encoding.Encoding, options, postProcess);
+        return ProcessingPipeline.Run(path, encoding.Encoding, options, postProcess, overwrite);
     }
 
     // ================================================================

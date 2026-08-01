@@ -14,6 +14,7 @@ public sealed class MainForm : Form
     private MergeTabControl _mergeTab = null!;
     private JoinTabControl _joinTab = null!;
     private ReplaceTabControl _replaceTab = null!;
+    private VNTabControl _vnTab = null!;
     private AboutTabControl _aboutTab = null!;
 
     // ===== 共享状态 =====
@@ -77,7 +78,13 @@ public sealed class MainForm : Form
         _replaceTab.RulesChanged += OnReplaceRulesChanged;
         _tabControl.TabPages.Add(CreateTabPage(_replaceTab, "Punct. Replace"));
 
-        // Tab 4: 关于
+        // Tab 4: 视觉小说
+        _vnTab = new VNTabControl();
+        _vnTab.StatusChanged += SetStatus;
+        _vnTab.ErrorOccurred += ShowError;
+        _tabControl.TabPages.Add(CreateTabPage(_vnTab, "Visual Novel"));
+
+        // Tab 5: 关于
         _aboutTab = new AboutTabControl();
         _aboutTab.StatusChanged += SetStatus;
         _aboutTab.ErrorOccurred += ShowError;
@@ -122,10 +129,7 @@ public sealed class MainForm : Form
         _statusStrip.BackColor = ThemeManager.IsDarkMode ? ThemeManager.DarkControlBg : SystemColors.Control;
         _statusLabel.ForeColor = ThemeManager.Fg;
 
-        _mergeTab.ApplyTheme();
-        _joinTab.ApplyTheme();
-        _replaceTab.ApplyTheme();
-        _aboutTab.ApplyTheme();
+        ApplyToAllTabs("ApplyTheme");
     }
 
     // ================================================================
@@ -139,15 +143,20 @@ public sealed class MainForm : Form
         _tabControl.TabPages[0].Text = Loc.T("TabMerge");
         _tabControl.TabPages[1].Text = Loc.T("TabJoin");
         _tabControl.TabPages[2].Text = Loc.T("TabReplace");
-        _tabControl.TabPages[3].Text = Loc.T("TabAbout");
+        _tabControl.TabPages[3].Text = Loc.T("TabVN");
+        _tabControl.TabPages[4].Text = Loc.T("TabAbout");
 
         _statusLabel.Text = Loc.T("StatusReady");
 
-        // 广播到各页签
-        _mergeTab.ApplyLocalization();
-        _joinTab.ApplyLocalization();
-        _replaceTab.ApplyLocalization();
-        _aboutTab.ApplyLocalization();
+        ApplyToAllTabs("ApplyLocalization");
+    }
+
+    /// <summary>遍历所有页签，调用指定公共方法（ApplyTheme / ApplyLocalization）</summary>
+    private void ApplyToAllTabs(string methodName)
+    {
+        foreach (TabPage page in _tabControl.TabPages)
+            if (page.Controls[0] is UserControl uc)
+                uc.GetType().GetMethod(methodName)?.Invoke(uc, null);
     }
 
     // ================================================================

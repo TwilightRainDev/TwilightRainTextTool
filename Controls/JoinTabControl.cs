@@ -6,7 +6,7 @@ namespace TextTool.Controls;
 /// <summary>
 /// "文件拼接" 页签：选择目录 → 按匹配模式合并多个文件。
 /// </summary>
-public sealed class JoinTabControl : UserControl
+public sealed class JoinTabControl : UserControl, IStatusSource
 {
     public event Action<string>? StatusChanged;
     public event Action<string>? ErrorOccurred;
@@ -84,26 +84,7 @@ public sealed class JoinTabControl : UserControl
     /// <summary>公开给 MainForm 调用以应用当前主题</summary>
     public void ApplyTheme()
     {
-        BackColor = ThemeManager.Bg;
-
-        _lblFolder.ForeColor = ThemeManager.Fg;
-        _lblPattern.ForeColor = ThemeManager.Fg;
-        _lblOutputFile.ForeColor = ThemeManager.Fg;
-
-        _txtFolder.BackColor = ThemeManager.ControlBg;
-        _txtFolder.ForeColor = ThemeManager.Fg;
-        _txtPattern.BackColor = ThemeManager.ControlBg;
-        _txtPattern.ForeColor = ThemeManager.Fg;
-        _txtOutputName.BackColor = ThemeManager.ControlBg;
-        _txtOutputName.ForeColor = ThemeManager.Fg;
-
-        _btnBrowseFolder.BackColor = ControlsHelper.ButtonBg;
-        _btnBrowseFolder.ForeColor = ControlsHelper.ButtonFg;
-        _btnBrowseFolder.FlatAppearance.MouseOverBackColor = ControlsHelper.ButtonBg;
-
-        _btnJoin.BackColor = ControlsHelper.ButtonBg;
-        _btnJoin.ForeColor = ControlsHelper.ButtonFg;
-        _btnJoin.FlatAppearance.MouseOverBackColor = ControlsHelper.ButtonBg;
+        ControlsHelper.ApplyTheme(this);
     }
 
     private void OnBrowseFolder(object? sender, EventArgs e)

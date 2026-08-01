@@ -41,6 +41,7 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource
     private Button _btnPresetSchemes = null!;
 
     private readonly List<string> _selectedFiles = new();
+    private CancellationTokenSource? _cts;   // 批处理取消令牌
 
     public ReplaceTabControl(List<ReplaceRule> rules)
     {
@@ -400,53 +401,94 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource
         StatusChanged?.Invoke(Loc.T(statusKey, ruleCount));
     }
 
-    private void OnReplaceProcess(object? sender, EventArgs e)
+    private async void OnReplaceProcess(object? sender, EventArgs e)
     {
         if (_selectedFiles.Count == 0 || string.IsNullOrWhiteSpace(_txtReplaceFile.Text)) return;
         if (_rules.Count == 0) { ErrorOccurred?.Invoke(Loc.T("MsgAddRule")); return; }
 
+        // 运行中再点按钮 = 取消
+        if (_cts != null)
+        {
+            _cts.Cancel();
+            _btnReplaceProcess.Enabled = false;
+            _btnReplaceProcess.Text = Loc.T("StatusCancelling");
+            StatusChanged?.Invoke(Loc.T("StatusCancelling"));
+            return;
+        }
+
+        // UI 线程捕获快照，避免后台线程访问控件
+        var rules = _rules.ToList();
+        var files = _selectedFiles.ToArray();
+
+        _cts = new CancellationTokenSource();
+        var token = _cts.Token;
+        _btnReplaceProcess.Enabled = false;
+        _btnReplaceProcess.Text = Loc.T("StatusReplacing");
+
+        var progress = new Progress<(int Done, string Error)>(
+            p =>
+            {
+                if (string.IsNullOrEmpty(p.Error))
+                    StatusChanged?.Invoke(Loc.T("StatusBatchProgress", p.Done, files.Length));
+                else
+                    ErrorOccurred?.Invoke(Loc.T("MsgReplaceFailed", Path.GetFileName(files[p.Done - 1]), p.Error));
+            });
+
+        var result = await ControlsHelper.RunBatchAsync(
+            files,
+            (path, _) =>
+            {
+                var encoding = EncodingDetector.Detect(path);
+                string outputPath = PathHelper.GetProcessedPath(path);
+                string content = File.ReadAllText(path, encoding.Encoding);
+                string replaced = PunctuationReplacer.Apply(content, rules);
+                File.WriteAllText(outputPath, replaced, new UTF8Encoding(true));
+            },
+            progress,
+            token);
+
         try
         {
-            _btnReplaceProcess.Enabled = false;
-            _btnReplaceProcess.Text = Loc.T("StatusReplacing");
-            StatusChanged?.Invoke(Loc.T("StatusReplacing"));
-
-            int successCount = 0;
-            foreach (string path in _selectedFiles)
+            if (_cts.IsCancellationRequested)
             {
-                try
-                {
-                    var encoding = EncodingDetector.Detect(path);
-                    string outputPath = PathHelper.GetProcessedPath(path);
-
-                    string content = File.ReadAllText(path, encoding.Encoding);
-                    string replaced = PunctuationReplacer.Apply(content, _rules);
-                    File.WriteAllText(outputPath, replaced, new UTF8Encoding(true));
-                    successCount++;
-                }
-                catch (Exception ex)
-                {
-                    ErrorOccurred?.Invoke(Loc.T("MsgReplaceFailed", Path.GetFileName(path), ex.Message));
-                }
+                _btnReplaceProcess.Enabled = true;
+                _btnReplaceProcess.Text = Loc.T("BtnExecuteReplace");
+                string cmsg = Loc.T("StatusBatchCancelled", result.Success);
+                _lblReplaceOutput.Text = cmsg;
+                _lblReplaceOutput.ForeColor = Color.DarkOrange;
+                StatusChanged?.Invoke(cmsg);
             }
-
-            string msg = successCount == _selectedFiles.Count
-                ? Loc.T("StatusBatchComplete", successCount)
-                : Loc.T("StatusBatchPartial", successCount, _selectedFiles.Count);
-            _lblReplaceOutput.Text = msg;
-            _lblReplaceOutput.ForeColor = successCount == _selectedFiles.Count ? Color.Green : Color.DarkOrange;
-            StatusChanged?.Invoke(msg);
-
-            if (successCount > 0 && MessageBox.Show(this,
-                Loc.T("MsgBatchBody", successCount),
-                Loc.T("MsgReplaceTitle"),
-                MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+            else
             {
-                RevealInExplorer(Path.GetDirectoryName(_selectedFiles[0])!);
+                _btnReplaceProcess.Enabled = true;
+                _btnReplaceProcess.Text = Loc.T("BtnExecuteReplace");
+                string msg = result.Success == files.Length
+                    ? Loc.T("StatusBatchComplete", result.Success)
+                    : Loc.T("StatusBatchPartial", result.Success, files.Length);
+                _lblReplaceOutput.Text = msg;
+                _lblReplaceOutput.ForeColor = result.Success == files.Length ? Color.Green : Color.DarkOrange;
+                StatusChanged?.Invoke(msg);
+
+                if (result.Success > 0 && MessageBox.Show(this,
+                    Loc.T("MsgBatchBody", result.Success),
+                    Loc.T("MsgReplaceTitle"),
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                {
+                    RevealInExplorer(Path.GetDirectoryName(files[0])!);
+                }
             }
         }
-        catch (Exception ex) { ErrorOccurred?.Invoke(Loc.T("MsgReplaceFailed", ex.Message)); }
-        finally { _btnReplaceProcess.Enabled = true; _btnReplaceProcess.Text = Loc.T("BtnExecuteReplace"); }
+        catch (Exception ex)
+        {
+            _btnReplaceProcess.Enabled = true;
+            _btnReplaceProcess.Text = Loc.T("BtnExecuteReplace");
+            ErrorOccurred?.Invoke(Loc.T("MsgReplaceFailed", ex.Message));
+        }
+        finally
+        {
+            _cts?.Dispose();
+            _cts = null;
+        }
     }
 
     // ================================================================

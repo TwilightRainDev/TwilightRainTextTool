@@ -65,6 +65,44 @@ internal static class ControlsHelper
     };
 
     // ================================================================
+    //  异步批处理（P1-2）
+    // ================================================================
+
+    /// <summary>
+    /// 异步批量处理：在后台线程逐文件执行 <paramref name="processFile"/>，
+    /// 进度与错误通过 <paramref name="progress"/> 封送回 UI 线程。
+    /// 返回 (成功数, 是否被取消)。
+    /// </summary>
+    public static async Task<(int Success, bool Cancelled)> RunBatchAsync(
+        IReadOnlyList<string> files,
+        Action<string, CancellationToken> processFile,
+        IProgress<(int Done, string Status)>? progress,
+        CancellationToken token)
+    {
+        return await Task.Run(() =>
+        {
+            int success = 0;
+            for (int i = 0; i < files.Count; i++)
+            {
+                if (token.IsCancellationRequested)
+                    return (success, true);
+                try
+                {
+                    processFile(files[i], token);
+                    success++;
+                }
+                catch (OperationCanceledException) { return (success, true); }
+                catch (Exception ex)
+                {
+                    progress?.Report((i + 1, ex.Message));
+                }
+                progress?.Report((i + 1, ""));
+            }
+            return (success, false);
+        }, token);
+    }
+
+    // ================================================================
     //  统一拖放事件处理（H2-1）
     // ================================================================
 
@@ -92,9 +130,7 @@ internal static class ControlsHelper
 
     // ================================================================
     //  统一主题遍历器（H1-1）
-    // ================================================================
-
-    /// <summary>
+    // ================================================================    /// <summary>
     /// 统一对控件树应用当前主题配色。
     /// 遍历所有子控件，按类型设置对应配色规则。
     /// 特殊覆盖（如 _chkOverwrite 橙色、_lblEncoding 灰色）由调用方在之后覆盖。

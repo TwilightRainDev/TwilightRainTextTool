@@ -42,6 +42,7 @@ public sealed class MergeTabControl : UserControl, IStatusSource
 
     private readonly List<string> _selectedFiles = new();
     private DetectionResult? _lastDetection;
+    private CancellationTokenSource? _cts;   // 批处理取消令牌
 
     public MergeTabControl()
     {
@@ -307,8 +308,22 @@ public sealed class MergeTabControl : UserControl, IStatusSource
 
         try
         {
+            var options = new MergeOptions
+            {
+                Threshold = (int)_numThreshold.Value,
+                Mode = _rbChar.Checked ? MergeMode.CharCount : MergeMode.ByteCount
+            };
+            var postProcess = new PostProcessOptions(
+                FixCjk: _chkFixCjk.Checked,
+                FixPunct: _chkFixPunct.Checked,
+                PunctChars: _txtPunctChars.Text,
+                NoMerge: _chkNoMerge.Checked,
+                NoMergeChars: _txtNoMergeChars.Text,
+                ApplyReplace: _chkApplyReplace.Checked,
+                TrimLeadingComma: _chkTrimLeadingComma.Checked,
+                Rules: ReplaceRules ?? new List<ReplaceRule>());
             // 预览始终不覆盖原文件（即使危险模式已勾选）
-            var result = RunPipeline(path, overwrite: false);
+            var result = RunPipeline(path, options, postProcess, overwrite: false);
             using var preview = new PreviewForm(result.Lines, result.OutputPath);
             preview.ShowDialog(this);
         }
@@ -328,51 +343,21 @@ public sealed class MergeTabControl : UserControl, IStatusSource
         }
     }
 
-    private void OnProcess(object? sender, EventArgs e)
+    private async void OnProcess(object? sender, EventArgs e)
     {
         if (_lastDetection == null || _selectedFiles.Count == 0) return;
 
-        try
+        // 运行中再点按钮 = 取消
+        if (_cts != null)
         {
+            _cts.Cancel();
             _btnProcess.Enabled = false;
-            _btnProcess.Text = Loc.T("StatusProcessing");
-            StatusChanged?.Invoke(Loc.T("StatusProcessing"));
-
-            int successCount = 0;
-            foreach (string path in _selectedFiles)
-            {
-                try
-                {
-                    RunPipeline(path, overwrite: _chkOverwrite.Checked);
-                    successCount++;
-                }
-                catch (Exception ex)
-                {
-                    ErrorOccurred?.Invoke(Loc.T("MsgProcessFailed", Path.GetFileName(path), ex.Message));
-                }
-            }
-
-            string msg = successCount == _selectedFiles.Count
-                ? Loc.T("StatusBatchComplete", successCount)
-                : Loc.T("StatusBatchPartial", successCount, _selectedFiles.Count);
-            _lblOutput.Text = msg;
-            _lblOutput.ForeColor = successCount == _selectedFiles.Count ? Color.Green : Color.DarkOrange;
-            StatusChanged?.Invoke(msg);
-
-            if (successCount > 0 && MessageBox.Show(this,
-                Loc.T("MsgBatchBody", successCount),
-                Loc.T("MsgProcessTitle"),
-                MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
-            {
-                ControlsHelper.RevealFolder(Path.GetDirectoryName(_selectedFiles[0])!);
-            }
+            _btnProcess.Text = Loc.T("StatusCancelling");
+            StatusChanged?.Invoke(Loc.T("StatusCancelling"));
+            return;
         }
-        finally { _btnProcess.Enabled = true; _btnProcess.Text = Loc.T("BtnProcess"); }
-    }
 
-    private ProcessingResult RunPipeline(string path, bool overwrite = false)
-    {
-        var encoding = EncodingDetector.Detect(path);
+        // 在 UI 线程捕获全部选项，避免后台线程访问控件
         var options = new MergeOptions
         {
             Threshold = (int)_numThreshold.Value,
@@ -387,6 +372,76 @@ public sealed class MergeTabControl : UserControl, IStatusSource
             ApplyReplace: _chkApplyReplace.Checked,
             TrimLeadingComma: _chkTrimLeadingComma.Checked,
             Rules: ReplaceRules ?? new List<ReplaceRule>());
+        bool overwrite = _chkOverwrite.Checked;
+        var files = _selectedFiles.ToArray();
+
+        _cts = new CancellationTokenSource();
+        var token = _cts.Token;
+        _btnProcess.Enabled = false;
+        _btnProcess.Text = Loc.T("StatusProcessing");
+
+        var progress = new Progress<(int Done, string Error)>(
+            p =>
+            {
+                if (string.IsNullOrEmpty(p.Error))
+                    StatusChanged?.Invoke(Loc.T("StatusBatchProgress", p.Done, files.Length));
+                else
+                    ErrorOccurred?.Invoke(Loc.T("MsgProcessFailed", Path.GetFileName(files[p.Done - 1]), p.Error));
+            });
+
+        var result = await ControlsHelper.RunBatchAsync(
+            files,
+            (path, _) => RunPipeline(path, options, postProcess, overwrite),
+            progress,
+            token);
+
+        try
+        {
+            if (_cts.IsCancellationRequested)
+            {
+                _btnProcess.Enabled = true;
+                _btnProcess.Text = Loc.T("BtnProcess");
+                string cmsg = Loc.T("StatusBatchCancelled", result.Success);
+                _lblOutput.Text = cmsg;
+                _lblOutput.ForeColor = Color.DarkOrange;
+                StatusChanged?.Invoke(cmsg);
+            }
+            else
+            {
+                _btnProcess.Enabled = true;
+                _btnProcess.Text = Loc.T("BtnProcess");
+                string msg = result.Success == files.Length
+                    ? Loc.T("StatusBatchComplete", result.Success)
+                    : Loc.T("StatusBatchPartial", result.Success, files.Length);
+                _lblOutput.Text = msg;
+                _lblOutput.ForeColor = result.Success == files.Length ? Color.Green : Color.DarkOrange;
+                StatusChanged?.Invoke(msg);
+
+                if (result.Success > 0 && MessageBox.Show(this,
+                    Loc.T("MsgBatchBody", result.Success),
+                    Loc.T("MsgProcessTitle"),
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                {
+                    ControlsHelper.RevealFolder(Path.GetDirectoryName(files[0])!);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _btnProcess.Enabled = true;
+            _btnProcess.Text = Loc.T("BtnProcess");
+            ErrorOccurred?.Invoke(Loc.T("MsgProcessFailed", ex.Message));
+        }
+        finally
+        {
+            _cts?.Dispose();
+            _cts = null;
+        }
+    }
+
+    private ProcessingResult RunPipeline(string path, MergeOptions options, PostProcessOptions postProcess, bool overwrite)
+    {
+        var encoding = EncodingDetector.Detect(path);
         return ProcessingPipeline.Run(path, encoding.Encoding, options, postProcess, overwrite);
     }
 

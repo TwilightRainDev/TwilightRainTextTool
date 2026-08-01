@@ -36,6 +36,7 @@ public sealed class VNTabControl : UserControl, IStatusSource
     private readonly List<string> _selectedFiles = new();
     private DetectionResult? _lastDetection;
     private List<VNCharacterScheme> _selectedSchemes = new();
+    private CancellationTokenSource? _cts;   // 批处理取消令牌
 
     public VNTabControl()
     {
@@ -315,110 +316,142 @@ public sealed class VNTabControl : UserControl, IStatusSource
             SelectFiles(dlg.FileNames);
     }
 
-    private void OnProcess(object? sender, EventArgs e)
+    private async void OnProcess(object? sender, EventArgs e)
     {
         if (_lastDetection == null || _selectedFiles.Count == 0) return;
 
+        // 运行中再点按钮 = 取消
+        if (_cts != null)
+        {
+            _cts.Cancel();
+            _btnProcess.Enabled = false;
+            _btnProcess.Text = Loc.T("StatusCancelling");
+            StatusChanged?.Invoke(Loc.T("StatusCancelling"));
+            return;
+        }
+
+        // UI 线程捕获全部选项与方案快照
+        var files = _selectedFiles.ToArray();
+        HashSet<string> characters = new();
+        List<string> routeNames = new();
+        List<string> scenePatterns = new();
+        foreach (var scheme in _selectedSchemes)
+        {
+            foreach (var ch in scheme.Characters)
+                characters.Add(ch);
+            routeNames.AddRange(scheme.RouteNames);
+            if (!string.IsNullOrWhiteSpace(scheme.ScenePattern))
+                scenePatterns.Add(scheme.ScenePattern!);
+        }
+        int maxPara = (int)_numMaxPara.Value;
+        bool doReformat = _rbAll.Checked || _rbReformat.Checked;
+        bool doFixPunct = _rbAll.Checked || _rbFixPunct.Checked;
+
+        _cts = new CancellationTokenSource();
+        var token = _cts.Token;
+        _btnProcess.Enabled = false;
+        _btnProcess.Text = Loc.T("StatusVNProcessing");
+
+        var progress = new Progress<(int Done, string Error)>(
+            p =>
+            {
+                if (string.IsNullOrEmpty(p.Error))
+                    StatusChanged?.Invoke(Loc.T("StatusBatchProgress", p.Done, files.Length));
+                else
+                    ErrorOccurred?.Invoke(Loc.T("MsgProcessFailed", Path.GetFileName(files[p.Done - 1]), p.Error));
+            });
+
+        string? singleContent = null;
+        string? singleOutputPath = null;
+        var result = await ControlsHelper.RunBatchAsync(
+            files,
+            (path, _) =>
+            {
+                var encoding = EncodingDetector.Detect(path);
+                string outputPath = PathHelper.GetProcessedPath(path);
+
+                string content = File.ReadAllText(path, encoding.Encoding);
+
+                if (doReformat)
+                {
+                    Regex? scenePattern = scenePatterns.Count > 0
+                        ? new Regex(string.Join("|", scenePatterns))
+                        : null;
+                    var reformatter = new VNReformatterService(
+                        characters: characters,
+                        routeNames: routeNames,
+                        maxParaLength: maxPara,
+                        scenePattern: scenePattern);
+                    content = reformatter.Reformat(content);
+                }
+
+                if (doFixPunct)
+                {
+                    var fixer = new PunctFixerService();
+                    content = fixer.Fix(content);
+                }
+
+                // 单文件场景：先预览，用户确认后保存；多文件直接写盘
+                if (files.Length == 1)
+                {
+                    singleContent = content;
+                    singleOutputPath = outputPath;
+                }
+                else
+                {
+                    File.WriteAllText(outputPath, content, new UTF8Encoding(true));
+                }
+            },
+            progress,
+            token);
+
         try
         {
-            _btnProcess.Enabled = false;
-            _btnProcess.Text = Loc.T("StatusVNProcessing");
-            StatusChanged?.Invoke(Loc.T("StatusVNProcessing"));
+            bool cancelled = _cts.IsCancellationRequested;
 
-            // 从选中的预设方案收集角色名
-            HashSet<string> characters = new();
-            List<string> routeNames = new();
-            List<string> scenePatterns = new();
-            foreach (var scheme in _selectedSchemes)
-            {
-                foreach (var ch in scheme.Characters)
-                    characters.Add(ch);
-                routeNames.AddRange(scheme.RouteNames);
-                if (!string.IsNullOrWhiteSpace(scheme.ScenePattern))
-                    scenePatterns.Add(scheme.ScenePattern!);
-            }
-
-            int maxPara = (int)_numMaxPara.Value;
-            bool doReformat = _rbAll.Checked || _rbReformat.Checked;
-            bool doFixPunct = _rbAll.Checked || _rbFixPunct.Checked;
-
-            int successCount = 0;
-            string? singleContent = null;
-            string? singleOutputPath = null;
-            foreach (string path in _selectedFiles)
-            {
-                try
-                {
-                    var encoding = EncodingDetector.Detect(path);
-                    string outputPath = PathHelper.GetProcessedPath(path);
-
-                    string content = File.ReadAllText(path, encoding.Encoding);
-
-                    if (doReformat)
-                    {
-                        // 合并所有方案提供的场景正则；无则用引擎通用模式
-                        Regex? scenePattern = scenePatterns.Count > 0
-                            ? new Regex(string.Join("|", scenePatterns))
-                            : null;
-                        var reformatter = new VNReformatterService(
-                            characters: characters,
-                            routeNames: routeNames,
-                            maxParaLength: maxPara,
-                            scenePattern: scenePattern);
-                        content = reformatter.Reformat(content);
-                    }
-
-                    if (doFixPunct)
-                    {
-                        var fixer = new PunctFixerService();
-                        content = fixer.Fix(content);
-                    }
-
-                    // 单文件场景：先预览，用户确认后保存；多文件直接写盘
-                    if (_selectedFiles.Count == 1)
-                    {
-                        singleContent = content;
-                        singleOutputPath = outputPath;
-                    }
-                    else
-                    {
-                        File.WriteAllText(outputPath, content, new UTF8Encoding(true));
-                    }
-                    successCount++;
-                }
-                catch (Exception ex)
-                {
-                    ErrorOccurred?.Invoke(Loc.T("MsgProcessFailed", Path.GetFileName(path), ex.Message));
-                }
-            }
-
-            // 单文件预览确认
-            if (_selectedFiles.Count == 1 && successCount == 1 && singleContent != null)
+            // 单文件预览确认（取消时跳过预览）
+            if (!cancelled && files.Length == 1 && result.Success == 1 && singleContent != null)
             {
                 using var preview = new PreviewForm(singleContent, singleOutputPath!);
-                if (preview.ShowDialog(this) == DialogResult.OK)
-                    successCount = 1;
-                else
-                    successCount = 0; // 用户取消保存，视为未完成
+                if (preview.ShowDialog(this) != DialogResult.OK)
+                    result = (0, false); // 用户取消保存，视为未完成
             }
 
-            string msg = successCount == _selectedFiles.Count
-                ? Loc.T("StatusVNComplete", $"{successCount} file(s)")
-                : Loc.T("StatusVNFailed", $"{successCount}/{_selectedFiles.Count}");
+            string msg;
+            if (cancelled)
+            {
+                msg = Loc.T("StatusBatchCancelled", result.Success);
+                _lblOutput.ForeColor = Color.DarkOrange;
+            }
+            else
+            {
+                msg = result.Success == files.Length
+                    ? Loc.T("StatusVNComplete", $"{result.Success} file(s)")
+                    : Loc.T("StatusVNFailed", $"{result.Success}/{files.Length}");
+                _lblOutput.ForeColor = result.Success == files.Length ? Color.Green : Color.DarkOrange;
+            }
             _lblOutput.Text = msg;
-            _lblOutput.ForeColor = successCount == _selectedFiles.Count ? Color.Green : Color.DarkOrange;
             StatusChanged?.Invoke(msg);
 
-            if (successCount > 0 && MessageBox.Show(this,
-                Loc.T("MsgVNDoneBody", Path.GetDirectoryName(_selectedFiles[0])!),
+            if (result.Success > 0 && !cancelled && MessageBox.Show(this,
+                Loc.T("MsgVNDoneBody", Path.GetDirectoryName(files[0])!),
                 Loc.T("MsgVNDoneTitle"),
                 MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
             {
-                ControlsHelper.RevealFolder(Path.GetDirectoryName(_selectedFiles[0])!);
+                ControlsHelper.RevealFolder(Path.GetDirectoryName(files[0])!);
             }
         }
-        catch (Exception ex) { ErrorOccurred?.Invoke(Loc.T("StatusVNFailed", ex.Message)); }
-        finally { _btnProcess.Enabled = true; _btnProcess.Text = Loc.T("BtnVNProcess"); }
+        catch (Exception ex)
+        {
+            ErrorOccurred?.Invoke(Loc.T("StatusVNFailed", ex.Message));
+        }
+        finally
+        {
+            _btnProcess.Enabled = true;
+            _btnProcess.Text = Loc.T("BtnVNProcess");
+            _cts?.Dispose();
+            _cts = null;
+        }
     }
 
     // ================================================================

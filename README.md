@@ -20,7 +20,7 @@ An all-in-one Windows text processing tool: line merge, file join, CJK truncatio
 
 ## English
 
-A **Windows WinForms (.NET 7)** desktop utility that replaces four legacy batch/PowerShell scripts with a unified GUI.  
+A **Windows WinForms (.NET 8)** desktop utility that replaces four legacy batch/PowerShell scripts with a unified GUI.  
 Drag-and-drop a text file, pick your options, click **Process** — done.
 
 ### Features
@@ -112,9 +112,9 @@ Three built-in languages, auto-detected from system UI culture:
 
 ### Requirements
 
-- **.NET 7 Desktop Runtime** (Windows WinForms)
-- Download from: [dotnet.microsoft.com/download/dotnet/7.0](https://dotnet.microsoft.com/download/dotnet/7.0)
-- Choose **.NET Desktop Runtime 7.0 (x64)**
+- **.NET 8 Desktop Runtime** (Windows WinForms)
+- Download from: [dotnet.microsoft.com/download/dotnet/8.0](https://dotnet.microsoft.com/download/dotnet/8.0)
+- Choose **.NET Desktop Runtime 8.0 (x64)**
 - Missing runtime shows a guided download dialog
 
 ### Running
@@ -143,8 +143,8 @@ dotnet publish -c Release -o bin/Release/publish
 ```
 TextTool/
 ├── TextTool.sln                  # Solution file
-├── TextTool.csproj               # .NET 7 WinForms, v2.2.0
-├── Directory.Build.props         # Centralized version (2.2.0)
+├── TextTool.csproj               # .NET 8 WinForms, v2.3.0
+├── Directory.Build.props         # Centralized version (2.3.0)
 ├── Program.cs                    # Entry point, registers GBK encoding
 ├── MainForm.cs                   # Main window (~177 lines, hosts 5 tabs)
 │
@@ -209,7 +209,7 @@ TextTool/
 
 | Component | Technology |
 |-----------|-----------|
-| Framework | .NET 7 WinForms |
+| Framework | .NET 8 WinForms |
 | UI construction | Pure C# (programmatic, no Designer files) |
 | Encoding | `System.Text.Encoding.CodePages` |
 | Output encoding | UTF-8 with BOM |
@@ -229,6 +229,7 @@ TextTool/
 
  | Version | Date | Update Content |
  | :-- | :--- | :------- |
+ | 2.3.0 | 2026-08-01 | Migrated to .NET 8 LTS; VN engine de-hardcoded from Steins;Gate defaults (character/route/scene-regex moved to presets); VN tab single-file preview; i18n holes fixed |
  | 2.2.0 | 2026-07-20 | Visual Novel tab: reformat VN scripts from hard-wrapped lines to natural paragraphs (dialogue/narrative/scene/route detection), dialogue punctuation completion, character/route preset schemes; unit tests for VN engine |
  | 2.1.0 | 2026-07-19 | Codebase optimization: unified theme traverser, generic JSON store, unified config, StringBuilder performance; dangerous overwrite mode; embedded default schemes |
  | 2.0.2 | 2026-07-18 | Preset replacement scheme selection; UI/business layer decoupling; emoji icons removal |
@@ -339,8 +340,8 @@ TextTool/
 
 ### 系统要求
 
-- **.NET 7 Desktop Runtime**（Windows WinForms）
-- 从 [dotnet.microsoft.com/download/dotnet/7.0](https://dotnet.microsoft.com/download/dotnet/7.0) 下载安装 **.NET Desktop Runtime 7.0（x64）**
+- **.NET 8 Desktop Runtime**（Windows WinForms）
+- 从 [dotnet.microsoft.com/download/dotnet/8.0](https://dotnet.microsoft.com/download/dotnet/8.0) 下载安装 **.NET Desktop Runtime 8.0（x64）**
 - 缺少运行时会弹出引导对话框
 
 ### 运行方式
@@ -361,8 +362,8 @@ dotnet publish -c Release -o bin/Release/publish
 ```
 TextTool/
 ├── TextTool.sln                  # 解决方案文件
-├── TextTool.csproj               # .NET 7 WinForms, v2.2.0
-├── Directory.Build.props         # 统一版本号 (2.2.0)
+├── TextTool.csproj               # .NET 8 WinForms, v2.3.0
+├── Directory.Build.props         # 统一版本号 (2.3.0)
 ├── Program.cs                    # 入口，注册 GBK 编码支持
 ├── MainForm.cs                   # 主窗口 (~177 行，承载 5 个页签)
 │
@@ -427,7 +428,7 @@ TextTool/
 
 | 组件 | 技术 |
 |------|------|
-| 框架 | .NET 7 WinForms |
+| 框架 | .NET 8 WinForms |
 | UI 构建 | 纯 C# 代码（无 Designer 文件） |
 | 编码支持 | `System.Text.Encoding.CodePages` |
 | 输出编码 | UTF-8 with BOM |
@@ -447,6 +448,7 @@ TextTool/
 
 | 版本 | 日期 | 更新内容 |
 | :-- | :--- | :------- |
+| 2.3.0 | 2026-08-01 | 迁移至 .NET 8 LTS；VN 引擎去 Steins;Gate 硬编码（角色/路线/场景正则迁至预设方案）；VN 页签单文件预览；i18n 漏洞修复 |
 | 2.2.0 | 2026-07-20 | 新增「视觉小说」页签：将 VN 脚本从固定宽度硬换行排版为自然段落（对话/叙事/场景/路线识别）、对话补全标点、角色/路线预设方案；VN 引擎单元测试 |
 | 2.1.0 | 2026-07-19 | 代码库优化：统一主题遍历器、泛型JSON存储、统一配置管理、StringBuilder性能优化；危险覆盖模式；嵌入式默认方案 |
 | 2.0.2 | 2026-07-18 | 预设替换方案勾选；UI/业务层解耦；emoji 图标移除 |

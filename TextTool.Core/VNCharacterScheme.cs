@@ -44,7 +44,7 @@ public static class VNCharacterSchemeStore
         try
         {
             var assembly = Assembly.GetExecutingAssembly();
-            using var stream = assembly.GetManifestResourceStream("TextTool.default_vn_schemes.json");
+            using var stream = assembly.GetManifestResourceStream("TextTool.Core.default_vn_schemes.json");
             if (stream != null)
             {
                 using var reader = new StreamReader(stream, Encoding.UTF8);

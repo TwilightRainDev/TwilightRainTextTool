@@ -22,15 +22,12 @@
   <ItemGroup>
     <Compile Remove="TextTool.Tests\**" />
     <EmbeddedResource Remove="TextTool.Tests\**" />
+    <Compile Remove="TextTool.Core\**" />
+    <EmbeddedResource Remove="TextTool.Core\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Text.Encoding.CodePages" Version="10.0.10" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="default_schemes.json" />
-    <EmbeddedResource Include="default_vn_schemes.json" />
+    <ProjectReference Include="TextTool.Core\TextTool.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TextTool.csproj" />
+    <ProjectReference Include="..\TextTool.Core\TextTool.Core.csproj" />
   </ItemGroup>
 
 </Project>

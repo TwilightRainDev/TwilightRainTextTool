@@ -8,7 +8,7 @@ namespace TextTool.Controls;
 /// <summary>
 /// "关于" 页签：应用信息、作者、链接、语言选择 + 深色模式切换、配置导入导出。
 /// </summary>
-public sealed class AboutTabControl : UserControl
+public sealed class AboutTabControl : UserControl, IThemedTab
 {
     // ===== 控件 =====
     private Label _lblAboutName = null!;
@@ -246,7 +246,7 @@ public sealed class AboutTabControl : UserControl
                 {
                     if (File.Exists(importedConfig))
                     {
-                        var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(importedConfig, Encoding.UTF8));
+                        using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(importedConfig, Encoding.UTF8));
                         if (doc.RootElement.TryGetProperty("language", out var langProp))
                             lang = langProp.GetString();
                     }

@@ -6,7 +6,7 @@ namespace TextTool.Controls;
 /// <summary>
 /// "文件拼接" 页签：选择目录 → 按匹配模式合并多个文件。
 /// </summary>
-public sealed class JoinTabControl : UserControl, IStatusSource
+public sealed class JoinTabControl : UserControl, IStatusSource, IThemedTab
 {
     public event Action<string>? StatusChanged;
     public event Action<string>? ErrorOccurred;
@@ -99,7 +99,7 @@ public sealed class JoinTabControl : UserControl, IStatusSource
             _txtFolder.Text = dlg.SelectedPath;
     }
 
-    private void OnJoin(object? sender, EventArgs e)
+    private async void OnJoin(object? sender, EventArgs e)
     {
         string folder = _txtFolder.Text.Trim();
         string pattern = _txtPattern.Text.Trim();
@@ -112,7 +112,7 @@ public sealed class JoinTabControl : UserControl, IStatusSource
         {
             _btnJoin.Enabled = false; _btnJoin.Text = Loc.T("StatusJoining");
             StatusChanged?.Invoke(Loc.T("StatusJoining"));
-            var (outputPath, fileCount) = FileJoiner.Join(folder, pattern, outputName);
+            var (outputPath, fileCount) = await Task.Run(() => FileJoiner.Join(folder, pattern, outputName));
             StatusChanged?.Invoke(Loc.T("StatusJoinComplete", fileCount, outputPath));
 
             if (MessageBox.Show(this,

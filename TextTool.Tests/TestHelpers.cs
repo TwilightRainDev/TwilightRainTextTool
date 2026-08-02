@@ -12,6 +12,12 @@ public sealed class TempFile : IDisposable
         if (File.Exists(Path)) File.Delete(Path);
         var processed = System.IO.Path.ChangeExtension(Path, null) + "_Processed.txt";
         if (File.Exists(processed)) File.Delete(processed);
+        // 清理 overwrite 模式产生的备份链（对应 BackupHelper 的 MaxHistory=3 + .bak）
+        for (int i = 0; i <= 3; i++)
+        {
+            string bak = Path + (i == 0 ? ".bak" : $".bak.{i}");
+            if (File.Exists(bak)) File.Delete(bak);
+        }
     }
 }
 

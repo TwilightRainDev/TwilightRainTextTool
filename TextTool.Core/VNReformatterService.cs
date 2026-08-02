@@ -42,7 +42,7 @@ public sealed class VNReformatterService
     };
 
     private static readonly Regex RepeatedEnder = new(
-        @"([。！？])\1{2,}", RegexOptions.Compiled);
+        @"([。！？])\1+", RegexOptions.Compiled);
 
     // ================================================================
     //  构造
@@ -203,9 +203,10 @@ public sealed class VNReformatterService
         if (m.Success)
             return (s[..m.Index], s[m.Index..]);
 
-        // 角色名「台词」或 角色名，「台词」模式
-        var cm = _charPattern.Match(s);
-        if (cm.Success)
+        // 角色名「台词」或 角色名，「台词」模式。
+        // 遍历所有匹配取第一个对话起点，与 HasDialogue 的判定保持一致，
+        // 避免最左角色名非对话起点时整行被误判为纯叙事。
+        foreach (Match cm in _charPattern.Matches(s))
         {
             int idx = cm.Index + cm.Length;
             if (idx < s.Length && s[idx] == '「')
@@ -291,25 +292,32 @@ public sealed class VNReformatterService
     private List<ParagraphPart> ProcessSceneLine(string text, List<string> buf)
     {
         var result = new List<ParagraphPart>();
-        string textBare = text;
-        string routeName = "";
 
+        // 先用原始文本匹配场景正则，保证与 ClassifyLines 的判定一致；
+        // 路线名随后从场景标记文本中剥离，避免先替换导致重新匹配失败。
+        var m = _scenePattern.Match(text);
+        string tagText = m.Success ? m.Value : text.Trim('─').Trim();
+
+        string routeName = "";
         foreach (var rn in _routeNames)
         {
-            if (textBare.Contains(rn))
+            if (tagText.Contains(rn))
             {
-                routeName = rn;
-                textBare = textBare.Replace(rn, "");
+                string candidate = tagText.Replace(rn, "").Trim();
+                // 仅当剥离路线名后仍有内容时才视为"场景文本内嵌路线名"；
+                // 剥离后为空说明场景标记本身就是路线名（如 ── 牧濑红莉栖线 ──），保留原文作为场景行。
+                if (candidate.Length > 0)
+                {
+                    routeName = rn;
+                    tagText = candidate;
+                }
                 break;
             }
         }
 
-        var m = _scenePattern.Match(textBare);
-        string tagText = m.Success ? m.Value : textBare.Trim('─').Trim();
-
         if (m.Success)
         {
-            string pre = textBare[..m.Index].Trim().Trim("─「」".ToCharArray()).Trim();
+            string pre = text[..m.Index].Trim().Trim("─「」".ToCharArray()).Trim();
             if (pre.Length > 0) buf.Add(pre);
         }
 
@@ -331,7 +339,8 @@ public sealed class VNReformatterService
 
         if (routeName.Length > 0)
             result.Add(new ParagraphPart("heading", routeName));
-        result.Add(new ParagraphPart("scene", tagText));
+        if (tagText.Length > 0)
+            result.Add(new ParagraphPart("scene", tagText));
 
         return result;
     }
@@ -393,7 +402,7 @@ public sealed class VNReformatterService
         s = s.Replace("。？", "？");
         s = s.Replace("，？", "？");
         s = s.Replace("。，", "，");
-        s = RepeatedEnder.Replace(s, "$1$1");
+        s = RepeatedEnder.Replace(s, "$1");  // 2+ 重复句末标点折叠为 1（含链式 Replace 处理不到的 3+ 场景）
         s = Regex.Replace(s, @"\.{3,}", "…");
         s = Regex.Replace(s, @"…{2,}", "……");
         return s;

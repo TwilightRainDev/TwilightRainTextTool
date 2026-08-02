@@ -13,6 +13,8 @@ public static class FileJoiner
     {
         string outputPath = Path.Combine(directory, outputName);
         var files = Directory.GetFiles(directory, pattern)
+            .Where(f => !string.Equals(Path.GetFullPath(f), Path.GetFullPath(outputPath),
+                StringComparison.OrdinalIgnoreCase))
             .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
             .ToArray();
         int fileCount = files.Length;

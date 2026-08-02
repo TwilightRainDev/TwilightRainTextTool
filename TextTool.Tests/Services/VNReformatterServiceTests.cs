@@ -214,6 +214,43 @@ public class VNReformatterServiceTests
         Assert.Contains("。", result);
     }
 
+    [Fact]
+    public void Reformat_TriplePeriod_ConsolidatedToSingle()
+    {
+        // 3+ 个重复句号应折叠为单个（链式 Replace 单趟无法处理 3+，需 RepeatedEnder 兜底）
+        var svc = new VNReformatterService();
+        var result = svc.Reformat("好冷。。。\n\n嗯。。。");
+
+        Assert.DoesNotContain("。。", result);
+        Assert.DoesNotContain("。。。", result);
+        Assert.Equal("好冷。\n\n嗯。", result);
+    }
+
+    [Fact]
+    public void Reformat_SceneMarkerContainingRouteName_KeepsSceneText()
+    {
+        // 场景标记文本内含路线名时，不得剥离路线名后把场景行清空（回归 #5）。
+        // 场景标记本身就是路线名（── 牧濑红莉栖线 ──）时，保留原文作为场景行。
+        var svc = new VNReformatterService(routeNames: new[] { "牧濑红莉栖线" });
+        var result = svc.Reformat("── 牧濑红莉栖线 ──");
+
+        // 场景行保留非空文本，不被清空
+        Assert.Contains("───", result);
+        Assert.Contains("牧濑红莉栖线", result);
+        Assert.DoesNotContain("───  ───", result);
+    }
+
+    [Fact]
+    public void Reformat_MixedLineWithLaterCharacterName_ExtractsDialogue()
+    {
+        // 最左角色名不是对话起点、后续角色名才是：对话部分必须被正确提取而非整行吞入叙事（回归 #6）
+        var svc = new VNReformatterService(characters: new[] { "红莉栖", "伦太郎" });
+        var result = svc.Reformat("红莉栖不是那样，伦太郎「嗯」。");
+
+        Assert.Contains("伦太郎「嗯」。", result);
+        Assert.Contains("红莉栖不是那样，", result);
+    }
+
     // ================================================================
     //  BOM 与空白
     // ================================================================

@@ -7,7 +7,7 @@ namespace TextTool.Controls;
 /// <summary>
 /// "标点替换" 页签：规则管理 + 对单个文件执行替换。
 /// </summary>
-public sealed class ReplaceTabControl : UserControl, IStatusSource
+public sealed class ReplaceTabControl : UserControl, IStatusSource, IThemedTab
 {
     public event Action<string>? StatusChanged;
     public event Action<string>? ErrorOccurred;
@@ -315,7 +315,12 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource
                 _lblReplaceEncoding.Text = detection.DisplayName;
                 _lblReplaceEncoding.ForeColor = SystemColors.ControlText;
             }
-            catch { }
+            catch
+            {
+                // 检测失败时清空状态，避免以错误的编码继续处理
+                _lblReplaceEncoding.Text = Loc.T("EncodingNotSelected");
+                _lblReplaceEncoding.ForeColor = ThemeManager.MutedFg;
+            }
         }
         else
         {

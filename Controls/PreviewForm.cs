@@ -32,7 +32,8 @@ public sealed class PreviewForm : Form
         Size = new Size(800, 600);
         StartPosition = FormStartPosition.CenterParent;
         Font = new Font("Consolas", 10f);
-        Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+        var icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+        if (icon != null) Icon = icon;
 
         _txtPreview = new TextBox
         {

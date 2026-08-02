@@ -54,6 +54,14 @@ public sealed class PunctFixerService
         if (lastClose < 0)
             return line;
 
+        // 引号之后已以句末标点结尾（如「…」？），不再补点
+        if (lastClose < s.Length - 1)
+        {
+            string tail = s[(lastClose + 1)..].TrimEnd();
+            if (tail.Length > 0 && _terminalChars.Contains(tail[^1]))
+                return line;
+        }
+
         // 越过末尾的引号字符（支持嵌套引号）
         int i = lastClose - 1;
         while (i >= 0 && (s[i] == '」' || s[i] == '』' || s[i] == '\'' || s[i] == '"'))

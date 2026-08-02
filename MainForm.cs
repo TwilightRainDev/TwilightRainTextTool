@@ -31,8 +31,19 @@ public sealed class MainForm : Form
         InitializeComponent();
         ApplyTheme();          // 应用初始主题
         ApplyLocalization();
-        Loc.LanguageChanged += () => BeginInvoke(ApplyLocalization);
-        ThemeManager.ThemeChanged += _ => BeginInvoke(ApplyTheme);
+        Loc.LanguageChanged += OnLanguageChanged;
+        ThemeManager.ThemeChanged += OnThemeChanged;
+    }
+
+    private void OnLanguageChanged() => BeginInvokeIfSafe(ApplyLocalization);
+
+    private void OnThemeChanged(bool _) => BeginInvokeIfSafe(ApplyTheme);
+
+    /// <summary>窗口句柄存在且未销毁时才 BeginInvoke，避免关闭过程中触发抛 ObjectDisposedException。</summary>
+    private void BeginInvokeIfSafe(Action action)
+    {
+        if (IsHandleCreated && !IsDisposed)
+            BeginInvoke(action);
     }
 
     private void InitializeComponent()
@@ -129,7 +140,7 @@ public sealed class MainForm : Form
         _statusStrip.BackColor = ThemeManager.IsDarkMode ? ThemeManager.DarkControlBg : SystemColors.Control;
         _statusLabel.ForeColor = ThemeManager.Fg;
 
-        ApplyToAllTabs("ApplyTheme");
+        ApplyToAllTabs(tab => tab.ApplyTheme());
     }
 
     // ================================================================
@@ -148,15 +159,15 @@ public sealed class MainForm : Form
 
         _statusLabel.Text = Loc.T("StatusReady");
 
-        ApplyToAllTabs("ApplyLocalization");
+        ApplyToAllTabs(tab => tab.ApplyLocalization());
     }
 
-    /// <summary>遍历所有页签，调用指定公共方法（ApplyTheme / ApplyLocalization）</summary>
-    private void ApplyToAllTabs(string methodName)
+    /// <summary>遍历所有页签，调用其主题/本地化更新（IThemedTab 强类型派发）。</summary>
+    private void ApplyToAllTabs(Action<IThemedTab> action)
     {
         foreach (TabPage page in _tabControl.TabPages)
-            if (page.Controls[0] is UserControl uc)
-                uc.GetType().GetMethod(methodName)?.Invoke(uc, null);
+            if (page.Controls[0] is IThemedTab tab)
+                action(tab);
     }
 
     // ================================================================
@@ -173,5 +184,15 @@ public sealed class MainForm : Form
         _statusLabel.Text = $"Error: {message}";
         MessageBox.Show(this, message, Loc.T("MsgErrorTitle"),
             MessageBoxButtons.OK, MessageBoxIcon.Error);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            Loc.LanguageChanged -= OnLanguageChanged;
+            ThemeManager.ThemeChanged -= OnThemeChanged;
+        }
+        base.Dispose(disposing);
     }
 }

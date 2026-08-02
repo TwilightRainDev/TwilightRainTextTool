@@ -8,7 +8,7 @@ namespace TextTool.Controls;
 /// "行合并" 页签：文件选择 → 阈值设置 → 后处理选项 → 执行流水线。
 /// 支持拖放多文件（批量处理）和预览。
 /// </summary>
-public sealed class MergeTabControl : UserControl, IStatusSource
+public sealed class MergeTabControl : UserControl, IStatusSource, IThemedTab
 {
     public event Action<string>? StatusChanged;
     public event Action<string>? ErrorOccurred;
@@ -283,7 +283,13 @@ public sealed class MergeTabControl : UserControl, IStatusSource
             _lblEncoding.Text = _lastDetection.DisplayName;
             _lblEncoding.ForeColor = SystemColors.ControlText;
         }
-        catch { }
+        catch
+        {
+            // 检测失败时清空状态，避免以错误的编码继续处理
+            _lastDetection = null;
+            _lblEncoding.Text = Loc.T("EncodingNotSelected");
+            _lblEncoding.ForeColor = ThemeManager.MutedFg;
+        }
 
         _btnProcess.Enabled = true;
         _btnPreview.Enabled = valid.Count == 1; // 预览只对单文件有意义
@@ -301,29 +307,31 @@ public sealed class MergeTabControl : UserControl, IStatusSource
             SelectFiles(dlg.FileNames);
     }
 
-    private void OnPreview(object? sender, EventArgs e)
+    private async void OnPreview(object? sender, EventArgs e)
     {
         if (_lastDetection == null || _selectedFiles.Count != 1) return;
         string path = _selectedFiles[0];
 
+        // UI 线程捕获选项，避免后台线程访问控件
+        var options = new MergeOptions
+        {
+            Threshold = (int)_numThreshold.Value,
+            Mode = _rbChar.Checked ? MergeMode.CharCount : MergeMode.ByteCount
+        };
+        var postProcess = new PostProcessOptions(
+            FixCjk: _chkFixCjk.Checked,
+            FixPunct: _chkFixPunct.Checked,
+            PunctChars: _txtPunctChars.Text,
+            NoMerge: _chkNoMerge.Checked,
+            NoMergeChars: _txtNoMergeChars.Text,
+            ApplyReplace: _chkApplyReplace.Checked,
+            TrimLeadingComma: _chkTrimLeadingComma.Checked,
+            Rules: ReplaceRules ?? new List<ReplaceRule>());
+
         try
         {
-            var options = new MergeOptions
-            {
-                Threshold = (int)_numThreshold.Value,
-                Mode = _rbChar.Checked ? MergeMode.CharCount : MergeMode.ByteCount
-            };
-            var postProcess = new PostProcessOptions(
-                FixCjk: _chkFixCjk.Checked,
-                FixPunct: _chkFixPunct.Checked,
-                PunctChars: _txtPunctChars.Text,
-                NoMerge: _chkNoMerge.Checked,
-                NoMergeChars: _txtNoMergeChars.Text,
-                ApplyReplace: _chkApplyReplace.Checked,
-                TrimLeadingComma: _chkTrimLeadingComma.Checked,
-                Rules: ReplaceRules ?? new List<ReplaceRule>());
             // 预览始终不覆盖原文件（即使危险模式已勾选）
-            var result = RunPipeline(path, options, postProcess, overwrite: false);
+            var result = await Task.Run(() => RunPipeline(path, options, postProcess, overwrite: false));
             using var preview = new PreviewForm(result.Lines, result.OutputPath);
             preview.ShowDialog(this);
         }

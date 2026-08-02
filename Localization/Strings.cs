@@ -93,7 +93,12 @@ public static class Loc
         }
 
         CurrentLanguage = lang;
-        ThemeManager.SaveAll(); // 统一由 ThemeManager 持久化全部配置
+
+        // 仅当偏好与已持久化语言不一致时才落盘：避免每次启动（Init 时偏好未变）
+        // 都无条件写配置文件。首次启动（无配置）时 CurrentLanguage 为 null，会落盘建立初始配置。
+        if (ThemeManager.CurrentLanguage != lang)
+            ThemeManager.SaveAll();
+
         LanguageChanged?.Invoke();
     }
 
@@ -111,6 +116,7 @@ public static class Loc
     public static string T(string key, params object[] args)
     {
         string format = T(key);
-        return string.Format(format, args);
+        try { return string.Format(format, args); }
+        catch (FormatException) { return format; } // 翻译串缺占位符时回退原文，不抛异常
     }
 }

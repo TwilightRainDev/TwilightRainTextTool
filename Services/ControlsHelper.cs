@@ -95,6 +95,7 @@ internal static class ControlsHelper
                 catch (Exception ex)
                 {
                     progress?.Report((i + 1, ex.Message));
+                    continue; // 失败文件不再报告成功进度
                 }
                 progress?.Report((i + 1, ""));
             }

@@ -9,7 +9,7 @@ namespace TextTool.Controls;
 /// "视觉小说" 页签：将视觉小说脚本从固定宽度硬换行排版为自然段落，
 /// 并可选地补全对话标点。角色设定通过预设方案管理（对标标点替换的方案系统）。
 /// </summary>
-public sealed class VNTabControl : UserControl, IStatusSource
+public sealed class VNTabControl : UserControl, IStatusSource, IThemedTab
 {
     // ===== 事件 =====
     public event Action<string>? StatusChanged;
@@ -260,7 +260,13 @@ public sealed class VNTabControl : UserControl, IStatusSource
             _lblEncoding.Text = _lastDetection.DisplayName;
             _lblEncoding.ForeColor = SystemColors.ControlText;
         }
-        catch { }
+        catch
+        {
+            // 检测失败时清空状态，避免以错误的编码继续处理
+            _lastDetection = null;
+            _lblEncoding.Text = Loc.T("EncodingNotSelected");
+            _lblEncoding.ForeColor = ThemeManager.MutedFg;
+        }
 
         _btnProcess.Enabled = true;
         StatusChanged?.Invoke(Loc.T("StatusFilesSelected", valid.Count));
@@ -287,14 +293,15 @@ public sealed class VNTabControl : UserControl, IStatusSource
         {
             _selectedSchemes = dlg.SelectedSchemes;
 
-            // 用户可能修改了方案内容，持久化
-            VNCharacterSchemeStore.Save(schemes);
-
             UpdatePresetSummary();
             StatusChanged?.Invoke(Loc.T("StatusVNPresetApplied",
                 _selectedSchemes.Count,
                 _selectedSchemes.Sum(s => s.Characters.Count)));
         }
+
+        // 无论 OK 还是取消都持久化：用户可能在内层编辑对话框中修改了方案内容，
+        // 取消外层表单也不应丢失这些修改（与 ReplaceTabControl 行为对齐）。
+        VNCharacterSchemeStore.Save(schemes);
     }
 
     private void UpdatePresetSummary()
@@ -352,70 +359,84 @@ public sealed class VNTabControl : UserControl, IStatusSource
         _btnProcess.Enabled = false;
         _btnProcess.Text = Loc.T("StatusVNProcessing");
 
-        var progress = new Progress<(int Done, string Error)>(
-            p =>
-            {
-                if (string.IsNullOrEmpty(p.Error))
-                    StatusChanged?.Invoke(Loc.T("StatusBatchProgress", p.Done, files.Length));
-                else
-                    ErrorOccurred?.Invoke(Loc.T("MsgProcessFailed", Path.GetFileName(files[p.Done - 1]), p.Error));
-            });
+        try
+        {
+            (int Success, bool Cancelled) result;
 
-        string? singleContent = null;
-        string? singleOutputPath = null;
-        var result = await ControlsHelper.RunBatchAsync(
-            files,
-            (path, _) =>
+            if (files.Length == 1)
             {
+                // 单文件：后台处理并用返回值回传内容，避免跨线程共享字段（可见性竞态）
+                string path = files[0];
                 var encoding = EncodingDetector.DetectStrict(path);
                 string outputPath = PathHelper.GetProcessedPath(path);
 
-                string content = File.ReadAllText(path, encoding.Encoding);
-
-                if (doReformat)
+                string content = await Task.Run(() =>
                 {
-                    Regex? scenePattern = scenePatterns.Count > 0
-                        ? new Regex(string.Join("|", scenePatterns))
-                        : null;
-                    var reformatter = new VNReformatterService(
-                        characters: characters,
-                        routeNames: routeNames,
-                        maxParaLength: maxPara,
-                        scenePattern: scenePattern);
-                    content = reformatter.Reformat(content);
-                }
+                    string c = File.ReadAllText(path, encoding.Encoding);
+                    if (doReformat)
+                    {
+                        Regex? scenePattern = scenePatterns.Count > 0
+                            ? new Regex(string.Join("|", scenePatterns))
+                            : null;
+                        c = new VNReformatterService(
+                            characters: characters,
+                            routeNames: routeNames,
+                            maxParaLength: maxPara,
+                            scenePattern: scenePattern).Reformat(c);
+                    }
+                    if (doFixPunct)
+                        c = new PunctFixerService().Fix(c);
+                    return c;
+                });
 
-                if (doFixPunct)
+                if (_cts.IsCancellationRequested)
                 {
-                    var fixer = new PunctFixerService();
-                    content = fixer.Fix(content);
-                }
-
-                // 单文件场景：先预览，用户确认后保存；多文件直接写盘
-                if (files.Length == 1)
-                {
-                    singleContent = content;
-                    singleOutputPath = outputPath;
+                    result = (0, false);
                 }
                 else
                 {
-                    File.WriteAllText(outputPath, content, new UTF8Encoding(true));
+                    using var preview = new PreviewForm(content, outputPath);
+                    result = preview.ShowDialog(this) == DialogResult.OK ? (1, false) : (0, false);
                 }
-            },
-            progress,
-            token);
-
-        try
-        {
-            bool cancelled = _cts.IsCancellationRequested;
-
-            // 单文件预览确认（取消时跳过预览）
-            if (!cancelled && files.Length == 1 && result.Success == 1 && singleContent != null)
-            {
-                using var preview = new PreviewForm(singleContent, singleOutputPath!);
-                if (preview.ShowDialog(this) != DialogResult.OK)
-                    result = (0, false); // 用户取消保存，视为未完成
             }
+            else
+            {
+                var progress = new Progress<(int Done, string Error)>(
+                    p =>
+                    {
+                        if (string.IsNullOrEmpty(p.Error))
+                            StatusChanged?.Invoke(Loc.T("StatusBatchProgress", p.Done, files.Length));
+                        else
+                            ErrorOccurred?.Invoke(Loc.T("MsgProcessFailed", Path.GetFileName(files[p.Done - 1]), p.Error));
+                    });
+
+                result = await ControlsHelper.RunBatchAsync(
+                    files,
+                    (path, _) =>
+                    {
+                        var encoding = EncodingDetector.DetectStrict(path);
+                        string outputPath = PathHelper.GetProcessedPath(path);
+                        string content = File.ReadAllText(path, encoding.Encoding);
+                        if (doReformat)
+                        {
+                            Regex? scenePattern = scenePatterns.Count > 0
+                                ? new Regex(string.Join("|", scenePatterns))
+                                : null;
+                            content = new VNReformatterService(
+                                characters: characters,
+                                routeNames: routeNames,
+                                maxParaLength: maxPara,
+                                scenePattern: scenePattern).Reformat(content);
+                        }
+                        if (doFixPunct)
+                            content = new PunctFixerService().Fix(content);
+                        File.WriteAllText(outputPath, content, new UTF8Encoding(true));
+                    },
+                    progress,
+                    token);
+            }
+
+            bool cancelled = _cts.IsCancellationRequested;
 
             string msg;
             if (cancelled)

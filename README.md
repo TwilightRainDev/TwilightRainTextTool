@@ -8,7 +8,7 @@ An all-in-one Windows text processing tool: line merge, file join, CJK truncatio
 
 ---
 
-[English](#english) · [中文](#中文)
+[English](#english) · [中文](#chinese)
 
 </div>
 
@@ -265,7 +265,7 @@ TextTool/
 
 <!-- ════════════════════════ 中文 ════════════════════════ -->
 
-<div id="中文"></div>
+<div id="chinese"></div>
 
 ## 中文
 
@@ -505,6 +505,6 @@ TextTool/
 
 © 2026 **TwilightRain**
 
-[English](#english) · [中文](#中文)
+[English](#english) · [中文](#chinese)
 
 </div>

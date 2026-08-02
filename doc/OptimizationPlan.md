@@ -187,6 +187,7 @@ public static class ReplaceRuleStore
 **实施方案：**
 
 1. **消除 Loc.LoadSavedLanguage()**——将其逻辑并入 `ThemeManager.Init()`，`ThemeManager` 同时存储 `darkMode` 和 `language`：
+
    ```csharp
    // ThemeManager.cs
    public static string? CurrentLanguage { get; private set; }
@@ -411,7 +412,7 @@ public interface IStatusSource
 
 ### 5.1 现有测试覆盖（54 测试）
 
-```
+```text
 LineMerger        → 7 测试    ✅ 完整
 CjkParagraphMerger → 7 测试   ✅ 完整
 PunctTruncationMerger → 6 测试 ✅ 完整
@@ -476,7 +477,7 @@ dotnet publish .\TextTool.csproj -c Release -o dist
 
 **P3: README 版本表自动化**
 
-```
+```text
 问题：README.md 中手写版本历史表，与 Directory.Build.props 的 <Version> 不同步。
 方案：发布时从 Directory.Build.props 读取版本号，追加到 README 的版本表。
        或删除 README 中的版本历史表，改为指向 git tag 列表。
@@ -486,7 +487,7 @@ dotnet publish .\TextTool.csproj -c Release -o dist
 
 在 `.claude/hooks/pre-commit` 中配置：
 
-```
+```text
 - dotnet build 无警告
 - dotnet test 全部通过
 - 无 .Only() 或 .Skip() 测试方法残留
@@ -511,7 +512,7 @@ dotnet publish .\TextTool.csproj -c Release -o dist
 
 ### 7.2 实施顺序建议
 
-```
+```text
 Phase 1 ─ 安全先行
   ├── H3-3 删除死代码（零风险）
   ├── H3-4 简化冗余条件（零风险）
@@ -624,7 +625,7 @@ public class NewTabControl : UserControl, IStatusSource
 
 如果时间有限，推荐按以下优先级执行（高价值/低风险先行）：
 
-```
+```text
   S1 第一优先 ─→ S2 第二 ─→ S3 第三 ─→ S4 第四 ─→ S5 第五
 (零风险清理)  (模式提取)   (主题统一)   (性能优化)   (UI收束)
 ```

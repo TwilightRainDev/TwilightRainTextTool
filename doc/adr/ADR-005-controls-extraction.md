@@ -8,6 +8,7 @@
 
 ## 决策
 将每个 Tab 抽取为独立的 `UserControl`，放在 `Controls/` 目录下：
+
 - `MergeTabControl.cs` — 行合并页签（414 行）
 - `JoinTabControl.cs` — 文件拼接页签（151 行）
 - `ReplaceTabControl.cs` — 标点替换页签（427 行）
@@ -17,13 +18,16 @@
 
 ## 通信模式
 各 Controls 通过事件向父级报告状态和错误：
+
 ```csharp
 public event Action<string>? StatusChanged;
 public event Action<string>? ErrorOccurred;
 ```
+
 共享数据（替换规则列表）通过构造注入传递。
 
 ## 后果
+
 - **优点**：每个页签独立文件，降低认知负担，修改一个 Tab 只需看一个文件
 - **优点**：Git diff 更清晰，冲突概率降低
 - **优点**：各 Tab 可以独立测试

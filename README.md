@@ -52,7 +52,7 @@ Drag-and-drop a text file, pick your options, click **Process** — done.
 
 **Processing pipeline** (single-pass, one file write):
 
-```
+```text
 Read file → Threshold merge → CJK fix → Punct. truncation fix → Punct. replace → Write output
 ```
 
@@ -121,19 +121,19 @@ Three built-in languages, auto-detected from system UI culture:
 
 #### Option A — Direct EXE
 
-```
+```bash
 double-click bin/Release/publish/TextTool.exe
 ```
 
 #### Option B — From source
 
-```
+```bash
 dotnet run --project TextTool.csproj
 ```
 
 #### Publishing
 
-```
+```bash
 dotnet publish -c Release -o bin/Release/publish
 # Output → bin/Release/publish/
 ```
@@ -142,7 +142,7 @@ dotnet publish -c Release -o bin/Release/publish
 
 `texttool` — the same engine, scriptable:
 
-```
+```bash
 texttool merge <file...> [options]     Line merge + post-processing
 texttool replace <file...> [options]   Punctuation replacement
 texttool vn <file...> [options]        Visual novel reformatting
@@ -156,7 +156,7 @@ new CLI zip from the GitHub Release, verifies its SHA-256, and swaps itself in
 
 ### Project Structure
 
-```
+```text
 TextTool/
 ├── TextTool.sln                  # Solution file
 ├── TextTool.csproj               # .NET 8 WinForms, v2.3.0
@@ -300,8 +300,10 @@ TextTool/
 
 **处理流水线**（一次内存传递，最后一次性写入硬盘）：
 
-```
+```text
+
 读取文件 → 阈值合并 → 中文截断修复 → 标点截断修复 → 标点替换 → 写出文件
+
 ```
 
 #### Tab 2 · 文件拼接
@@ -368,28 +370,43 @@ TextTool/
 #### 方式一 · 直接运行 exe
 
 #### 方式二 · 从源码运行
-```
+
+```bash
+
 dotnet run --project TextTool.csproj
+
 ```
+
 #### 发布命令
-```
+
+```bash
+
 dotnet publish -c Release -o bin/Release/publish
 # 输出 → bin/Release/publish/
+
 ```
+
 #### 命令行（CLI）
+
 `texttool` — 同一引擎，可脚本化：
-```
+
+```bash
+
 texttool merge <文件...> [选项]      行合并 + 后处理
 texttool replace <文件...> [选项]    标点替换
 texttool vn <文件...> [选项]        视觉小说排版
 texttool join <目录> [选项]         文件拼接
 texttool update [--check]           自更新（--check 仅检查）
-```
-运行 `texttool <命令> --help` 查看各命令选项。`update` 从 GitHub Release 下载新 CLI
-zip，校验 SHA-256 后自动替换自身（`--check` 可只检查不更新）。
-### 项目结构
 
 ```
+
+运行 `texttool <命令> --help` 查看各命令选项。`update` 从 GitHub Release 下载新 CLI
+zip，校验 SHA-256 后自动替换自身（`--check` 可只检查不更新）。
+
+### 项目结构
+
+```text
+
 TextTool/
 ├── TextTool.sln                  # 解决方案文件
 ├── TextTool.csproj               # .NET 8 WinForms, v2.3.0
@@ -460,6 +477,7 @@ TextTool/
 ├── app_config.json               # 语言与主题偏好（自动）
 ├── LICENSE                       # MIT 许可证
 └── README.md                     # 本文件
+
 ```
 
 ### 技术栈

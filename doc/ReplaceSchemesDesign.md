@@ -30,6 +30,7 @@ public class ReplaceScheme
 ### 新增文件 `replace_schemes.json`
 
 与 `replace_rules.json` 同级存放，格式：
+
 ```json
 [
   {
@@ -81,7 +82,7 @@ public class ReplaceScheme
 
 ## 数据流
 
-```
+```text
 用户点击「预设替换方案勾选」按钮
   → ReplaceSchemeStore.Load()  加载 replace_schemes.json（或返回默认方案）
   → 打开 SchemeSelectionForm（用户勾选方案、可选编辑方案）

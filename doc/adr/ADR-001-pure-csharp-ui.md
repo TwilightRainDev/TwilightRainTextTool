@@ -10,6 +10,7 @@ TextTool 是 WinForms 应用。传统 WinForms 开发依赖 Visual Studio 的 De
 全部 UI 控件使用纯 C# 代码在 `InitializeComponent()` 方法中手动创建和布局，不依赖 Designer 文件，也未使用任何 WinForms 设计器。
 
 ## 后果
+
 - **优点**：代码完全可控，diff 清晰可审查，无自动生成的垃圾代码
 - **优点**：布局逻辑就在控件旁边，阅读代码即可理解界面结构
 - **优点**：无需安装 Visual Studio，任何编辑器均可修改

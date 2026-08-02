@@ -25,6 +25,7 @@ Read this first if you are new to the project or need to make changes.
 - The "special dimmed label" colors are unified via `MutedFg`
 
 **How to theme a new control:**
+
 ```csharp
 // In ApplyTheme() for your tab:
 BackColor = ThemeManager.Bg;
@@ -42,6 +43,7 @@ someActionButton.ForeColor = ControlsHelper.ButtonFg;
 **Purpose:** Workaround a WinForms bug where `FlatStyle.Flat` buttons in `Enabled = false` state ignore `ForeColor` and always render with `SystemColors.GrayText`.
 
 **How it works:**
+
 - `Enabled = true` → delegates to `base.OnPaint()` (normal WinForms rendering)
 - `Enabled = false` → manually fills the background and draws text with `TextRenderer.DrawText` using the actual `ForeColor`
 
@@ -89,12 +91,14 @@ These eliminate ~80 lines of duplicated factory code across tabs.
 **Singleton:** `Loc` is a static class (not a true singleton — all members are static).
 
 **Lifecycle:**
+
 1. `MainForm` constructor → `ThemeManager.Init()` (reads `app_config.json` once, exposes `InitialLanguage`)
 2. `Loc.Init()` → uses `ThemeManager.InitialLanguage` (no second file read) or auto-detects system language
 3. `SetLanguage(code)` → switches locale, fires `LanguageChanged` event
 4. `MainForm` subscribes to `LanguageChanged` → calls `ApplyLocalization()` on all tabs
 
 **Adding a new language:**
+
 1. Add `Localization/{code}.json` with all keys
 2. Add the code to `DetectSystemLanguage()` if it should be auto-detected
 3. Add locale file to publish in `Publish.md`
@@ -117,7 +121,7 @@ All post-processing runs on in-memory lines (not intermediate files). Only one i
 
 Both MergeTab and ReplaceTab support batch multi-file processing:
 
-```
+```text
 Select files → _selectedFiles list → Process loop → Per-file encoding detection
                                                 → Per-file read/transform/write
                                                 → Success counter
@@ -130,9 +134,9 @@ Key implementation detail: `_selectedFiles` is a `List<string>` cleared on each 
 
 ## 8. File Layout
 
-```
+```text
 TextTool/
-├── TextTool.csproj              # .NET 7 WinForms
+├── TextTool.csproj              # .NET 8 WinForms
 ├── Directory.Build.props        # Centralized version
 ├── Program.cs                   # Entry + GBK encoding registration
 ├── MainForm.cs                  # Tab host, theme & localization dispatch
@@ -180,6 +184,7 @@ TextTool/
 6. Optionally subscribe to `ThemeManager.ThemeChanged` and `Loc.LanguageChanged` if needed
 
 **Checklist for a new tab:**
+
 - [ ] `ApplyTheme()` sets colors on all controls (or uses recursive walker)
 - [ ] `ApplyLocalization()` translates all visible text
 - [ ] `StatusChanged` event fires for status bar updates

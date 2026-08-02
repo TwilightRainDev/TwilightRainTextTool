@@ -8,6 +8,7 @@
 
 ## 决策
 使用 `Directory.Build.props` 作为 MSBuild 属性的单一来源：
+
 ```xml
 <Project>
   <PropertyGroup>
@@ -15,11 +16,13 @@
   </PropertyGroup>
 </Project>
 ```
+
 - `TextTool.csproj` 不再设置 `<Version>`，自动继承
 - `AboutTabControl` 通过 `Assembly.GetName().Version` 运行时读取，不再有硬编码
 - `AssemblyVersion` = `1.6.1.0`（.NET 自动追加 Revision=0）
 
 ## 后果
+
 - **优点**：改版本号只需改一个文件
 - **优点**：源码零硬编码版本字符串
 - **优点**：遵循 .NET 生态标准做法

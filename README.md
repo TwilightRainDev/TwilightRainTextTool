@@ -1,22 +1,13 @@
 # TwilightRain Text Tool
 
-<div align="center">
-
-集行合并、文件拼接、中文截断修复、标点截断修复、标点替换于一体的 Windows 文本处理工具。
-
+集行合并、文件拼接、中文截断修复、标点截断修复、标点替换于一体的 Windows 文本处理工具。  
 An all-in-one Windows text processing tool: line merge, file join, CJK truncation fix, punct. truncation fix & punctuation replacement.
 
 ---
 
-[English](#english) · [中文](#chinese)
-
-</div>
+[English](#english) · [中文](#中文)
 
 ---
-
-<!-- ════════════════════════ ENGLISH ════════════════════════ -->
-
-<div id="english"></div>
 
 ## English
 
@@ -150,9 +141,7 @@ texttool join <dir> [options]          File joining
 texttool update [--check]              Self-update (--check = check only)
 ```
 
-Run `texttool <command> --help` for each command's options. `update` downloads the
-new CLI zip from the GitHub Release, verifies its SHA-256, and swaps itself in
-(with `--check` you can check for a new version without updating).
+Run `texttool <command> --help` for each command's options. `update` downloads the new CLI zip from the GitHub Release, verifies its SHA-256, and swaps itself in (with `--check` you can check for a new version without updating).
 
 ### Project Structure
 
@@ -223,6 +212,11 @@ TextTool/
 ├── .github/workflows/
 │   └── build-test.yml            # CI: build + test + format + publish on release
 │
+├── replace_rules.json            # Runtime-generated rules (auto)
+├── app_config.json               # Language & theme preferences (auto)
+├── LICENSE                       # MIT License
+└── README.md                     # This file
+```
 
 ### Tech Stack
 
@@ -246,26 +240,22 @@ TextTool/
 
 ### Version History
 
- | Version | Date | Update Content |
- | :-- | :--- | :------- |
- | 2.3.0 | 2026-08-01 | Migrated to .NET 8 LTS; VN engine de-hardcoded from Steins;Gate defaults (character/route/scene-regex moved to presets); VN tab single-file preview; i18n holes fixed; async batch processing with cancel; shared dialogue regex; strict encoding detection (full-file re-verify); .editorconfig + analyzers + pre-commit; unified scheme form base class; auto-backup before overwrite; scheme export/import; TextTool.Core library + CLI (merge/replace/vn/join); auto GitHub Release + check for updates |
- | 2.2.0 | 2026-07-20 | Visual Novel tab: reformat VN scripts from hard-wrapped lines to natural paragraphs (dialogue/narrative/scene/route detection), dialogue punctuation completion, character/route preset schemes; unit tests for VN engine |
- | 2.1.0 | 2026-07-19 | Codebase optimization: unified theme traverser, generic JSON store, unified config, StringBuilder performance; dangerous overwrite mode; embedded default schemes |
- | 2.0.2 | 2026-07-18 | Preset replacement scheme selection; UI/business layer decoupling; emoji icons removal |
- | 2.0.1 | 2026-07-18 | Semantic color palette refactoring; extracted shared factory; code review fixes; added development documentation |
- | 2.0.0 | 2026-07-18 | Batch processing support for punctuation replacement tab; dark mode expansion; button color scheme inversion; fixed disabled button font color |
- | 1.5.2 | 2026-07-18 | Threshold merging no longer ignores no‑merge rules; optimized line‑end no‑merge rule logic |
- | 1.5.1 | 2026-07-17 | Fixed encoding detector issue |
- | 1.5.0 | 2026-07-17 | Sortable replacement rules; language selection moved from status bar to About page; added punctuation truncation segment repair; added line‑end no‑merge rule; compact About page layout |
- | 1.4.0 | 2026-07-17 | Internationalization; single‑pass traversal refactoring; CJK merge complexity simplification; 4KB header scanning; file I/O simplification |
- | 1.3.0 | 2026-07-17 | Added punctuation replacement tab; About tab and program icon; Chinese truncation fix; layout bug fixes |
- | 1.0.0 | 2026-07 | Initial release: line merging + file concatenation |
+| Version | Date | Update Content |
+| :-- | :--- | :------- |
+| 2.3.0 | 2026-08-01 | Migrated to .NET 8 LTS; VN engine de-hardcoded from Steins;Gate defaults (character/route/scene-regex moved to presets); VN tab single-file preview; i18n holes fixed; async batch processing with cancel; shared dialogue regex; strict encoding detection (full-file re-verify); .editorconfig + analyzers + pre-commit; unified scheme form base class; auto-backup before overwrite; scheme export/import; TextTool.Core library + CLI (merge/replace/vn/join); auto GitHub Release + check for updates |
+| 2.2.0 | 2026-07-20 | Visual Novel tab: reformat VN scripts from hard-wrapped lines to natural paragraphs (dialogue/narrative/scene/route detection), dialogue punctuation completion, character/route preset schemes; unit tests for VN engine |
+| 2.1.0 | 2026-07-19 | Codebase optimization: unified theme traverser, generic JSON store, unified config, StringBuilder performance; dangerous overwrite mode; embedded default schemes |
+| 2.0.2 | 2026-07-18 | Preset replacement scheme selection; UI/business layer decoupling; emoji icons removal |
+| 2.0.1 | 2026-07-18 | Semantic color palette refactoring; extracted shared factory; code review fixes; added development documentation |
+| 2.0.0 | 2026-07-18 | Batch processing support for punctuation replacement tab; dark mode expansion; button color scheme inversion; fixed disabled button font color |
+| 1.5.2 | 2026-07-18 | Threshold merging no longer ignores no‑merge rules; optimized line‑end no‑merge rule logic |
+| 1.5.1 | 2026-07-17 | Fixed encoding detector issue |
+| 1.5.0 | 2026-07-17 | Sortable replacement rules; language selection moved from status bar to About page; added punctuation truncation segment repair; added line‑end no‑merge rule; compact About page layout |
+| 1.4.0 | 2026-07-17 | Internationalization; single‑pass traversal refactoring; CJK merge complexity simplification; 4KB header scanning; file I/O simplification |
+| 1.3.0 | 2026-07-17 | Added punctuation replacement tab; About tab and program icon; Chinese truncation fix; layout bug fixes |
+| 1.0.0 | 2026-07 | Initial release: line merging + file concatenation |
 
 ---
-
-<!-- ════════════════════════ 中文 ════════════════════════ -->
-
-<div id="chinese"></div>
 
 ## 中文
 
@@ -301,9 +291,7 @@ TextTool/
 **处理流水线**（一次内存传递，最后一次性写入硬盘）：
 
 ```text
-
 读取文件 → 阈值合并 → 中文截断修复 → 标点截断修复 → 标点替换 → 写出文件
-
 ```
 
 #### Tab 2 · 文件拼接
@@ -369,21 +357,21 @@ TextTool/
 
 #### 方式一 · 直接运行 exe
 
+```bash
+double-click bin/Release/publish/TextTool.exe
+```
+
 #### 方式二 · 从源码运行
 
 ```bash
-
 dotnet run --project TextTool.csproj
-
 ```
 
 #### 发布命令
 
 ```bash
-
 dotnet publish -c Release -o bin/Release/publish
 # 输出 → bin/Release/publish/
-
 ```
 
 #### 命令行（CLI）
@@ -391,22 +379,18 @@ dotnet publish -c Release -o bin/Release/publish
 `texttool` — 同一引擎，可脚本化：
 
 ```bash
-
 texttool merge <文件...> [选项]      行合并 + 后处理
 texttool replace <文件...> [选项]    标点替换
 texttool vn <文件...> [选项]        视觉小说排版
 texttool join <目录> [选项]         文件拼接
 texttool update [--check]           自更新（--check 仅检查）
-
 ```
 
-运行 `texttool <命令> --help` 查看各命令选项。`update` 从 GitHub Release 下载新 CLI
-zip，校验 SHA-256 后自动替换自身（`--check` 可只检查不更新）。
+运行 `texttool <命令> --help` 查看各命令选项。`update` 从 GitHub Release 下载新 CLI zip，校验 SHA-256 后自动替换自身（`--check` 可只检查不更新）。
 
 ### 项目结构
 
 ```text
-
 TextTool/
 ├── TextTool.sln                  # 解决方案文件
 ├── TextTool.csproj               # .NET 8 WinForms, v2.3.0
@@ -477,7 +461,6 @@ TextTool/
 ├── app_config.json               # 语言与主题偏好（自动）
 ├── LICENSE                       # MIT 许可证
 └── README.md                     # 本文件
-
 ```
 
 ### 技术栈
@@ -527,10 +510,4 @@ TextTool/
 
 ---
 
-<div align="center">
-
 © 2026 **TwilightRain**
-
-[English](#english) · [中文](#chinese)
-
-</div>

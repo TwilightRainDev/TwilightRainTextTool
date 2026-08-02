@@ -1,0 +1,28 @@
+# 规范化行尾：文本文件一律以 LF 存储、检出
+# .editorconfig 要求 LF（end_of_line = lf），git 必须与之保持一致，
+# 否则 CI 的 dotnet format --verify-no-changes 会报 ENDOFLINE。
+
+*.cs       text eol=lf
+*.csproj   text eol=lf
+*.props    text eol=lf
+*.sln      text eol=lf
+*.json     text eol=lf
+*.md       text eol=lf
+*.yml      text eol=lf
+*.txt      text eol=lf
+*.gitignore text eol=lf
+*.editorconfig text eol=lf
+LICENSE    text eol=lf
+.githooks/** text eol=lf
+
+# 二进制文件不做行尾转换
+*.jpg      -text
+*.jpeg     -text
+*.png      -text
+*.ico      -text
+*.gif      -text
+*.exe      -text
+*.dll      -text
+*.pdb      -text
+*.zip      -text
+*.pfx      -text

@@ -50,6 +50,7 @@ coverage.json
 *.swp
 *~
 .vscode/
+CLAUDE.md
 
 ## ADR 模板（不含具体决策内容）
 doc/adr/_template.md

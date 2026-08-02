@@ -393,8 +393,8 @@ texttool update [--check]           自更新（--check 仅检查）
 ```text
 TextTool/
 ├── TextTool.sln                  # 解决方案文件
-├── TextTool.csproj               # .NET 8 WinForms, v2.3.0
-├── Directory.Build.props         # 统一版本号 (2.3.0)
+├── TextTool.csproj               # .NET 8 WinForms, v2.4.2
+├── Directory.Build.props         # 统一版本号 (2.4.2)
 ├── Program.cs                    # 入口，注册 GBK 编码支持
 ├── MainForm.cs                   # 主窗口 (~177 行，承载 5 个页签)
 │
@@ -487,6 +487,9 @@ TextTool/
 
 | 版本 | 日期 | 更新内容 |
 | :-- | :--- | :------- |
+| 2.4.2 | 2026-08-02 | 修复 CI 发布路径：GUI 主项目在仓库根目录，`dotnet publish` 改用 `TextTool.csproj` |
+| 2.4.1 | 2026-08-02 | 移除文档装饰 emoji 并声明不使用 emoji 风格；CLI/终端状态标记改为 `[成功]`/`[失败]` |
+| 2.4.0 | 2026-08-02 | CLI 自更新（`texttool update`/`--check`，GitHub Release 源 + SHA256 校验 + 延迟替换）；发布安装包 Authenticode 签名（可选）；`.gitattributes` 行尾规范化；CI 修复（setup-dotnet 缓存、README 中文锚点） |
 | 2.3.0 | 2026-08-01 | 迁移至 .NET 8 LTS；VN 引擎去 Steins;Gate 硬编码（角色/路线/场景正则迁至预设方案）；VN 页签单文件预览；i18n 漏洞修复；异步批处理+取消；共享对话正则；编码严格检测（全文件二次验证）；.editorconfig+分析器+pre-commit；方案表单共享基类；覆盖写前自动备份；方案导出/导入；TextTool.Core 类库 + CLI（merge/replace/vn/join）；自动 GitHub Release + 检查更新 |
 | 2.2.0 | 2026-07-20 | 新增「视觉小说」页签：将 VN 脚本从固定宽度硬换行排版为自然段落（对话/叙事/场景/路线识别）、对话补全标点、角色/路线预设方案；VN 引擎单元测试 |
 | 2.1.0 | 2026-07-19 | 代码库优化：统一主题遍历器、泛型JSON存储、统一配置管理、StringBuilder性能优化；危险覆盖模式；嵌入式默认方案 |

@@ -4,10 +4,10 @@
       统一版本号 — 所有项目和代码通过此文件获取版本。
       csproj 无需重复设置 <Version>，程序集版本自动从此继承。
 
-      AssemblyVersion = 2.4.1.0
-      AssemblyFileVersion = 2.4.1.0
+      AssemblyVersion = 2.4.2.0
+      AssemblyFileVersion = 2.4.2.0
     -->
-    <Version>2.4.1</Version>
+    <Version>2.4.2</Version>
 
     <!-- 代码质量（P2-3）：启用内置分析器 + 未定义严重度的规则默认不开 -->
     <AnalysisLevel>latest</AnalysisLevel>

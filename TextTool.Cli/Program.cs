@@ -1,3 +1,4 @@
+using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
 using TextTool.Services;
@@ -12,9 +13,13 @@ namespace TextTool.Cli;
 ///   texttool replace &lt;file...&gt; [--scheme &lt;name&gt;]
 ///   texttool vn &lt;file...&gt; [--scheme &lt;name...&gt;] [--max-para N] [--reformat-only|--punct-only]
 ///   texttool join &lt;directory&gt; [--pattern &quot;*.txt&quot;] [--output &lt;name&gt;]
+///   texttool update [--check]
 /// </summary>
 public static class Program
 {
+    private static readonly string Version =
+        typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
+
     public static int Main(string[] args)
     {
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -33,6 +38,7 @@ public static class Program
                 "replace" => RunReplace(args[1..]),
                 "vn" => RunVn(args[1..]),
                 "join" => RunJoin(args[1..]),
+                "update" => RunUpdate(args[1..]),
                 "help" or "--help" or "-h" => PrintUsage(),
                 _ => UnknownCommand(args[0]),
             };
@@ -194,6 +200,49 @@ public static class Program
         return success == files.Count ? 0 : 1;
     }
 
+    private static int RunUpdate(string[] args)
+    {
+        bool checkOnly = false;
+        foreach (string arg in args)
+        {
+            switch (arg)
+            {
+                case "--check":
+                    checkOnly = true;
+                    break;
+                case "--help" or "-h":
+                    PrintUpdateHelp();
+                    return 0;
+                default:
+                    throw new ArgumentException($"未知参数：{arg}");
+            }
+        }
+
+        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        var result = checkOnly
+            ? SelfUpdater.CheckAsync(client, Version).GetAwaiter().GetResult()
+            : SelfUpdater.UpdateAsync(client, Version).GetAwaiter().GetResult();
+
+        if (result.Error is not null)
+        {
+            Console.Error.WriteLine($"错误：{result.Error}");
+            return 1;
+        }
+
+        if (result.HasUpdate)
+        {
+            Console.WriteLine($"发现新版本：{result.LatestVersion}（当前 {Version}）");
+            Console.WriteLine("NEW_VERSION_AVAILABLE=true");
+            Console.WriteLine($"NEW_VERSION={result.LatestVersion}");
+        }
+        else
+        {
+            Console.WriteLine($"已是最新版本（{result.LatestVersion ?? Version}）。");
+            Console.WriteLine("NEW_VERSION_AVAILABLE=false");
+        }
+        return 0;
+    }
+
     private static int RunJoin(string[] args)
     {
         string? directory = null;
@@ -257,19 +306,26 @@ public static class Program
 
     private static int PrintUsage()
     {
-        Console.WriteLine("""
-            TextTool 命令行工具 v2.3.0
+        Console.WriteLine($"""
+            TextTool 命令行工具 v{Version}
 
             用法：
               texttool merge <文件...> [选项]      行合并 + 后处理
               texttool replace <文件...> [选项]    标点符号替换
               texttool vn <文件...> [选项]        视觉小说排版
               texttool join <目录> [选项]         文件拼接
+              texttool update [--check]           自更新（--check 仅检查）
 
             运行 texttool <命令> --help 查看各命令选项。
             """);
         return 0;
     }
+
+    private static void PrintUpdateHelp() =>
+        Console.WriteLine("""
+            update 选项：
+              --check       仅检查是否有新版本，不执行更新
+            """);
 
     private static void PrintMergeHelp() =>
         Console.WriteLine("""

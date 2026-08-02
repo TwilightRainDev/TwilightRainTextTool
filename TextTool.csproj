@@ -7,8 +7,8 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
-    <!-- 依赖框架部署：用户需自行安装 .NET 7 运行时 -->
-    <!-- 下载地址：https://dotnet.microsoft.com/download/dotnet/7.0 -->
+    <!-- 依赖框架部署：用户需自行安装 .NET 8 运行时 -->
+    <!-- 下载地址：https://dotnet.microsoft.com/download/dotnet/8.0 -->
     <SelfContained>false</SelfContained>
     <!-- 版本号统一在 Directory.Build.props 中管理 -->
     <ApplicationIcon>Resources\icon.ico</ApplicationIcon>

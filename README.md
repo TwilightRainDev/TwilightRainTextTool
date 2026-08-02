@@ -138,6 +138,22 @@ dotnet publish -c Release -o bin/Release/publish
 # Output → bin/Release/publish/
 ```
 
+#### Command Line (CLI)
+
+`texttool` — the same engine, scriptable:
+
+```
+texttool merge <file...> [options]     Line merge + post-processing
+texttool replace <file...> [options]   Punctuation replacement
+texttool vn <file...> [options]        Visual novel reformatting
+texttool join <dir> [options]          File joining
+texttool update [--check]              Self-update (--check = check only)
+```
+
+Run `texttool <command> --help` for each command's options. `update` downloads the
+new CLI zip from the GitHub Release, verifies its SHA-256, and swaps itself in
+(with `--check` you can check for a new version without updating).
+
 ### Project Structure
 
 ```
@@ -176,7 +192,7 @@ TextTool/
 │   └── TextUtils.cs               # Extension methods (EndsWithAny, etc.)
 │
 ├── TextTool.Cli/                  # Command-line entry (texttool.exe)
-│   └── Program.cs                 # merge / replace / vn / join subcommands
+│   └── Program.cs                 # merge / replace / vn / join / update subcommands
 │
 ├── Services/                      # UI-adjacent services
 │   ├── ThemeManager.cs            # Semantic color palette (dark/light mode)
@@ -360,6 +376,17 @@ dotnet run --project TextTool.csproj
 dotnet publish -c Release -o bin/Release/publish
 # 输出 → bin/Release/publish/
 ```
+#### 命令行（CLI）
+`texttool` — 同一引擎，可脚本化：
+```
+texttool merge <文件...> [选项]      行合并 + 后处理
+texttool replace <文件...> [选项]    标点替换
+texttool vn <文件...> [选项]        视觉小说排版
+texttool join <目录> [选项]         文件拼接
+texttool update [--check]           自更新（--check 仅检查）
+```
+运行 `texttool <命令> --help` 查看各命令选项。`update` 从 GitHub Release 下载新 CLI
+zip，校验 SHA-256 后自动替换自身（`--check` 可只检查不更新）。
 ### 项目结构
 
 ```
@@ -398,7 +425,7 @@ TextTool/
 │   └── TextUtils.cs               # 扩展方法（EndsWithAny 等）
 │
 ├── TextTool.Cli/                  # 命令行入口（texttool.exe）
-│   └── Program.cs                 # merge / replace / vn / join 子命令
+│   └── Program.cs                 # merge / replace / vn / join / update 子命令
 │
 ├── Services/                      # UI 相关服务
 │   ├── ThemeManager.cs            # 语义化色板（深色/浅色模式）

@@ -47,6 +47,24 @@ jobs:
           dotnet publish TextTool.Cli/TextTool.Cli.csproj -c Release -r win-x64 -o publish/TextTool.Cli
           echo "::notice::Published CLI to publish/TextTool.Cli"
 
+      - name: Sign binaries
+        if: startsWith(github.ref, 'refs/tags/v') && env.CODE_SIGN_CERT != ''
+        env:
+          CODE_SIGN_CERT: ${{ secrets.CODE_SIGN_CERT }}
+          CODE_SIGN_PASSWORD: ${{ secrets.CODE_SIGN_PASSWORD }}
+          TIMESTAMP_URL: ${{ secrets.TIMESTAMP_URL }}
+        shell: pwsh
+        run: |
+          $pfx = "$env:TEMP\codesign.pfx"
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:CODE_SIGN_CERT))
+          $timestamp = if ($env:TIMESTAMP_URL) { "/tr $env:TIMESTAMP_URL" } else { "" }
+          Get-ChildItem publish -Recurse -Include *.exe, *.dll |
+            ForEach-Object {
+              Write-Host "Signing $($_.Name)"
+              & signtool sign /f $pfx /p $env:CODE_SIGN_PASSWORD $timestamp /fd SHA256 $_.FullName
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
+
       - name: Package zip
         if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
@@ -55,13 +73,25 @@ jobs:
           Compress-Archive -Path publish/TextTool/* -DestinationPath "TextTool-GUI-$version-win-x64.zip"
           Compress-Archive -Path publish/TextTool.Cli/* -DestinationPath "TextTool-CLI-$version-win-x64.zip"
 
+      - name: Generate checksums
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          Get-ChildItem *.zip | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            Set-Content "$($_.FullName).sha256" "$hash  $($_.Name)"
+            Write-Host "SHA256: $($_.Name) = $hash"
+          }
+
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: |
             TextTool-GUI-*.zip
+            TextTool-GUI-*.zip.sha256
             TextTool-CLI-*.zip
+            TextTool-CLI-*.zip.sha256
 
   # 代码质量门禁：格式合规 + 分析器警告
   code-quality:

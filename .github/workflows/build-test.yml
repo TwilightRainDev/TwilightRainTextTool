@@ -7,6 +7,10 @@ on:
   pull_request:
     branches: [main]
 
+# 创建 GitHub Release 需要 contents: write（GITHUB_TOKEN 默认只读）
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest

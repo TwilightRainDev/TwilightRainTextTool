@@ -393,8 +393,8 @@ texttool update [--check]           自更新（--check 仅检查）
 ```text
 TextTool/
 ├── TextTool.sln                  # 解决方案文件
-├── TextTool.csproj               # .NET 8 WinForms, v2.4.2
-├── Directory.Build.props         # 统一版本号 (2.4.2)
+├── TextTool.csproj               # .NET 8 WinForms, v2.4.3
+├── Directory.Build.props         # 统一版本号 (2.4.3)
 ├── Program.cs                    # 入口，注册 GBK 编码支持
 ├── MainForm.cs                   # 主窗口 (~177 行，承载 5 个页签)
 │
@@ -487,6 +487,7 @@ TextTool/
 
 | 版本 | 日期 | 更新内容 |
 | :-- | :--- | :------- |
+| 2.4.3 | 2026-08-02 | 修复 GitHub Release 创建失败：workflow 补充 `permissions: contents: write`（默认 GITHUB_TOKEN 只读，无法创建 release） |
 | 2.4.2 | 2026-08-02 | 修复 CI 发布路径：GUI 主项目在仓库根目录，`dotnet publish` 改用 `TextTool.csproj` |
 | 2.4.1 | 2026-08-02 | 移除文档装饰 emoji 并声明不使用 emoji 风格；CLI/终端状态标记改为 `[成功]`/`[失败]` |
 | 2.4.0 | 2026-08-02 | CLI 自更新（`texttool update`/`--check`，GitHub Release 源 + SHA256 校验 + 延迟替换）；发布安装包 Authenticode 签名（可选）；`.gitattributes` 行尾规范化；CI 修复（setup-dotnet 缓存、README 中文锚点） |

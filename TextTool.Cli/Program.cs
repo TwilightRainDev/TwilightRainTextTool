@@ -87,7 +87,7 @@ public static class Program
         {
             var encoding = EncodingDetector.DetectStrict(file);
             var result = ProcessingPipeline.Run(file, encoding.Encoding, options, post, overwrite);
-            Console.WriteLine($"✓ {Path.GetFileName(file)} → {result.OutputPath}");
+            Console.WriteLine($"[成功] {Path.GetFileName(file)} → {result.OutputPath}");
             success++;
         }
         return success == files.Count ? 0 : 1;
@@ -128,7 +128,7 @@ public static class Program
             string replaced = PunctuationReplacer.Apply(content, rules);
             string outputPath = PathHelper.GetProcessedPath(file);
             File.WriteAllText(outputPath, replaced, new UTF8Encoding(true));
-            Console.WriteLine($"✓ {Path.GetFileName(file)} → {Path.GetFileName(outputPath)}");
+            Console.WriteLine($"[成功] {Path.GetFileName(file)} → {Path.GetFileName(outputPath)}");
             success++;
         }
         return success == files.Count ? 0 : 1;
@@ -194,7 +194,7 @@ public static class Program
 
             string outputPath = PathHelper.GetProcessedPath(file);
             File.WriteAllText(outputPath, content, new UTF8Encoding(true));
-            Console.WriteLine($"✓ {Path.GetFileName(file)} → {Path.GetFileName(outputPath)}");
+            Console.WriteLine($"[成功] {Path.GetFileName(file)} → {Path.GetFileName(outputPath)}");
             success++;
         }
         return success == files.Count ? 0 : 1;
@@ -266,7 +266,7 @@ public static class Program
             throw new ArgumentException($"目录不存在：{directory}");
 
         var (outputPath, count) = FileJoiner.Join(directory, pattern, output);
-        Console.WriteLine($"✓ 合并 {count} 个文件 → {outputPath}");
+        Console.WriteLine($"[成功] 合并 {count} 个文件 → {outputPath}");
         return 0;
     }
 

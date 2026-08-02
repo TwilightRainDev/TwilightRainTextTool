@@ -12,17 +12,17 @@ cd "$(dirname "$0")/.."
 
 # 增量构建（快速失败路径），失败即阻止提交
 if ! dotnet build TextTool.sln -c Release -warnaserror > /tmp/texttool-build.log 2>&1; then
-    echo "✗ 构建失败，已阻止提交。详情见 /tmp/texttool-build.log"
+    echo "[失败] 构建失败，已阻止提交。详情见 /tmp/texttool-build.log"
     tail -30 /tmp/texttool-build.log
     exit 1
 fi
 
 # 运行测试（不重新构建）
 if ! dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --no-build > /tmp/texttool-test.log 2>&1; then
-    echo "✗ 测试失败，已阻止提交。详情见 /tmp/texttool-test.log"
+    echo "[失败] 测试失败，已阻止提交。详情见 /tmp/texttool-test.log"
     tail -30 /tmp/texttool-test.log
     exit 1
 fi
 
-echo "✓ 构建与测试全部通过"
+echo "[成功] 构建与测试全部通过"
 exit 0

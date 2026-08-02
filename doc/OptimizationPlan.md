@@ -26,11 +26,11 @@
 
 | 维度 | 评价 |
 |------|------|
-| **架构清晰度** | ⭐⭐⭐⭐ 良好。三层分离（Controls/Services/Localization），ADR 文档完备 |
-| **模块内聚性** | ⭐⭐⭐⭐ 单文件单职责贯彻到位（除 ReplaceTabControl 略重） |
-| **代码重复率** | ⭐⭐⭐ 中等。约 400 LOC 存在重复模式（~20%），集中在中观层次 |
-| **测试覆盖** | ⭐⭐⭐⭐⭐ 优秀。54 测试覆盖所有 Service 边界情况 |
-| **可维护性** | ⭐⭐⭐⭐ 文档与代码同步好，但主题系统手写冗余较多 |
+| **架构清晰度** | 4/5 良好。三层分离（Controls/Services/Localization），ADR 文档完备 |
+| **模块内聚性** | 4/5 单文件单职责贯彻到位（除 ReplaceTabControl 略重） |
+| **代码重复率** | 3/5 中等。约 400 LOC 存在重复模式（~20%），集中在中观层次 |
+| **测试覆盖** | 5/5 优秀。54 测试覆盖所有 Service 边界情况 |
+| **可维护性** | 4/5 文档与代码同步好，但主题系统手写冗余较多 |
 
 ### 1.2 发现汇总（去重后）
 
@@ -413,14 +413,14 @@ public interface IStatusSource
 ### 5.1 现有测试覆盖（54 测试）
 
 ```text
-LineMerger        → 7 测试    ✅ 完整
-CjkParagraphMerger → 7 测试   ✅ 完整
-PunctTruncationMerger → 6 测试 ✅ 完整
-PunctuationReplacer → 7 测试   ✅ 完整
-TextUtils          → 10 测试   ✅ 完整
-EncodingDetector   → 8 测试    ✅ 完整
-ProcessingPipeline → 4 测试    ✅ 集成测试
-FileJoiner         → 5 测试    ✅ 完整
+LineMerger        → 7 测试    完整
+CjkParagraphMerger → 7 测试   完整
+PunctTruncationMerger → 6 测试 完整
+PunctuationReplacer → 7 测试   完整
+TextUtils          → 10 测试   完整
+EncodingDetector   → 8 测试    完整
+ProcessingPipeline → 4 测试    集成测试
+FileJoiner         → 5 测试    完整
 ```
 
 ### 5.2 优化后新增/更新测试
@@ -443,13 +443,13 @@ FileJoiner         → 5 测试    ✅ 完整
 
 | 阶段 | 当前状态 | 问题 |
 |------|----------|------|
-| **构建** | `dotnet build` + 隐式 restore | ✅ OK |
-| **测试** | `dotnet test` 通过 xUnit | ✅ OK，耗时 < 300ms |
-| **CI** | GitHub Actions（build-test.yml） | ✅ 已配置 |
-| **发布** | `dotnet publish -c Release` + 手工拷贝 exe | ⚠️ 无自动发布脚本 |
-| **代码审查** | 无 PR 模板，无自动化审查 | ⚠️ 无审查清单 |
-| **版本管理** | Directory.Build.props + README.md 版本列表 | ⚠️ README 版本表需手动同步 |
-| **编码检查** | 无 .editorconfig，无 StyleCop/Analyzer | ⚠️ 代码风格完全靠自觉 |
+| **构建** | `dotnet build` + 隐式 restore | OK |
+| **测试** | `dotnet test` 通过 xUnit | OK，耗时 < 300ms |
+| **CI** | GitHub Actions（build-test.yml） | 已配置 |
+| **发布** | `dotnet publish -c Release` + 手工拷贝 exe | 待改进：无自动发布脚本 |
+| **代码审查** | 无 PR 模板，无自动化审查 | 待改进：无审查清单 |
+| **版本管理** | Directory.Build.props + README.md 版本列表 | 待改进：README 版本表需手动同步 |
+| **编码检查** | 无 .editorconfig，无 StyleCop/Analyzer | 待改进：代码风格完全靠自觉 |
 
 ### 6.2 流程优化建议
 
@@ -501,14 +501,14 @@ dotnet publish .\TextTool.csproj -c Release -o dist
 
 | 优化项 | 风险等级 | 潜在问题 | 回退策略 |
 |--------|---------|----------|----------|
-| **H1-1 主题遍历器** | 🟡 中 | 递归遍历可能遗漏新控件类型；特殊配色覆盖被覆盖 | 逐个合并提交，每个 Tab 验证后推进；保留旧的 ApplyTheme 方法作为 fallback |
-| **H1-2 JsonFileStore** | 🟢 低 | 泛型序列化行为与现有一致 | 与旧实现并行运行一个版本，比对输出 JSON 一致后再删除旧代码 |
-| **H1-3 统一配置** | 🟡 中 | ThemeManager 初始化为 null 时 Loc 找不到语言 | 确保 CurrentLanguage 总有 fallback="zh_CN"；若旧版配置缺少 language 字段，自动使用默认值 |
-| **H2-3 StringBuilder.Replace** | 🟡 中 | StringBuilder.Replace 语义差异 | 对现有规则集运行 A/B 比较测试，确保输出完全一致 |
-| **H2-4 方案迁移至 JSON** | 🟢 低 | 嵌入式资源路径错误 | 运行时检查：资源加载失败→回退到旧版硬编码 GetDefaultSchemes() |
-| **H2-5 事件接口** | 🟢 低 | MainForm 订阅模式改变 | 接口添加后保留旧事件声明一个版本过渡 |
-| **并行化（H2 扩展）** | 🔴 高 | 多线程 UI 操作 + 文件竞争 | **暂不建议实施**——当前场景文件数量不大，收益有限。如需实施，使用 `Parallel.ForEach` + 每个 iteration 的 try-catch 隔离 |
-| **H3 全部** | 🟢 低 | 行级修改不影响功能 | 每个修改独立提交，测试通过后合并 |
+| **H1-1 主题遍历器** | 中 | 递归遍历可能遗漏新控件类型；特殊配色覆盖被覆盖 | 逐个合并提交，每个 Tab 验证后推进；保留旧的 ApplyTheme 方法作为 fallback |
+| **H1-2 JsonFileStore** | 低 | 泛型序列化行为与现有一致 | 与旧实现并行运行一个版本，比对输出 JSON 一致后再删除旧代码 |
+| **H1-3 统一配置** | 中 | ThemeManager 初始化为 null 时 Loc 找不到语言 | 确保 CurrentLanguage 总有 fallback="zh_CN"；若旧版配置缺少 language 字段，自动使用默认值 |
+| **H2-3 StringBuilder.Replace** | 中 | StringBuilder.Replace 语义差异 | 对现有规则集运行 A/B 比较测试，确保输出完全一致 |
+| **H2-4 方案迁移至 JSON** | 低 | 嵌入式资源路径错误 | 运行时检查：资源加载失败→回退到旧版硬编码 GetDefaultSchemes() |
+| **H2-5 事件接口** | 低 | MainForm 订阅模式改变 | 接口添加后保留旧事件声明一个版本过渡 |
+| **并行化（H2 扩展）** | 高 | 多线程 UI 操作 + 文件竞争 | **暂不建议实施**——当前场景文件数量不大，收益有限。如需实施，使用 `Parallel.ForEach` + 每个 iteration 的 try-catch 隔离 |
+| **H3 全部** | 低 | 行级修改不影响功能 | 每个修改独立提交，测试通过后合并 |
 
 ### 7.2 实施顺序建议
 

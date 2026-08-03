@@ -80,6 +80,12 @@
 
 判断是否被中间代理拦截：CLI 输出含"检测到本机 GitHub 流量经中间代理"即为开启状态。
 
+## 已知问题（2.4.4 发布实测发现，建议 2.4.5 修复）
+
+- **旧客户端无法自更新（≤2.4.3）**：仓库更名（TextTool → TwilightRainTextTool）后，GitHub API 对改名仓库的子资源不重定向，旧版硬编码的更新 URL 返回 404。**非本次改动引入**，已在新版 release 说明中披露；存量用户需手动下载。
+- **S302 类代理下下载超时**：实测 zip 经 S302 中继下载约 30s，客户端 30s 超时可能失败（报"下载失败：The request was canceled..."）。建议：下载用更长时间（如 90s）或按资源区分超时。
+- **替换脚本 wait-loop 脆弱**：`tasklist /fi "PID eq N"` 等待父进程退出存在 PID 复用竞态（父进程退出后 PID 被复用 → 循环空转）；非标准 PATH（含 Git/usr/bin）下 `timeout` 可能被 GNU timeout 遮蔽。建议：循环加次数上限（如 30 次后继续）、改用 `%SystemRoot%\System32\timeout.exe` 或 `ping -n 2 127.0.0.1 >nul`。
+
 ## 相关文件
 
 | 文件 | 作用 |

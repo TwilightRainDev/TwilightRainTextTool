@@ -80,4 +80,32 @@ public class SelfUpdaterTests
         Assert.Contains("robocopy \"C:\\Temp\\texttool-update\\2.4.0\\staging\" \"C:\\Tools My App\\texttool\"", script);
         Assert.Contains("start \"\" /d \"C:\\Tools My App\\texttool\" \"C:\\Tools My App\\texttool\\texttool.exe\"", script);
     }
+
+    [Fact]
+    public void BuildUpdateScript_EscapesPercentInPaths()
+    {
+        // cmd 中 % 在引号内仍会做环境变量展开（唯一可注入字符），必须转义为 %%
+        string script = SelfUpdater.BuildUpdateScript(
+            installDir: @"C:\Tools\50%Off\texttool",
+            stagingDir: @"C:\Temp\texttool-update\2.4.0\staging",
+            exePath: @"C:\Tools\50%Off\texttool\texttool.exe",
+            parentPid: 1234);
+
+        Assert.Contains(@"C:\Tools\50%%Off\texttool", script);
+        Assert.DoesNotContain(@"C:\Tools\50%Off", script);
+    }
+
+    [Fact]
+    public void BuildUpdateScript_HandlesRobocopyFailure()
+    {
+        string script = SelfUpdater.BuildUpdateScript(
+            installDir: @"C:\Tools\texttool",
+            stagingDir: @"C:\Temp\texttool-update\2.4.0\staging",
+            exePath: @"C:\Tools\texttool\texttool.exe",
+            parentPid: 1234);
+
+        Assert.Contains("/r:1 /w:1", script);     // 限制重试，避免 8 小时挂起
+        Assert.Contains("GEQ 8", script);         // 复制失败分支
+        Assert.Contains("已保留暂存目录", script); // 失败时不清空 staging
+    }
 }

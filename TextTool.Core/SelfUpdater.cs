@@ -1,17 +1,23 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 
 namespace TextTool.Services;
 
 /// <summary>
-/// CLI 自更新：查询最新 release → 下载 CLI zip + .sha256 → 校验 → 解压 staging → 延迟替换并重启。
+/// CLI 自更新：查询最新 release → 下载 CLI zip + .sha256 + .sig → 校验（SHA256 + 发布者签名）→ 解压 staging → 延迟替换并重启。
 /// 运行中的 exe 无法覆盖自身，因此排定一个批处理脚本在本进程退出后执行替换。
+///
+/// 信任模型：zip 与 .sha256 同信道下载仅作完整性检查；真正的信任根是 .sig 签名
+/// （ECDsa P-256，私钥仅存于开发机离线签名）。TLS 层由 UpdateClient 固定公共根 CA。
 /// </summary>
 public static class SelfUpdater
 {
-    public const string LatestReleaseUrl = "https://api.github.com/repos/TwilightRainDev/TextTool/releases/latest";
+    /// <summary>解压安全上限：防止恶意/异常安装包以 zip 炸弹形式打爆磁盘。</summary>
+    private const long MaxExtractBytes = 500L * 1024 * 1024;
+    private const int MaxEntryCount = 20_000;
 
     public sealed record UpdateResult(bool HasUpdate, string? LatestVersion = null, string? Error = null);
 
@@ -45,10 +51,16 @@ public static class SelfUpdater
         return true;
     }
 
-    /// <summary>构建延迟替换批处理脚本：等本进程退出 → 覆盖安装目录 → 启动新 exe → 清理。</summary>
+    /// <summary>
+    /// 构建延迟替换批处理脚本：等本进程退出 → 覆盖安装目录 → 启动新 exe → 清理。
+    /// 所有内插路径经 cmd 转义（%→%%，cmd 中 % 在引号内仍会展开，是唯一可注入字符）；
+    /// robocopy 失败（exit code ≥8）时保留 staging 并明确报错，不静默删掉唯一一致版本。
+    /// </summary>
     public static string BuildUpdateScript(string installDir, string stagingDir, string exePath, int parentPid)
     {
-        string target = installDir.TrimEnd('\\');
+        string target = EscapeCmd(installDir.TrimEnd('\\'));
+        string staging = EscapeCmd(stagingDir);
+        string exe = EscapeCmd(exePath);
         return $$"""
             @echo off
             setlocal
@@ -58,54 +70,93 @@ public static class SelfUpdater
                 timeout /t 1 /nobreak >nul
                 goto waitloop
             )
-            robocopy "{{stagingDir}}" "{{target}}" /e /is /it /nfl /ndl /njh /njs /nc /ns /np
-            start "" /d "{{target}}" "{{exePath}}"
-            rd /s /q "{{stagingDir}}"
+            robocopy "{{staging}}" "{{target}}" /e /is /it /r:1 /w:1 /nfl /ndl /njh /njs /nc /ns /np
+            if %errorlevel% GEQ 8 (
+                echo [TextTool] robocopy 复制失败（exit code %errorlevel%），已保留暂存目录 "{{staging}}"。 >&2
+                start "" /d "{{target}}" "{{exe}}"
+                exit /b 1
+            )
+            start "" /d "{{target}}" "{{exe}}"
+            rd /s /q "{{staging}}"
             del "%~f0"
             """;
     }
 
-    /// <summary>仅检查：返回是否有新版本。网络失败时 Error 非空。</summary>
+    private static string EscapeCmd(string value) => value.Replace("%", "%%");
+
+    /// <summary>仅检查：返回是否有新版本。网络失败/版本格式异常时 Error 非空。</summary>
     public static async Task<UpdateResult> CheckAsync(HttpClient client, string currentVersion)
     {
         string? latest = await UpdateChecker.GetLatestVersionAsync(client);
         if (latest is null)
             return new UpdateResult(false, Error: "无法查询最新版本（无网络或仓库无 release）");
+        if (!UpdateChecker.IsStrictVersion(latest))
+            return new UpdateResult(false, Error: $"最新发布版本号格式异常：{latest}");
         if (!UpdateChecker.IsNewer(currentVersion, latest))
             return new UpdateResult(false, LatestVersion: latest);
         return new UpdateResult(true, LatestVersion: latest);
     }
 
-    /// <summary>执行更新：下载 → 校验 → 解压 → 排定替换脚本。返回后本进程应立即退出。</summary>
+    /// <summary>执行更新：下载 → 校验（SHA256 + 签名）→ 解压 → 排定替换脚本。返回后本进程应立即退出。</summary>
     public static async Task<UpdateResult> UpdateAsync(HttpClient client, string currentVersion)
     {
-        var check = await CheckAsync(client, currentVersion);
-        if (check.Error is not null || !check.HasUpdate)
-            return check;
-
+        // 单次抓取 release（tag_name 与 assets 同源，消除双重请求 TOCTOU）
         using var release = await GetReleaseAsync(client);
         if (release is null)
             return new UpdateResult(false, Error: "无法查询最新版本（无网络或仓库无 release）");
 
-        string version = check.LatestVersion!;
+        string? version = release.RootElement.TryGetProperty("tag_name", out var tag) ? tag.GetString() : null;
+        if (version is null || !UpdateChecker.IsStrictVersion(version))
+            return new UpdateResult(false, Error: $"最新发布版本号格式异常：{version ?? "(无 tag_name)"}");
+        if (!UpdateChecker.IsNewer(currentVersion, version))
+            return new UpdateResult(false, LatestVersion: version);
+
         string? assetUrl = FindCliAssetUrl(release, version);
         if (assetUrl is null)
             return new UpdateResult(false, Error: $"未找到 CLI 安装包资产（{GetCliAssetName(version)}）");
 
-        string tempDir = Path.Combine(Path.GetTempPath(), "texttool-update", version);
-        Directory.CreateDirectory(tempDir);
-        string zipPath = Path.Combine(tempDir, GetCliAssetName(version));
+        // —— 下载：TLS 公共根固定 + 主机白名单，失败即中止 ——
+        byte[] zipBytes;
+        string shaContent;
+        byte[] sigBytes;
+        try
+        {
+            zipBytes = await UpdateClient.FetchBytesAsync(client, assetUrl);
+            shaContent = Encoding.UTF8.GetString(await UpdateClient.FetchBytesAsync(client, assetUrl + ".sha256"));
+            sigBytes = await UpdateClient.FetchBytesAsync(client, assetUrl + ".sig");
+        }
+        catch (Exception ex)
+        {
+            return new UpdateResult(false, Error: $"下载失败：{ex.Message}");
+        }
 
-        byte[] zipBytes = await client.GetByteArrayAsync(assetUrl);
-        string shaContent = await client.GetStringAsync(assetUrl + ".sha256");
+        // —— 校验：SHA256 防传输损坏；签名是信任根，缺失/无效一律中止（无 sha256-only 降级） ——
         if (!TryParseSha256(shaContent, out string expected) ||
             !Sha256Hex(zipBytes).Equals(expected, StringComparison.OrdinalIgnoreCase))
             return new UpdateResult(false, Error: "安装包校验失败（SHA256 不匹配），已中止更新");
 
+        if (!ReleaseVerifier.VerifyZipSignature(zipBytes, sigBytes))
+            return new UpdateResult(false, Error: "安装包签名校验失败（未签名或签名无效），已中止更新");
+
+        // —— 落盘与解压：随机临时目录 + 落盘后重读复验，消除可预测路径与写盘后替换面 ——
+        string tempDir = Path.Combine(Path.GetTempPath(), "texttool-update", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        string zipPath = Path.Combine(tempDir, GetCliAssetName(version));
         await File.WriteAllBytesAsync(zipPath, zipBytes);
 
+        byte[] onDisk = await File.ReadAllBytesAsync(zipPath);
+        if (!Sha256Hex(onDisk).Equals(expected, StringComparison.OrdinalIgnoreCase))
+            return new UpdateResult(false, Error: "安装包落盘校验失败，已中止更新");
+
         string staging = Path.Combine(tempDir, "staging");
-        if (Directory.Exists(staging)) Directory.Delete(staging, true);
+        using (var archive = ZipFile.OpenRead(zipPath))
+        {
+            long total = 0;
+            foreach (var entry in archive.Entries)
+                total += entry.Length;
+            if (archive.Entries.Count > MaxEntryCount || total > MaxExtractBytes)
+                return new UpdateResult(false, Error: "安装包解压内容超过安全上限，已中止更新");
+        }
         ZipFile.ExtractToDirectory(zipPath, staging);
 
         string exePath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "texttool.exe");
@@ -127,7 +178,7 @@ public static class SelfUpdater
 
     private static async Task<JsonDocument?> GetReleaseAsync(HttpClient client)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, LatestReleaseUrl);
+        using var request = new HttpRequestMessage(HttpMethod.Get, UpdateChecker.LatestReleaseUrl);
         request.Headers.Add("User-Agent", "TextTool-Updater");
         request.Headers.Add("Accept", "application/vnd.github+json");
         using var response = await client.SendAsync(request);

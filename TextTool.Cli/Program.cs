@@ -218,10 +218,15 @@ public static class Program
             }
         }
 
-        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        using var client = UpdateClient.Create(TimeSpan.FromSeconds(30));
+        UpdateClient.ResetMitmDetection();
         var result = checkOnly
             ? SelfUpdater.CheckAsync(client, Version).GetAwaiter().GetResult()
             : SelfUpdater.UpdateAsync(client, Version).GetAwaiter().GetResult();
+
+        if (UpdateClient.MitmDetected)
+            Console.WriteLine("警告：检测到本机 GitHub 流量经中间代理（TLS 根证书非公共 CA，如 S302 类加速器/企业代理）。" +
+                "安装包签名校验仍保证安全；如不信任该代理，可设置环境变量 TEXTTOOL_UPDATE_STRICT_TLS=1 强制拒绝后更新。");
 
         if (result.Error is not null)
         {

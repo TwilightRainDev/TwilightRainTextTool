@@ -1,5 +1,6 @@
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace TextTool.Services;
 
@@ -9,8 +10,25 @@ namespace TextTool.Services;
 /// </summary>
 public static class UpdateChecker
 {
-    /// <summary>仓库地址（用于拼接 API 与 release 页面）。</summary>
-    public const string RepositoryUrl = "https://github.com/TwilightRainDev/TextTool";
+    /// <summary>仓库地址（唯一事实来源）。改名只需改这里。</summary>
+    public const string RepositoryUrl = "https://github.com/TwilightRainDev/TwilightRainTextTool";
+
+    /// <summary>GitHub API 最新 release 端点（由 RepositoryUrl 推导，避免 URL 多处硬编码）。</summary>
+    public static string LatestReleaseUrl =>
+        RepositoryUrl.Replace("https://github.com/", "https://api.github.com/repos/") + "/releases/latest";
+
+    /// <summary>严格版本白名单：v 前缀可选、二至三段数字。拒绝负数/后缀垃圾/路径字符。</summary>
+    private static readonly Regex StrictVersionRegex =
+        new(@"^v?\d+\.\d+(\.\d+)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// 严格版本校验（进入任何路径/脚本构造前的强制门禁）：
+    /// 格式白名单 + 分量 ≤9999（拒绝溢出，如 9999999999.0.0 这类 tag 无法再永久瘫痪更新通道）。
+    /// </summary>
+    public static bool IsStrictVersion(string version) =>
+        StrictVersionRegex.IsMatch(version)
+        && TryParse(version, out var parsed)
+        && parsed.Major <= 9999 && parsed.Minor <= 9999 && parsed.Patch <= 9999;
 
     /// <summary>
     /// 查询 GitHub 最新 release 的 tag 名。
@@ -18,7 +36,7 @@ public static class UpdateChecker
     /// </summary>
     public static async Task<string?> GetLatestVersionAsync(HttpClient client)
     {
-        string url = "https://api.github.com/repos/TwilightRainDev/TextTool/releases/latest";
+        string url = LatestReleaseUrl;
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Add("User-Agent", "TextTool-Updater");
         request.Headers.Add("Accept", "application/vnd.github+json");

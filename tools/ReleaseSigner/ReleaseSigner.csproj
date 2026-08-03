@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>ReleaseSigner</AssemblyName>
+    <RootNamespace>ReleaseSigner</RootNamespace>
+    <!-- 独立工具：不参与主解决方案构建，仅发布流程手动调用 -->
+  </PropertyGroup>
+
+</Project>

@@ -85,12 +85,12 @@ public sealed class AboutTabControl : UserControl, IThemedTab
 
         var lblUrl = new LinkLabel
         {
-            Text = "https://github.com/TwilightRainDev/TextTool",
+            Text = UpdateChecker.RepositoryUrl,
             Font = new Font("Microsoft YaHei UI", 10f, FontStyle.Underline),
             LinkColor = ThemeManager.IsDarkMode ? Color.LightBlue : Color.SteelBlue,
             ActiveLinkColor = ThemeManager.IsDarkMode ? Color.DeepSkyBlue : Color.DarkBlue,
             AutoSize = true, Margin = new Padding(16, 0, 0, 0),
-            Tag = "https://github.com/TwilightRainDev/TextTool"
+            Tag = UpdateChecker.RepositoryUrl
         };
         lblUrl.LinkClicked += (_, _) =>
         {
@@ -274,7 +274,7 @@ public sealed class AboutTabControl : UserControl, IThemedTab
 
         try
         {
-            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+            using var client = UpdateClient.Create(TimeSpan.FromSeconds(10));
             string? latest = await UpdateChecker.GetLatestVersionAsync(client);
 
             if (latest == null)

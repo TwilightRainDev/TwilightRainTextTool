@@ -143,6 +143,12 @@ dotnet publish TextTool.csproj -c Release -r win-x64 -o publish/TextTool
 > behind (the .NET host may then load the wrong assembly). To clean local build
 > output, delete the `bin/` and `obj/` directories and rebuild.
 
+> Note: a RID build (`-r win-x64`) writes its intermediate output to
+> `bin/Release/net8.0-windows/win-x64/` — that is the SDK's standard output
+> location for RID builds (publish copies from there to `-o`), not a backup
+> copy. It is already gitignored; no need to delete it, the next publish
+> reuses it incrementally.
+
 #### Command Line (CLI)
 
 `texttool` — the same engine, scriptable:
@@ -399,6 +405,10 @@ dotnet publish TextTool.csproj -c Release -r win-x64 -o publish/TextTool
 > 注意：不要将 `-o` 指向 `bin/Release` 下 —— SDK 从不清理旧文件，publish
 > 输出会与构建产物混居，残留旧版本文件（.NET host 可能因此加载到错误版本的程序集）。
 > 清理本地构建产物：删除 `bin/`、`obj/` 目录后重新构建即可。
+
+> 注意：带 `-r win-x64` 的构建会把中间产物写入 `bin/Release/net8.0-windows/win-x64/` ——
+> 这是 SDK 对 RID 构建的标准输出目录（publish 从这里复制到 `-o`，并非备份副本），
+> 已被 git 忽略，无需手动删除，下次 publish 会增量复用。
 
 #### 命令行（CLI）
 

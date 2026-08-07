@@ -110,10 +110,12 @@ Three built-in languages, auto-detected from system UI culture:
 
 ### Running
 
-#### Option A — Direct EXE
+#### Option A — Build then run
 
 ```bash
-double-click bin/Release/publish/TextTool.exe
+dotnet build TextTool.sln -c Release
+# Output → bin/Release/net8.0-windows/TextTool.exe
+double-click bin/Release/net8.0-windows/TextTool.exe
 ```
 
 #### Option B — From source
@@ -122,12 +124,17 @@ double-click bin/Release/publish/TextTool.exe
 dotnet run --project TextTool.csproj
 ```
 
-#### Publishing
+#### Publishing (same command as CI)
 
 ```bash
-dotnet publish -c Release -o bin/Release/publish
-# Output → bin/Release/publish/
+dotnet publish TextTool.csproj -c Release -r win-x64 -o publish/TextTool
+# Output → publish/TextTool/   (official release artifact is the CI-built zip)
 ```
+
+> Note: do not point `-o` at `bin/Release` — the SDK never cleans old files, so
+> publish output would mix with build artifacts and leave stale-version files
+> behind (the .NET host may then load the wrong assembly). To clean local build
+> output, delete the `bin/` and `obj/` directories and rebuild.
 
 #### Command Line (CLI)
 
@@ -224,7 +231,7 @@ TextTool/
 |-----------|-----------|
 | Framework | .NET 8 WinForms |
 | UI construction | Pure C# (programmatic, no Designer files) |
-| Encoding | `System.Text.Encoding.CodePages` |
+| Encoding (GBK) | `System.Text.Encoding.CodePages`, built into the .NET 8 shared framework (no NuGet package) |
 | Output encoding | UTF-8 with BOM |
 | Persistence | JSON (`System.Text.Json`) |
 | i18n | Custom `Loc` singleton with JSON locale files |
@@ -355,10 +362,12 @@ TextTool/
 
 ### 运行方式
 
-#### 方式一 · 直接运行 exe
+#### 方式一 · 构建后运行
 
 ```bash
-double-click bin/Release/publish/TextTool.exe
+dotnet build TextTool.sln -c Release
+# 输出 → bin/Release/net8.0-windows/TextTool.exe
+double-click bin/Release/net8.0-windows/TextTool.exe
 ```
 
 #### 方式二 · 从源码运行
@@ -367,12 +376,16 @@ double-click bin/Release/publish/TextTool.exe
 dotnet run --project TextTool.csproj
 ```
 
-#### 发布命令
+#### 发布命令（与 CI 一致）
 
 ```bash
-dotnet publish -c Release -o bin/Release/publish
-# 输出 → bin/Release/publish/
+dotnet publish TextTool.csproj -c Release -r win-x64 -o publish/TextTool
+# 输出 → publish/TextTool/   （正式发布物为 CI 生成的 zip）
 ```
+
+> 注意：不要将 `-o` 指向 `bin/Release` 下 —— SDK 从不清理旧文件，publish
+> 输出会与构建产物混居，残留旧版本文件（.NET host 可能因此加载到错误版本的程序集）。
+> 清理本地构建产物：删除 `bin/`、`obj/` 目录后重新构建即可。
 
 #### 命令行（CLI）
 
@@ -469,7 +482,7 @@ TextTool/
 |------|------|
 | 框架 | .NET 8 WinForms |
 | UI 构建 | 纯 C# 代码（无 Designer 文件） |
-| 编码支持 | `System.Text.Encoding.CodePages` |
+| 编码支持 | `System.Text.Encoding.CodePages`（.NET 8 共享框架内置，无需 NuGet 包） |
 | 输出编码 | UTF-8 with BOM |
 | 持久化 | JSON（`System.Text.Json`） |
 | 国际化 | 自定义 `Loc` 单例 + JSON 语言包 |

@@ -108,6 +108,13 @@ Three built-in languages, auto-detected from system UI culture:
 - Choose **.NET Desktop Runtime 8.0 (x64)**
 - Missing runtime shows a guided download dialog
 
+### Installation (end users)
+
+Download the latest `TextTool-GUI-*-win-x64.zip` from the
+[GitHub Releases](https://github.com/TwilightRainDev/TwilightRainTextTool/releases),
+extract it, and double-click `TextTool.exe`. Requires .NET 8 Desktop Runtime
+(see Requirements above); a missing runtime shows a guided download dialog.
+
 ### Running
 
 #### Option A — Build then run
@@ -359,6 +366,12 @@ TextTool/
 - **.NET 8 Desktop Runtime**（Windows WinForms）
 - 从 [dotnet.microsoft.com/download/dotnet/8.0](https://dotnet.microsoft.com/download/dotnet/8.0) 下载安装 **.NET Desktop Runtime 8.0（x64）**
 - 缺少运行时会弹出引导对话框
+
+### 安装（最终用户）
+
+从 [GitHub Releases](https://github.com/TwilightRainDev/TwilightRainTextTool/releases)
+下载最新的 `TextTool-GUI-*-win-x64.zip`，解压后双击 `TextTool.exe` 即可运行。
+需先安装 .NET 8 Desktop Runtime（见上方系统要求）；缺少运行时会弹出引导对话框。
 
 ### 运行方式
 

@@ -127,7 +127,7 @@ public static class Program
             string content = File.ReadAllText(file, encoding.Encoding);
             string replaced = PunctuationReplacer.Apply(content, rules);
             string outputPath = PathHelper.GetProcessedPath(file);
-            File.WriteAllText(outputPath, replaced, new UTF8Encoding(true));
+            AtomicFile.WriteAllText(outputPath, replaced, new UTF8Encoding(true));
             Console.WriteLine($"[成功] {Path.GetFileName(file)} → {Path.GetFileName(outputPath)}");
             success++;
         }
@@ -156,6 +156,10 @@ public static class Program
 
         RequireFiles(files, "vn");
 
+        // maxPara=0 会在 SplitLongParagraph 中永不缩短文本，死循环占用 CPU
+        if (maxPara < 1)
+            throw new ArgumentException("--max-para 需要大于 0 的整数");
+
         HashSet<string> characters = new();
         List<string> routeNames = new();
         List<string> scenePatterns = new();
@@ -173,6 +177,20 @@ public static class Program
             }
         }
 
+        // 场景标记正则：经 RegexGuard 带超时构造，防止配置来源模式触发 ReDoS
+        Regex? scenePattern = null;
+        if (scenePatterns.Count > 0)
+        {
+            try
+            {
+                scenePattern = RegexGuard.Create(string.Join("|", scenePatterns));
+            }
+            catch (ArgumentException ex)
+            {
+                throw new ArgumentException($"场景标记规则非法（方案包损坏或被篡改）：{ex.Message}");
+            }
+        }
+
         int success = 0;
         foreach (var file in files)
         {
@@ -181,19 +199,23 @@ public static class Program
 
             if (doReformat)
             {
-                Regex? scenePattern = scenePatterns.Count > 0
-                    ? new Regex(string.Join("|", scenePatterns))
-                    : null;
-                var reformatter = new VNReformatterService(
-                    characters: characters, routeNames: routeNames,
-                    maxParaLength: maxPara, scenePattern: scenePattern);
-                content = reformatter.Reformat(content);
+                try
+                {
+                    content = new VNReformatterService(
+                        characters: characters, routeNames: routeNames,
+                        maxParaLength: maxPara, scenePattern: scenePattern).Reformat(content);
+                }
+                catch (RegexMatchTimeoutException)
+                {
+                    throw new InvalidOperationException(
+                        $"{Path.GetFileName(file)}：场景标记正则执行超时——所选方案的规则过于复杂，请编辑方案简化后重试");
+                }
             }
             if (doFixPunct)
                 content = new PunctFixerService().Fix(content);
 
             string outputPath = PathHelper.GetProcessedPath(file);
-            File.WriteAllText(outputPath, content, new UTF8Encoding(true));
+            AtomicFile.WriteAllText(outputPath, content, new UTF8Encoding(true));
             Console.WriteLine($"[成功] {Path.GetFileName(file)} → {Path.GetFileName(outputPath)}");
             success++;
         }

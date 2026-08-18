@@ -284,7 +284,7 @@ public sealed class VNEditCharacterSchemeDialog : Form
         string pattern = _txtScenePattern.Text.Trim();
         if (pattern.Length > 0)
         {
-            try { new Regex(pattern); }
+            try { RegexGuard.Create(pattern); }
             catch (Exception ex)
             {
                 MessageBox.Show(this, Loc.T("VnSchemeEditPatternInvalid", ex.Message), "", MessageBoxButtons.OK, MessageBoxIcon.Warning);

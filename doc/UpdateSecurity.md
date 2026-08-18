@@ -1,6 +1,6 @@
 # 自更新安全：签名发布流程与轮换手册
 
-> 配套 ADR：[ADR-008-update-trust-model](adr/ADR-008-update-trust-model.md)
+> 配套 ADR：[ADR-008-update-trust-model](adr/ADR-008-update-trust-model.md)、[ADR-009-single-folder-layout](adr/ADR-009-single-folder-layout.md)
 
 ## 信任模型（三层）
 
@@ -8,7 +8,7 @@
 |---|---|---|
 | 信任根 | ECDsa P-256 签名（`<zip>.sig`，私钥仅存开发机） | 中间人/仓库被攻破均无法伪造更新 |
 | 完整性 | `.sha256` 同信道校验（保留，防传输损坏） | 意外损坏/CDN 不一致 |
-| 传输 | TLS 默认 OS 信任（链根非公共 CA 时**仅告警**）+ 主机白名单 + 禁自动重定向 | 阻止任意主机下载/降级；暴露 MITM 存在 |
+| 传输 | TLS 默认 OS 信任（链根非公共 CA 时**仅告警**）+ 主机/443 端口白名单 + 禁自动重定向 + 响应大小上限（zip 256MB / API JSON 1MB，流式边读边限） | 阻止任意主机下载/降级；暴露 MITM 存在 |
 
 缺失任何一层都不降级：**`.sig` 缺失或验签失败 → 更新中止**，不退回 sha256-only。
 
@@ -80,6 +80,10 @@
 
 判断是否被中间代理拦截：CLI 输出含"检测到本机 GitHub 流量经中间代理"即为开启状态。
 
+## 降级重放检测（2026-08-04 新增）
+
+签名（`.sig`）不覆盖版本号，中间人理论上可把任一官方旧版安装包"重放"为最新版（签名全合法）。客户端在程序目录维护 `last_known_version.txt`（单目录哲学，ADR-009），记录最近一次**成功安装**的版本；当 GitHub 声称的"最新版"低于该记录时，检查/更新一律报错中止（提示"检测到版本回退"）。首次使用无记录文件，不触发；确认是开发者正常回滚时，删除该文件后重试。
+
 ## 已知问题（2.4.4 发布实测发现，建议 2.4.5 修复）
 
 - **旧客户端无法自更新（≤2.4.3）**：仓库更名（TextTool → TwilightRainTextTool）后，GitHub API 对改名仓库的子资源不重定向，旧版硬编码的更新 URL 返回 404。**非本次改动引入**，已在新版 release 说明中披露；存量用户需手动下载。
@@ -94,6 +98,9 @@
 | `TextTool.Core/ReleaseVerifier.cs` | 验签逻辑 |
 | `TextTool.Core/PinnedRoots.cs` + `pinned_roots.txt` | TLS 锚点 |
 | `TextTool.Core/UpdateClient.cs` | HttpClient 工厂（固定/白名单/重定向） |
-| `TextTool.Core/SelfUpdater.cs` | 更新主流程 |
+| `TextTool.Core/SelfUpdater.cs` | 更新主流程（含解压安全上限、降级检测） |
 | `TextTool.Core/UpdateChecker.cs` | 严格版本校验 |
+| `TextTool.Core/LastKnownVersion.cs` | 降级重放检测记录（`last_known_version.txt`） |
+| `TextTool.Core/RegexGuard.cs` | 正则统一超时（ReDoS 防御，2s） |
+| `TextTool.Core/AtomicFile.cs` | 原子文件写入（临时文件 + Move） |
 | `tools/ReleaseSigner/` | 离线签名工具（keygen/sign/verify/fingerprint） |

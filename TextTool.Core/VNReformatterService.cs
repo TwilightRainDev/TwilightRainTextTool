@@ -19,7 +19,7 @@ public sealed class VNReformatterService
 
     private static readonly List<string> EmptyRouteNames = new();
 
-    private static readonly Regex DefaultScenePattern = new(
+    private static readonly Regex DefaultScenePattern = RegexGuard.Create(
         @"(?<=── )\S+(?= ──)",
         RegexOptions.Compiled);
 
@@ -41,7 +41,7 @@ public sealed class VNReformatterService
         '、', '…', '—', '～', '·', '.', '!', '?', ';', ':',
     };
 
-    private static readonly Regex RepeatedEnder = new(
+    private static readonly Regex RepeatedEnder = RegexGuard.Create(
         @"([。！？])\1+", RegexOptions.Compiled);
 
     // ================================================================
@@ -57,6 +57,10 @@ public sealed class VNReformatterService
     {
         _characters = new HashSet<string>(characters ?? EmptyCharacters);
         _routeNames = new List<string>(routeNames ?? EmptyRouteNames);
+        // maxPara=0 会让 SplitLongParagraph 永远切割不出内容，陷入死循环
+        if (maxParaLength < 1)
+            throw new ArgumentOutOfRangeException(nameof(maxParaLength), "段落最大字数必须 ≥ 1");
+
         _maxParaLen = maxParaLength;
         _minParaLen = minParaLength;
         _scenePattern = scenePattern ?? DefaultScenePattern;
@@ -65,11 +69,11 @@ public sealed class VNReformatterService
         if (_characters.Count > 0)
         {
             var sorted = _characters.OrderByDescending(c => c.Length).Select(Regex.Escape);
-            _charPattern = new Regex("(?:" + string.Join("|", sorted) + ")", RegexOptions.Compiled);
+            _charPattern = RegexGuard.Create("(?:" + string.Join("|", sorted) + ")", RegexOptions.Compiled);
         }
         else
         {
-            _charPattern = new Regex(@"\b(?!\b)", RegexOptions.Compiled); // 永不匹配
+            _charPattern = RegexGuard.Create(@"\b(?!\b)", RegexOptions.Compiled); // 永不匹配
         }
     }
 
@@ -105,7 +109,7 @@ public sealed class VNReformatterService
     {
         string text = File.ReadAllText(inputPath, encoding);
         string result = Reformat(text);
-        File.WriteAllText(outputPath, result, new UTF8Encoding(true));
+        AtomicFile.WriteAllText(outputPath, result, new UTF8Encoding(true));
     }
 
     // ================================================================
@@ -383,7 +387,7 @@ public sealed class VNReformatterService
         }
 
         string result = string.Join("\n", outLines);
-        result = Regex.Replace(result, @"\n{3,}", "\n\n");
+        result = Regex.Replace(result, @"\n{3,}", "\n\n", RegexOptions.None, RegexGuard.Timeout);
         return result;
     }
 
@@ -403,8 +407,8 @@ public sealed class VNReformatterService
         s = s.Replace("，？", "？");
         s = s.Replace("。，", "，");
         s = RepeatedEnder.Replace(s, "$1");  // 2+ 重复句末标点折叠为 1（含链式 Replace 处理不到的 3+ 场景）
-        s = Regex.Replace(s, @"\.{3,}", "…");
-        s = Regex.Replace(s, @"…{2,}", "……");
+        s = Regex.Replace(s, @"\.{3,}", "…", RegexOptions.None, RegexGuard.Timeout);
+        s = Regex.Replace(s, @"…{2,}", "……", RegexOptions.None, RegexGuard.Timeout);
         return s;
     }
 

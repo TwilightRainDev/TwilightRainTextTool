@@ -61,7 +61,16 @@ public sealed class MainForm : Form
         catch { }
 
         // ---- 加载共享规则列表 ----
-        _rules = ReplaceRuleStore.Load();
+        // 配置文件损坏必须显式报错（ADR-009），不能让规则无声消失后以空规则运行
+        try
+        {
+            _rules = ReplaceRuleStore.Load();
+        }
+        catch (InvalidDataException ex)
+        {
+            MessageBox.Show(ex.Message, "配置文件损坏", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            _rules = new List<ReplaceRule>();
+        }
 
         // ---- TabControl ----
         _tabControl = new TabControl

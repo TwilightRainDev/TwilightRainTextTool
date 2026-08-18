@@ -447,7 +447,7 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource, IThemedTab
                 string outputPath = PathHelper.GetProcessedPath(path);
                 string content = File.ReadAllText(path, encoding.Encoding);
                 string replaced = PunctuationReplacer.Apply(content, rules);
-                File.WriteAllText(outputPath, replaced, new UTF8Encoding(true));
+                AtomicFile.WriteAllText(outputPath, replaced, new UTF8Encoding(true));
             },
             progress,
             token);
@@ -502,7 +502,16 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource, IThemedTab
 
     private void OnPresetSchemes(object? sender, EventArgs e)
     {
-        var schemes = ReplaceSchemeStore.Load();
+        List<ReplaceScheme> schemes;
+        try
+        {
+            schemes = ReplaceSchemeStore.Load();
+        }
+        catch (InvalidDataException ex)
+        {
+            MessageBox.Show(ex.Message, "", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
         using var dlg = new SchemeSelectionForm(schemes);
         if (dlg.ShowDialog(this) == DialogResult.OK)
         {

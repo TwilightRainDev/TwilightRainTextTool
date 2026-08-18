@@ -22,6 +22,9 @@ public static class UpdateClient
     private const int MaxRedirectHops = 5;
     private const long MaxDownloadBytes = 256L * 1024 * 1024;
 
+    /// <summary>GitHub API JSON 响应上限（release 元数据远小于此，仅防异常响应吃满内存）。</summary>
+    public const long MaxJsonBytes = 1L * 1024 * 1024;
+
     /// <summary>
     /// 严格模式环境变量：设置后 TLS 链根必须为公共 CA，否则拒绝连接。
     /// 默认关闭——国内 DNS 污染下 S302 类加速器/企业代理是常见连法（TLS 被其 MITM），
@@ -66,9 +69,13 @@ public static class UpdateClient
         return true; // 默认模式放行（签名兜底），仅记录检测结果
     }
 
-    /// <summary>下载地址白名单：仅 https + 允许主机（含每次重定向跳转）。</summary>
+    /// <summary>
+    /// 下载地址白名单：仅 https + 默认 443 端口 + 允许主机（含每次重定向跳转）。
+    /// Uri.Port 在未显式指定端口时返回方案默认值 443，故 `:4444` 等非常规端口一律拒绝。
+    /// </summary>
     public static bool IsAllowedDownloadUrl(Uri url) =>
         url.Scheme == Uri.UriSchemeHttps
+        && url.Port == 443
         && AllowedHosts.Contains(url.Host, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
@@ -97,14 +104,31 @@ public static class UpdateClient
 
             response.EnsureSuccessStatusCode();
 
-            // 响应大小上限（Content-Length 缺失/伪造时以读后长度兜底）
-            if (response.Content.Headers.ContentLength is { } declared && declared > MaxDownloadBytes)
-                throw new InvalidOperationException($"响应超过大小上限：{url}");
-
-            byte[] bytes = await response.Content.ReadAsByteArrayAsync();
-            if (bytes.LongLength > MaxDownloadBytes)
-                throw new InvalidOperationException($"响应超过大小上限：{url}");
-            return bytes;
+            return await ReadBoundedAsync(response, MaxDownloadBytes);
         }
+    }
+
+    /// <summary>
+    /// 流式读取响应体并实时统计字节数（声明长度可伪造，以实读为准）——
+    /// 超上限立即中止，不会先整体缓冲进内存。
+    /// </summary>
+    public static async Task<byte[]> ReadBoundedAsync(HttpResponseMessage response, long maxBytes)
+    {
+        if (response.Content.Headers.ContentLength is { } declared && declared > maxBytes)
+            throw new InvalidOperationException($"响应超过大小上限：{maxBytes} 字节");
+
+        await using var stream = await response.Content.ReadAsStreamAsync();
+        using var buffer = new MemoryStream();
+        var chunk = new byte[81920];
+        long total = 0;
+        int read;
+        while ((read = await stream.ReadAsync(chunk)) > 0)
+        {
+            total += read;
+            if (total > maxBytes)
+                throw new InvalidOperationException($"响应超过大小上限：{maxBytes} 字节");
+            buffer.Write(chunk, 0, read);
+        }
+        return buffer.ToArray();
     }
 }

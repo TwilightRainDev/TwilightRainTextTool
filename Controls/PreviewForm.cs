@@ -102,7 +102,7 @@ public sealed class PreviewForm : Form
     {
         try
         {
-            File.WriteAllLines(_outputPath, _lines, Utf8Bom);
+            AtomicFile.WriteAllLines(_outputPath, _lines, Utf8Bom);
             MessageBox.Show(this, Loc.T("MsgSavedTo", _outputPath),
                 Loc.T("MsgSaveTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
             DialogResult = DialogResult.OK;

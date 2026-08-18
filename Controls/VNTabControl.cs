@@ -278,7 +278,16 @@ public sealed class VNTabControl : UserControl, IStatusSource, IThemedTab
 
     private void OnPresetSchemes(object? sender, EventArgs e)
     {
-        var schemes = VNCharacterSchemeStore.Load();
+        List<VNCharacterScheme> schemes;
+        try
+        {
+            schemes = VNCharacterSchemeStore.Load();
+        }
+        catch (InvalidDataException ex)
+        {
+            MessageBox.Show(ex.Message, "", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
         using var dlg = new VNCharacterSchemeForm(schemes);
 
         // 恢复上次的勾选状态
@@ -361,6 +370,19 @@ public sealed class VNTabControl : UserControl, IStatusSource, IThemedTab
 
         try
         {
+            // 场景标记正则：经 RegexGuard 带超时构造，防止配置来源模式触发 ReDoS
+            Regex? scenePattern;
+            try
+            {
+                scenePattern = scenePatterns.Count > 0
+                    ? RegexGuard.Create(string.Join("|", scenePatterns))
+                    : null;
+            }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidOperationException($"场景标记正则非法（方案文件损坏或被篡改）：{ex.Message}");
+            }
+
             (int Success, bool Cancelled) result;
 
             if (files.Length == 1)
@@ -374,16 +396,7 @@ public sealed class VNTabControl : UserControl, IStatusSource, IThemedTab
                 {
                     string c = File.ReadAllText(path, encoding.Encoding);
                     if (doReformat)
-                    {
-                        Regex? scenePattern = scenePatterns.Count > 0
-                            ? new Regex(string.Join("|", scenePatterns))
-                            : null;
-                        c = new VNReformatterService(
-                            characters: characters,
-                            routeNames: routeNames,
-                            maxParaLength: maxPara,
-                            scenePattern: scenePattern).Reformat(c);
-                    }
+                        c = ReformatContent(c, characters, routeNames, maxPara, scenePattern);
                     if (doFixPunct)
                         c = new PunctFixerService().Fix(c);
                     return c;
@@ -418,19 +431,10 @@ public sealed class VNTabControl : UserControl, IStatusSource, IThemedTab
                         string outputPath = PathHelper.GetProcessedPath(path);
                         string content = File.ReadAllText(path, encoding.Encoding);
                         if (doReformat)
-                        {
-                            Regex? scenePattern = scenePatterns.Count > 0
-                                ? new Regex(string.Join("|", scenePatterns))
-                                : null;
-                            content = new VNReformatterService(
-                                characters: characters,
-                                routeNames: routeNames,
-                                maxParaLength: maxPara,
-                                scenePattern: scenePattern).Reformat(content);
-                        }
+                            content = ReformatContent(content, characters, routeNames, maxPara, scenePattern);
                         if (doFixPunct)
                             content = new PunctFixerService().Fix(content);
-                        File.WriteAllText(outputPath, content, new UTF8Encoding(true));
+                        AtomicFile.WriteAllText(outputPath, content, new UTF8Encoding(true));
                     },
                     progress,
                     token);
@@ -480,6 +484,25 @@ public sealed class VNTabControl : UserControl, IStatusSource, IThemedTab
     // ================================================================
 
     private static Label MakeLabel(string text) => ControlsHelper.MakeLabel(text);
+
+    /// <summary>执行排版；场景正则超时（ReDoS 防御）时翻译为明确的中文错误。</summary>
+    private static string ReformatContent(
+        string content, HashSet<string> characters, List<string> routeNames, int maxPara, Regex? scenePattern)
+    {
+        try
+        {
+            return new VNReformatterService(
+                characters: characters,
+                routeNames: routeNames,
+                maxParaLength: maxPara,
+                scenePattern: scenePattern).Reformat(content);
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            throw new InvalidOperationException(
+                "场景标记正则执行超时——所选方案的规则过于复杂，请编辑方案简化后重试");
+        }
+    }
 
     private static ThemedFlatButton MakePrimaryButton(string text) => ControlsHelper.MakePrimaryButton(text);
 }

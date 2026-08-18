@@ -63,7 +63,7 @@ public static class SelfUpdater
         string exe = EscapeCmd(exePath);
         return $$"""
             @echo off
-            setlocal
+            setlocal DisableDelayedExpansion
             :waitloop
             tasklist /fi "PID eq {{parentPid}}" >nul 2>&1
             if %errorlevel%==0 (
@@ -84,7 +84,7 @@ public static class SelfUpdater
 
     private static string EscapeCmd(string value) => value.Replace("%", "%%");
 
-    /// <summary>仅检查：返回是否有新版本。网络失败/版本格式异常时 Error 非空。</summary>
+    /// <summary>仅检查：返回是否有新版本。网络失败/版本格式异常/版本回退时 Error 非空。</summary>
     public static async Task<UpdateResult> CheckAsync(HttpClient client, string currentVersion)
     {
         string? latest = await UpdateChecker.GetLatestVersionAsync(client);
@@ -92,6 +92,9 @@ public static class SelfUpdater
             return new UpdateResult(false, Error: "无法查询最新版本（无网络或仓库无 release）");
         if (!UpdateChecker.IsStrictVersion(latest))
             return new UpdateResult(false, Error: $"最新发布版本号格式异常：{latest}");
+        string? recorded = LastKnownVersion.Read();
+        if (IsDowngradeAttempt(latest, recorded))
+            return new UpdateResult(false, Error: DowngradeErrorMessage(latest, recorded!));
         if (!UpdateChecker.IsNewer(currentVersion, latest))
             return new UpdateResult(false, LatestVersion: latest);
         return new UpdateResult(true, LatestVersion: latest);
@@ -108,6 +111,9 @@ public static class SelfUpdater
         string? version = release.RootElement.TryGetProperty("tag_name", out var tag) ? tag.GetString() : null;
         if (version is null || !UpdateChecker.IsStrictVersion(version))
             return new UpdateResult(false, Error: $"最新发布版本号格式异常：{version ?? "(无 tag_name)"}");
+        string? recorded = LastKnownVersion.Read();
+        if (IsDowngradeAttempt(version, recorded))
+            return new UpdateResult(false, Error: DowngradeErrorMessage(version, recorded!));
         if (!UpdateChecker.IsNewer(currentVersion, version))
             return new UpdateResult(false, LatestVersion: version);
 
@@ -149,15 +155,14 @@ public static class SelfUpdater
             return new UpdateResult(false, Error: "安装包落盘校验失败，已中止更新");
 
         string staging = Path.Combine(tempDir, "staging");
-        using (var archive = ZipFile.OpenRead(zipPath))
+        try
         {
-            long total = 0;
-            foreach (var entry in archive.Entries)
-                total += entry.Length;
-            if (archive.Entries.Count > MaxEntryCount || total > MaxExtractBytes)
-                return new UpdateResult(false, Error: "安装包解压内容超过安全上限，已中止更新");
+            ExtractWithLimits(zipPath, staging, MaxExtractBytes, MaxEntryCount);
         }
-        ZipFile.ExtractToDirectory(zipPath, staging);
+        catch (InvalidOperationException ex)
+        {
+            return new UpdateResult(false, Error: ex.Message);
+        }
 
         string exePath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "texttool.exe");
         string installDir = Path.GetDirectoryName(exePath) ?? AppContext.BaseDirectory;
@@ -173,7 +178,70 @@ public static class SelfUpdater
             WindowStyle = ProcessWindowStyle.Hidden,
         });
 
+        // 安装流程已排定（签名校验全过），记录本次成功安装的版本
+        LastKnownVersion.Write(version);
+
         return new UpdateResult(true, LatestVersion: version);
+    }
+
+    /// <summary>
+    /// 最新发布版本低于本机记录版本 = 疑似降级重放
+    /// （中间人把官方旧版伪装成"最新"，把用户永久钉在旧版本上）。
+    /// </summary>
+    public static bool IsDowngradeAttempt(string latestVersion, string? recordedVersion) =>
+        recordedVersion is not null
+        && UpdateChecker.IsStrictVersion(recordedVersion)
+        && UpdateChecker.IsNewer(latestVersion, recordedVersion);
+
+    private static string DowngradeErrorMessage(string latestVersion, string recordedVersion) =>
+        $"检测到版本回退：最新发布 {latestVersion} 低于本机已记录版本 {recordedVersion}。" +
+        "可能遭中间人降级或发布回滚；确认是正常回滚时，删除程序目录下的 last_known_version.txt 后重试。";
+
+    /// <summary>
+    /// 解压 zip 到 staging，边解压边统计实际写出的字节数——
+    /// zip 条目声明长度可伪造，不能只信 entry.Length；同时拒绝路径穿越（zip slip）。
+    /// 任一超限立即中止并抛出，不留下部分解压的 staging。
+    /// </summary>
+    public static void ExtractWithLimits(string zipPath, string stagingDir, long maxBytes, int maxEntries)
+    {
+        Directory.CreateDirectory(stagingDir);
+        string stagingRoot = Path.GetFullPath(stagingDir);
+
+        using var archive = ZipFile.OpenRead(zipPath);
+        if (archive.Entries.Count > maxEntries)
+            throw new InvalidOperationException($"安装包条目数超过安全上限（{maxEntries}），已中止更新");
+
+        long total = 0;
+        foreach (var entry in archive.Entries)
+        {
+            string dest = Path.GetFullPath(Path.Combine(stagingDir, entry.FullName));
+            if (!dest.StartsWith(stagingRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("安装包包含非法路径条目（zip slip），已中止更新");
+
+            if (entry.Name.Length == 0)  // 目录条目
+            {
+                Directory.CreateDirectory(dest);
+                continue;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+            long written = 0;
+            using (var src = entry.Open())
+            using (var dst = File.Create(dest))
+            {
+                var chunk = new byte[81920];
+                int read;
+                while ((read = src.Read(chunk, 0, chunk.Length)) > 0)
+                {
+                    written += read;
+                    if (total + written > maxBytes)
+                        throw new InvalidOperationException(
+                            $"安装包解压内容超过安全上限（{maxBytes} 字节），已中止更新");
+                    dst.Write(chunk, 0, read);
+                }
+            }
+            total += written;
+        }
     }
 
     private static async Task<JsonDocument?> GetReleaseAsync(HttpClient client)
@@ -184,7 +252,8 @@ public static class SelfUpdater
         using var response = await client.SendAsync(request);
         if (!response.IsSuccessStatusCode)
             return null;
-        return JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        byte[] json = await UpdateClient.ReadBoundedAsync(response, UpdateClient.MaxJsonBytes);
+        return JsonDocument.Parse(json);
     }
 
     private static string Sha256Hex(byte[] data) => Convert.ToHexString(SHA256.HashData(data)).ToLowerInvariant();

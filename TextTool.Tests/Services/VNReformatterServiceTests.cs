@@ -308,4 +308,27 @@ public class VNReformatterServiceTests
             if (File.Exists(outPath)) File.Delete(outPath);
         }
     }
+
+    // ================================================================
+    //  安全加固（2026-08 审计）
+    // ================================================================
+
+    [Fact]
+    public void Ctor_MaxParaZero_Throws()
+    {
+        // maxPara=0 会让 SplitLongParagraph 永不缩短文本，死循环占满 CPU
+        Assert.Throws<ArgumentOutOfRangeException>(() => new VNReformatterService(maxParaLength: 0));
+    }
+
+    [Fact]
+    public void Reformat_CatastrophicScenePattern_TimesOutNotHangs()
+    {
+        // 配置来源正则必须带超时（ReDoS 防御）：灾难性回溯应在毫秒级超时后抛异常，
+        // 而不是无限挂起。此处用 50ms 超时 + (a+)+$ 经典回溯模式验证。
+        var pathological = new Regex("(a+)+$", RegexOptions.None, TimeSpan.FromMilliseconds(50));
+        var svc = new VNReformatterService(scenePattern: pathological);
+
+        string bomb = new string('a', 40) + "b";
+        Assert.Throws<RegexMatchTimeoutException>(() => svc.Reformat(bomb));
+    }
 }

@@ -18,8 +18,8 @@ public static class UpdateChecker
         RepositoryUrl.Replace("https://github.com/", "https://api.github.com/repos/") + "/releases/latest";
 
     /// <summary>严格版本白名单：v 前缀可选、二至三段数字。拒绝负数/后缀垃圾/路径字符。</summary>
-    private static readonly Regex StrictVersionRegex =
-        new(@"^v?\d+\.\d+(\.\d+)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    private static readonly Regex StrictVersionRegex = RegexGuard.Create(
+        @"^v?\d+\.\d+(\.\d+)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     /// <summary>
     /// 严格版本校验（进入任何路径/脚本构造前的强制门禁）：
@@ -45,7 +45,7 @@ public static class UpdateChecker
         if (!response.IsSuccessStatusCode)
             return null;
 
-        string json = await response.Content.ReadAsStringAsync();
+        byte[] json = await UpdateClient.ReadBoundedAsync(response, UpdateClient.MaxJsonBytes);
         using var doc = JsonDocument.Parse(json);
         return doc.RootElement.TryGetProperty("tag_name", out var tag) ? tag.GetString() : null;
     }

@@ -10,6 +10,8 @@ public class UpdateClientTests
     [InlineData("https://objects.githubusercontent.com/x/y.zip", true)]
     [InlineData("https://release-assets.githubusercontent.com/x/y.zip", true)]
     [InlineData("https://api.github.com/repos/x/y/releases/latest", true)]
+    [InlineData("https://github.com:4444/a.zip", false)]                       // 非常规端口
+    [InlineData("https://github.com:443/a.zip", true)]                         // 显式 443 放行
     [InlineData("http://github.com/a/b.zip", false)]                        // 非 https
     [InlineData("https://evil.com/a.zip", false)]                           // 任意主机
     [InlineData("https://github.com.attacker.com/a.zip", false)]            // 相似域名

@@ -86,7 +86,7 @@ public static class ThemeManager
                 ["language"] = Loc.CurrentLang,
                 ["darkMode"] = IsDarkMode
             };
-            File.WriteAllText(ConfigPath, JsonSerializer.Serialize(config), Encoding.UTF8);
+            AtomicFile.WriteAllText(ConfigPath, JsonSerializer.Serialize(config), Encoding.UTF8);
         }
         catch { }
     }

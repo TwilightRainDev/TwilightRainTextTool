@@ -1,56 +1,10 @@
-# .NET 标准 gitignore
-# https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
+# Codegraph
+.codegraph/
 
-## 编译产物
+# Build outputs
 bin/
 obj/
-publish/
 
-## 用户特定文件
+# IDE user config / shortcuts
 *.user
-*.suo
-*.userosscache
-*.sln.docstates
-*.userprefs
-
-## NuGet
-packages/
-*.nupkg
-**/[Pp]ackages/*
-!**/[Pp]ackages/build/
-*.nuget.props
-*.nuget.targets
-
-## VS 缓存
-.vs/
-*.csproj.user
-*.dbmdl
-*.jfm
-
-## 运行时生成的文件
-replace_rules.json
-app_config.json
-vn_schemes.json
-
-## 快捷方式
 *.lnk
-
-## 开发文档（含 git 操作记录，可能含敏感信息）
-doc/Publish.md
-
-## 测试产物
-TestResults/
-coverage/
-*.opencover.xml
-*.cobertura.xml
-coverage.json
-
-## IDE
-.idea/
-*.swp
-*~
-.vscode/
-CLAUDE.md
-
-## ADR 模板（不含具体决策内容）
-doc/adr/_template.md

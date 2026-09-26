@@ -37,34 +37,55 @@
 
 - 修改：`TextTool.Core/ReplaceScheme.cs:41`
 - 修改：`TextTool.Core/VNCharacterScheme.cs:47`
+- 修改：`TextTool.Core/TextTool.Core.csproj`（加 `InternalsVisibleTo`）
 - 修改：`TextTool.Tests/Services/DefaultSchemeTests.cs`
 
 **接口：**
 
 - 消费：无
-- 产出：两处资源名常量修正为 `TextTool.*` 前缀；`DefaultSchemeTests` 新增两个断言资源可达的测试
+- 产出：两个 store 各暴露 `internal const string ResourceName`（值以 `TextTool.` 为前缀）；`DefaultSchemeTests` 的两个测试**引用该常量**并断言其可解析
 
 背景：已构建程序集里的真实资源名是 `TextTool.default_schemes.json` / `TextTool.default_vn_schemes.json`（前缀取 `RootNamespace`，不是程序集名）。现有代码查 `TextTool.Core.*`，查不到就静默走内联兜底——两份数据逐条相同，所以无行为差异，但两个 JSON 是死文件。`TextTool.Core/PinnedRoots.cs:19` 是正确范式。
 
-- [ ] **步骤 1：编写失败的测试**
+> TDD 顺序说明：测试必须**引用 store 上的常量**才能与生产代码耦合。测试里硬编码字面资源名**测不到本缺陷**——资源存在与否由 csproj 决定，与 store 的查询串解耦，那样的测试改前改后都通过。因此这里的 RED 靠"常量先填错值"取得。
+
+- [ ] **步骤 1：加常量与可见性，常量先填旧错值，并写引用常量的测试**
+
+`TextTool.Core/TextTool.Core.csproj` 的 `ItemGroup` 内加：
+
+```xml
+    <InternalsVisibleTo Include="TextTool.Tests" />
+```
+
+`TextTool.Core/ReplaceScheme.cs` 在类内加常量（**故意先填旧错值**，步骤 3 改回）：
+
+```csharp
+    /// <summary>
+    /// 嵌入式资源名。前缀取 RootNamespace（TextTool），不是程序集名（TextTool.Core）
+    /// ——这里写错过一次，导致查不到资源、静默回落到内联硬编码。
+    /// </summary>
+    internal const string ResourceName = "TextTool.Core.default_schemes.json";
+```
+
+`TextTool.Core/VNCharacterScheme.cs` 同法加 `internal const string ResourceName = "TextTool.Core.default_vn_schemes.json";`。
+
+`TextTool.Tests/Services/DefaultSchemeTests.cs` 新增（测试引用常量，不写字面串）：
 
 ```csharp
     [Fact]
-    public void ReplaceSchemeStore_EmbeddedResourceName_IsResolvable()
+    public void ReplaceSchemeStore_ResourceName_ResolvesToEmbeddedResource()
     {
-        // 直接查资源，绕过 store 的兜底逻辑——兜底数据与 JSON 相同，
-        // 只断言「有方案」无法区分两条路径，因此必须直查资源名
         var stream = typeof(ReplaceSchemeStore).Assembly
-            .GetManifestResourceStream("TextTool.default_schemes.json");
+            .GetManifestResourceStream(ReplaceSchemeStore.ResourceName);
 
         Assert.NotNull(stream);
     }
 
     [Fact]
-    public void VNCharacterSchemeStore_EmbeddedResourceName_IsResolvable()
+    public void VNCharacterSchemeStore_ResourceName_ResolvesToEmbeddedResource()
     {
         var stream = typeof(VNCharacterSchemeStore).Assembly
-            .GetManifestResourceStream("TextTool.default_vn_schemes.json");
+            .GetManifestResourceStream(VNCharacterSchemeStore.ResourceName);
 
         Assert.NotNull(stream);
     }
@@ -72,26 +93,16 @@
 
 - [ ] **步骤 2：运行测试以确认失败**
 
-运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "EmbeddedResourceName"`
-预期：FAIL，两个测试均报 `Assert.NotNull() Failure`
+运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "ResourceName"`
+预期：FAIL，两个测试均报 `Assert.NotNull() Failure`（常量是错值时解析不到资源）
 
-- [ ] **步骤 3：修正资源名**
+- [ ] **步骤 3：把常量改回正确值，并让 store 用常量取资源**
 
-`TextTool.Core/ReplaceScheme.cs:41`：
-
-```csharp
-            using var stream = assembly.GetManifestResourceStream("TextTool.default_schemes.json");
-```
-
-`TextTool.Core/VNCharacterScheme.cs:47`：
-
-```csharp
-            using var stream = assembly.GetManifestResourceStream("TextTool.default_vn_schemes.json");
-```
+两个常量改为 `TextTool.default_schemes.json` / `TextTool.default_vn_schemes.json`；两处 `GetManifestResourceStream(字面串)` 改为 `GetManifestResourceStream(ResourceName)`。
 
 - [ ] **步骤 4：运行测试以确认通过**
 
-运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "EmbeddedResourceName"`
+运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "ResourceName"`
 预期：PASS（2 个）
 
 - [ ] **步骤 5：跑全量门禁并提交**
@@ -100,9 +111,12 @@
 dotnet build TextTool.sln -c Release -warnaserror
 dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release
 dotnet format TextTool.sln --verify-no-changes
-git add TextTool.Core/ReplaceScheme.cs TextTool.Core/VNCharacterScheme.cs TextTool.Tests/Services/DefaultSchemeTests.cs
-git commit -m "fix: 修正嵌入式资源名前缀，内联兜底不再掩盖 JSON 读取失败"
+git add TextTool.Core/ReplaceScheme.cs TextTool.Core/VNCharacterScheme.cs \
+        TextTool.Core/TextTool.Core.csproj TextTool.Tests/Services/DefaultSchemeTests.cs
+git commit -m "fix: 修正嵌入式资源名前缀并提为 store 常量，测试改为引用常量"
 ```
+
+> 执行记录：本任务实际分两次提交完成（先按初版 brief 修资源名，再按实测结论改造为常量方案）。本节文字已按最终落地形态改写——初版把"测试里直查字面资源名"当作 RED，实施实测证伪了该预期（那种测试与 store 查询串解耦，改前改后都通过）。
 
 ### Task 2：规则模型与存储
 

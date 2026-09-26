@@ -62,7 +62,11 @@
 
 **为什么现有测试没拦住**：`TextTool.Tests/Services/DefaultSchemeTests.cs` 只断言"有内置方案且规则数 > 0"，而内联兜底同样满足——断言无法区分两条路径，注释里写的"验证资源路径正确"实际没验到。
 
-**修复**：两处资源名改为 `TextTool.*` 前缀；新增**直接查 `GetManifestResourceStream`** 的测试（绕过 store 的兜底逻辑，因此今天会失败、修完才通过）。内联兜底**保留不删**——它现在是双份真相的源头，但删除约 200 行重复数据是独立的重构，列入范围之外。`TextTool.Core/PinnedRoots.cs:19` 是正确的参照范式：名字对，且资源缺失时抛 `InvalidOperationException` 而非静默兜底。
+**修复（实施中据实测修正过）**：两处资源名改为 `TextTool.*` 前缀，并提为 store 上的 `internal const string ResourceName`（对齐 `TextTool.Core/PinnedRoots.cs:15` 的 `ResourceName` 范式）；`TextTool.Core.csproj` 向 `TextTool.Tests` 开 `InternalsVisibleTo`，两个测试改为**引用该常量**并断言其可解析。
+
+> **原设计的"测试里直查字面资源名"不成立**，已由实施实测证伪：资源名是否存在由 csproj 的 `EmbeddedResource` 决定，与 store 里的查询串**解耦**——那种测试改前改后都通过，拦不住"查询串被改回错值"。改为引用常量后测试与生产代码耦合：把常量临时设回旧错值，两个测试均以 `Assert.NotNull() Failure` 失败，改回即通过（真实 RED/GREEN 已取证）。
+
+内联兜底**保留不删**——它现在是双份真相的源头，但删除约 200 行重复数据是独立的重构，列入范围之外。`PinnedRoots` 仍是参照范式：名字对，且资源缺失时抛 `InvalidOperationException` 而非静默兜底。
 
 ### R1 规则模型与数据
 

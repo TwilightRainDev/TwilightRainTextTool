@@ -107,7 +107,7 @@
 | `Patterns` | 字符串数组 | **数组而非单串**：P1 有 2 条正则、L1 有 26 条词，单字段装不下。`literal` 时为字面串，`regex` 时为 .NET 正则 |
 | `Scope` | `document` / `paragraph` | 默认 `document` |
 | `TailChars` | 整数或省略 | 仅 `Scope=paragraph` 有效，只检查段末 N 字（S3 用） |
-| `MinCount` | 整数，默认 1 | **每条 Pattern 各自**在作用域内的出现次数达到才报，用于压误报（L2、S2 用） |
+| `MinCount` | 整数，默认 1 | **每条 Pattern 各自**在作用域内的出现次数达到才报；`Scope=paragraph` 时按**段各自**判定（同段凑够次数才算，分散在多段的单次出现合计不算）。用于压误报（L2、S2 用） |
 | `Severity` | `info` / `warn` | `warn` = 高度可疑值得改；`info` = 可能是合法用法，报给你判断 |
 | `Detail` | 字符串 | 报告里给 Claude 的一句话说明（规则级，回答"这是什么毛病"） |
 | `Hints` | 字符串数组或省略 | 与 `Patterns` **下标对齐**的建议改法，报告里随命中给出（L7 用）；长度不匹配即校验失败 |

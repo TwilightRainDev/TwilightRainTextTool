@@ -28,7 +28,7 @@
 - **量门禁退出码时不要接管道**：`cmd | tail` 之后 `$?` 取的是 `tail` 的状态，会把失败读成 0。要 `cmd > log 2>&1; echo $?`。
 - **所有来自 JSON 的正则必须经 `RegexGuard.Create` 构造**（2s 超时，防 ReDoS），不得直接 `new Regex(...)`。
 - 质量门禁（每个任务提交前跑）：`dotnet build TextTool.sln -c Release -warnaserror`、`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release`、`dotnet format TextTool.sln --verify-no-changes`。
-- 提交信息中文，前缀 `feat:` / `fix:` / `docs:` / `test:`；**署名沿用本仓既有惯例**（`git log -1 --format=%an <%ae>` 当前为 `TwilightRainDev <122437146+TwilightRainDev@users.noreply.github.com>`），不要用本机其它身份顶替。
+- 提交信息中文，前缀 `feat:` / `fix:` / `docs:` / `test:`，正文末尾带 `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`（仓库近期提交的既有惯例）；**署名沿用本仓既有惯例**（`git log -1 --format=%an <%ae>` 当前为 `TwilightRainDev <122437146+TwilightRainDev@users.noreply.github.com>`），不要用本机其它身份顶替。
 - 版本号只在任务 10 改：`Directory.Build.props` 的 `2.4.4` → `2.5.0`。
 
 ## 任务
@@ -1092,19 +1092,18 @@ git commit -m "feat: AI 味检查引擎支持全文作用域规则与行列定�
         var paragraphs = Paragraphs(text);
         foreach (var (regex, hint) in rule.Patterns)
         {
-            var matches = paragraphs
-                .SelectMany(p =>
-                {
-                    int windowStart = rule.Rule.TailChars is int tail && p.Text.Length > tail
-                        ? p.Text.Length - tail
-                        : 0;
-                    return regex.Matches(p.Text, windowStart)
-                        .Select(m => (Index: p.Offset + m.Index, m.Length, m.Value));
-                })
-                .ToList();
-            if (matches.Count < rule.Rule.MinCount) continue;
-            foreach (var (index, length, value) in matches)
-                report.Hits.Add(Hit(rule.Rule, text, index, length, value, hint));
+            // MinCount 按段判定：段内序数词必须是同一段里凑够次数才算骨架，
+            // 分散在多段的单次出现合计到达阈值不算（规则名与用例的「段内」口径）。
+            foreach (var p in paragraphs)
+            {
+                int windowStart = rule.Rule.TailChars is int tail && p.Text.Length > tail
+                    ? p.Text.Length - tail
+                    : 0;
+                var matches = regex.Matches(p.Text, windowStart);
+                if (matches.Count < rule.Rule.MinCount) continue;
+                foreach (Match m in matches)
+                    report.Hits.Add(Hit(rule.Rule, text, p.Offset + m.Index, m.Length, m.Value, hint));
+            }
         }
     }
 

@@ -606,7 +606,7 @@ public class LintReportTests
     };
 
     [Fact]
-    public void Filter_按严重度保留warn及以上_统计项不受影响()
+    public void Filter_按严重度保留warn及以上_统计项不受严重度影响()
     {
         var filtered = Sample().Filter(null, "warn");
 

@@ -40,6 +40,19 @@
 - 原计划要求补 3 项（覆盖 Label/Button/TextBox/CheckBox/RadioButton/ComboBox 类型分派）。
 - 状态：未落地
 
+### D-5 内置方案的内联硬编码兜底待删（R0 遗留）
+
+- 现状：R0 已把资源名修正为 `TextTool.default_schemes.json`（`TextTool.Core/ReplaceScheme.cs:27`）
+  与 `TextTool.default_vn_schemes.json`（`TextTool.Core/VNCharacterScheme.cs:35`），资源解析成功即不再走兜底，
+  于是 `ReplaceScheme.cs:65-253` 的 `GetHardcodedSchemes()`（189 行）与 `VNCharacterScheme.cs:69-139`
+  的同名方法（71 行）成为**纯冗余**：实测两份内联数据与对应 `default_*.json` 的条目数相同
+  （替换方案各 9 方案 / 176 规则，VN 方案各 4 方案）。
+- 影响：同一份数据两处真相。改 JSON 已生效，但代码内的副本会随时间漂移，且给人「改哪里才对」的错误暗示；
+  `GetDefaultSchemes()` 的 `catch { }`（`ReplaceScheme.cs:57`）还会把嵌入式资源解析失败一并吞掉，静默降级到兜底。
+- 建议方向：删除两份内联数据，让资源缺失像 `TextTool.Core/PinnedRoots.cs:19-20` 那样
+  `throw new InvalidOperationException`，而不是静默兜底。
+- 状态：未落地（规格 `doc/specs/2026-09-26-texttool-lint-design.md` §2 明确列为范围之外，属独立重构）
+
 ---
 
 ## 2. 待人工确认：`H:\` 盘符失真
@@ -102,10 +115,10 @@
 
 ```bash
 # 当前版本号（唯一权威）
-grep -oP '(?<=<Version>)[^<]+' Directory.Build.props        # 期望 2.4.4
+grep -oP '(?<=<Version>)[^<]+' Directory.Build.props        # 期望 2.5.0
 
 # 测试用例数（[Fact] + [Theory]）
-grep -roE '\[(Fact|Theory)' TextTool.Tests --include=*.cs | wc -l   # 期望 139
+grep -roE '\[(Fact|Theory)' TextTool.Tests --include=*.cs | wc -l   # 期望 182
 
 # ADR 份数
 ls doc/adr/ | wc -l                                          # 期望 9

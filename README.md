@@ -23,6 +23,7 @@ Drag-and-drop a text file, pick your options, click **Process** — done.
 | **Punct. Replace** | Freely configurable find-&-replace rules with reordering, persisted as JSON |
 | **Visual Novel** | Reformat VN scripts to natural paragraphs, complete dialogue punctuation, character/route presets |
 | **About** | Version, author, avatar, GitHub link, language selector |
+| **CLI · lint** | Chinese AI-tone check — reports rule id, line and column of AI-flavored wording, never rewrites |
 
 #### Tab 1 · Line Merge
 
@@ -158,18 +159,36 @@ texttool merge <file...> [options]     Line merge + post-processing
 texttool replace <file...> [options]   Punctuation replacement
 texttool vn <file...> [options]        Visual novel reformatting
 texttool join <dir> [options]          File joining
+texttool lint <file...> [options]      AI-tone check, report only
 texttool update [--check]              Self-update (--check = check only)
 ```
 
 Run `texttool <command> --help` for each command's options. `update` downloads the new CLI zip from the GitHub Release, verifies its SHA-256, and swaps itself in (with `--check` you can check for a new version without updating).
+
+`lint` takes one or more files (`-` reads stdin) and changes nothing: it reports where
+Chinese AI-flavored wording appears, with rule id, line and column. `--json` emits the
+machine-readable contract, `--only S1,L1` runs selected rule ids only, `--min-severity warn`
+keeps the output to `warn` hits.
+
+**Exit codes differ from the other subcommands.** `merge` / `replace` / `vn` / `join` /
+`update` use `0` = success, `1` = failure; `lint` uses `0` = no hits, `1` = hits found,
+`2` = usage or read error. The hit test runs after filtering, so `--min-severity warn`
+means "exit 1 only when a `warn` hit exists".
+
+**Heuristic limits.** `P4` (quote style) and `P5` (bracket width) match characters without
+context: the `'` in an English word such as `don't` counts as a quote style, so a Chinese
+quote elsewhere in the same text is reported as mixed, and ASCII brackets written inside a
+code sample count towards bracket-width mixing. The `C` group (`C1`-`C5`) is statistical
+observation and never affects the exit code. These rules are all `info` level — reported by
+default, and excluded from a gate by `--min-severity warn`.
 
 ### Project Structure
 
 ```text
 TextTool/
 ├── TextTool.sln                  # Solution file
-├── TextTool.csproj               # .NET 8 WinForms, v2.4.4
-├── Directory.Build.props         # Centralized version (2.4.4)
+├── TextTool.csproj               # .NET 8 WinForms, v2.5.0
+├── Directory.Build.props         # Centralized version (2.5.0)
 ├── Program.cs                    # Entry point, registers GBK encoding
 ├── MainForm.cs                   # Main window (207 lines, hosts 5 tabs)
 │
@@ -204,6 +223,10 @@ TextTool/
 │   ├── JsonFileStore.cs           # Generic JSON file persistence
 │   ├── PathHelper.cs              # Shared file path utilities
 │   ├── TextUtils.cs               # Extension methods (EndsWithAny, etc.)
+│   ├── LintRule.cs                # AI-tone rule model + store (per-id merge with external file)
+│   ├── LintReport.cs              # Lint report model and JSON contract
+│   ├── AiToneLintService.cs       # AI-tone check engine (data rules + algorithmic detectors)
+│   ├── LintTextFormatter.cs       # Human-readable report rendering (invisible chars escaped)
 │   ├── UpdateChecker.cs           # GitHub latest-release version check
 │   ├── UpdateClient.cs            # Update-only HttpClient (pinned roots, no redirects)
 │   ├── ReleaseVerifier.cs         # Release zip signature verification (ECDsa P-256)
@@ -213,10 +236,11 @@ TextTool/
 │   ├── SelfUpdater.cs              # CLI self-update: download, verify, staged swap
 │   ├── default_schemes.json       # Embedded default replace schemes
 │   ├── default_vn_schemes.json    # Embedded default VN schemes
+│   ├── default_lint_rules.json    # Embedded default AI-tone rules
 │   └── pinned_roots.txt           # Embedded root CA list (certifi)
 │
 ├── TextTool.Cli/                  # Command-line entry (texttool.exe)
-│   └── Program.cs                 # merge / replace / vn / join / update subcommands
+│   └── Program.cs                 # merge / replace / vn / join / lint / update subcommands
 │
 ├── Services/                      # UI-adjacent services
 │   ├── ThemeManager.cs            # Semantic color palette (dark/light mode)
@@ -234,7 +258,7 @@ TextTool/
 │   ├── icon.ico                  # App icon
 │   └── TwilightRain.jpg          # Avatar in About page
 │
-├── TextTool.Tests/               # Unit tests (xUnit, 139 [Fact]/[Theory])
+├── TextTool.Tests/               # Unit tests (xUnit, 182 [Fact]/[Theory])
 │   ├── TextTool.Tests.csproj
 │   ├── TestHelpers.cs
 │   └── Services/                 # One test file per service
@@ -290,6 +314,7 @@ Per-version changelog is carried by git tags and GitHub Releases — see
 | **标点替换** | 自由配置查找/替换规则，支持排序，JSON 持久化 |
 | **视觉小说** | 将 VN 脚本重排为自然段落、补全对话标点、角色/路线预设方案 |
 | **关于** | 版本、作者、头像、GitHub 链接、语言切换 |
+| **CLI · lint** | 中文 AI 味检查 —— 报出规则 Id、行号与列号，只报不改 |
 
 #### Tab 1 · 行合并
 
@@ -419,18 +444,32 @@ texttool merge <文件...> [选项]      行合并 + 后处理
 texttool replace <文件...> [选项]    标点替换
 texttool vn <文件...> [选项]        视觉小说排版
 texttool join <目录> [选项]         文件拼接
+texttool lint <文件...> [选项]      AI 味检查（只报不改）
 texttool update [--check]           自更新（--check 仅检查）
 ```
 
 运行 `texttool <命令> --help` 查看各命令选项。`update` 从 GitHub Release 下载新 CLI zip，校验 SHA-256 后自动替换自身（`--check` 可只检查不更新）。
+
+`lint` 接受一个或多个文件（`-` 表示从 stdin 读），不改动任何内容：只报告中文 AI 味出现的位置，
+给出规则 Id、行号与列号。`--json` 输出机器可读契约，`--only S1,L1` 只跑指定规则 Id，
+`--min-severity warn` 只保留 `warn` 及以上命中。
+
+**退出码与其它子命令不同。** `merge` / `replace` / `vn` / `join` / `update` 是
+`0` 成功 / `1` 失败；`lint` 是 `0` 无命中 / `1` 有命中 / `2` 用法或读取错误。
+命中判定在过滤之后进行，因此 `--min-severity warn` 的语义是「只在有 `warn` 命中时退 1」。
+
+**启发式规则的边界。** `P4`（引号风格）、`P5`（括号全半角）只看字符不看上下文：
+英文词里的 `'`（如 `don't`）会被当作一种引号风格，与文中别处的中文引号并列为「混用」；
+代码片段里写的 ASCII 括号同样计入括号混用。`C` 组（`C1`–`C5`）是统计观察，不进退出码。
+这些规则一律 `info` 级：默认只报，用 `--min-severity warn` 即可把它们排除在关卡之外。
 
 ### 项目结构
 
 ```text
 TextTool/
 ├── TextTool.sln                  # 解决方案文件
-├── TextTool.csproj               # .NET 8 WinForms, v2.4.4
-├── Directory.Build.props         # 统一版本号 (2.4.4)
+├── TextTool.csproj               # .NET 8 WinForms, v2.5.0
+├── Directory.Build.props         # 统一版本号 (2.5.0)
 ├── Program.cs                    # 入口，注册 GBK 编码支持
 ├── MainForm.cs                   # 主窗口 (207 行，承载 5 个页签)
 │
@@ -465,6 +504,10 @@ TextTool/
 │   ├── JsonFileStore.cs           # 泛型 JSON 文件持久化
 │   ├── PathHelper.cs              # 共享文件路径工具
 │   ├── TextUtils.cs               # 扩展方法（EndsWithAny 等）
+│   ├── LintRule.cs                # AI 味规则模型 + 存储（外部文件按 Id 合并覆盖）
+│   ├── LintReport.cs              # 检查报告模型与 JSON 契约
+│   ├── AiToneLintService.cs       # AI 味检查引擎（数据规则 + 算法检出器）
+│   ├── LintTextFormatter.cs       # 人读报告渲染（不可见字符转义）
 │   ├── UpdateChecker.cs           # GitHub 最新 release 版本检查
 │   ├── UpdateClient.cs            # 自更新专用 HttpClient（固定根、禁重定向）
 │   ├── ReleaseVerifier.cs         # 发布包签名验签（ECDsa P-256）
@@ -474,10 +517,11 @@ TextTool/
 │   ├── SelfUpdater.cs             # CLI 自更新：下载、校验、延迟替换
 │   ├── default_schemes.json       # 内置默认替换方案
 │   ├── default_vn_schemes.json    # 内置默认 VN 方案
+│   ├── default_lint_rules.json    # 内置 AI 味规则
 │   └── pinned_roots.txt           # 内置根 CA 清单（certifi）
 │
 ├── TextTool.Cli/                  # 命令行入口（texttool.exe）
-│   └── Program.cs                 # merge / replace / vn / join / update 子命令
+│   └── Program.cs                 # merge / replace / vn / join / lint / update 子命令
 │
 ├── Services/                      # UI 相关服务
 │   ├── ThemeManager.cs            # 语义化色板（深色/浅色模式）
@@ -495,7 +539,7 @@ TextTool/
 │   ├── icon.ico                  # 程序图标
 │   └── TwilightRain.jpg          # 关于页头像
 │
-├── TextTool.Tests/               # 单元测试（xUnit，139 个 [Fact]/[Theory]）
+├── TextTool.Tests/               # 单元测试（xUnit，182 个 [Fact]/[Theory]）
 │   ├── TextTool.Tests.csproj
 │   ├── TestHelpers.cs
 │   └── Services/                 # 每个服务对应一个测试文件

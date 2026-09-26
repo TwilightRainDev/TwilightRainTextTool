@@ -43,7 +43,7 @@
 
 ## 任务
 
-### 任务 1：LintRunner + CLI 改调
+### Task 1：LintRunner + CLI 改调
 
 **文件：**
 
@@ -207,7 +207,7 @@ git add TextTool.Core/LintRunner.cs TextTool.Tests/Services/LintRunnerTests.cs T
 git commit -m "feat: 抽出 LintRunner 供 CLI 与 GUI 共用" -m "Co-Authored-By: Cursor <noreply@cursor.com>"
 ```
 
-### 任务 2：三个语言包补 lint 键
+### Task 2：三个语言包补 lint 键
 
 **文件：**
 
@@ -288,7 +288,7 @@ git commit -m "feat: 为 lint 页签补齐三语键" -m "Co-Authored-By: Cursor 
 
 本任务无新测试。提交前仍跑全量门禁（确认 JSON 复制进输出目录后既有测试不受影响）。
 
-### 任务 3：LintTabControl + MainForm
+### Task 3：LintTabControl + MainForm
 
 **文件：**
 
@@ -592,7 +592,7 @@ git commit -m "feat: GUI 第 6 页签接入 AI 味检查" -m "Co-Authored-By: Cu
 
 提交前跑全量门禁。本任务无新单元测试。
 
-### 任务 4：文档、关于页与版本 2.6.0
+### Task 4：文档、关于页与版本 2.6.0
 
 **文件：**
 

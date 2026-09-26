@@ -413,6 +413,21 @@ JSON 里写 `\\uXXXX`（JSON 转义后成为正则的 `\uXXXX`）；含 CJK 的�
             Assert.False(string.IsNullOrWhiteSpace(r.Detail));
         });
     }
+
+    [Fact]
+    public void GetDefaultRules_literal规则的Patterns不含反斜杠()
+    {
+        // literal 走 Regex.Escape：JSON 里写的 \uXXXX 解码后是六个普通字符，
+        // 被 Escape 再转义一次后永远匹配不到真实字符——这类规则必须写成 regex
+        var offenders = LintRuleStore.GetDefaultRules()
+            .Where(r => r.Kind == "literal")
+            .SelectMany(r => r.Patterns.Select(p => (r.Id, Pattern: p)))
+            .Where(x => x.Pattern.Contains('\\'))
+            .Select(x => x.Id)
+            .ToList();
+
+        Assert.Empty(offenders);
+    }
 ```
 
 - [ ] **步骤 2：运行测试以确认失败**
@@ -456,7 +471,7 @@ JSON 里写 `\\uXXXX`（JSON 转义后成为正则的 `\uXXXX`）；含 CJK 的�
     "Severity": "info", "Detail": "破折号/波浪号写法不规范",
     "SuggestScheme": "去AI味标点归一" },
 
-  { "Id": "P7", "Group": "P", "Title": "隐形字符", "Kind": "literal",
+  { "Id": "P7", "Group": "P", "Title": "隐形字符", "Kind": "regex",
     "Patterns": ["\\u200B", "\\u200C", "\\u200D", "\\u200E", "\\u200F", "\\u2060", "\\u00AD", "\\u00A0"],
     "Severity": "warn", "Detail": "隐形字符（零宽/软连字符/不换行空格）",
     "SuggestScheme": "去AI味标点归一" },
@@ -540,10 +555,12 @@ JSON 里写 `\\uXXXX`（JSON 转义后成为正则的 `\uXXXX`）；含 CJK 的�
 ]
 ```
 
+> **P7 为什么是 `regex` 而不是 `literal`**：`literal` 走 `Regex.Escape`，JSON 里写的 `\\u200B` 解码后是六个普通字符（反斜杠 u 2 0 0 B），再被 `Regex.Escape` 转义一次，于是去匹配文本里字面的 `​` 序列——真实文本里的 U+200B 永远匹配不到，规则静默失效。写成 `regex` 则由正则引擎把 `​` 解释为真字符，且文件里仍看得见转义（比在 JSON 里嵌真实不可见字符可靠得多）。`L2`/`L7` 是纯中文文本、不含反斜杠，用 `literal` 正确。下面那条不变量测试负责拦住这类写法。
+
 - [ ] **步骤 4：运行测试以确认通过**
 
 运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "LintRuleStoreTests"`
-预期：PASS（9 个：任务 2 的 7 个 + 本任务的 2 个）
+预期：PASS（10 个：任务 2 的 7 个 + 本任务的 3 个）
 
 - [ ] **步骤 5：提交**
 

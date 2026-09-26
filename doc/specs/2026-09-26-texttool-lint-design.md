@@ -127,10 +127,12 @@ P 组——机械层（标点与字符，8 条）：
 | P4 | 引号风格混用 | algorithm | info | tone_lint 统计项 | 引号括号统一 |
 | P5 | 括号全半角混用 | algorithm | info | tone_lint 统计项 | 引号括号统一 |
 | P6 | 破折号 / 波浪号 | regex ×4 | info | tone_lint P6 | 去AI味标点归一（注） |
-| P7 | 隐形字符 | literal ×8 | warn | tone_lint P7 | 去AI味标点归一（注） |
+| P7 | 隐形字符 | regex ×8（不可用 literal，见 R1 脚注） | warn | tone_lint P7 | 去AI味标点归一（注） |
 | P8 | 表情与装饰符号 | regex | info | 24 条 #17 | 特殊符号清除 |
 
 > 注：`去AI味标点归一` 不是内置方案，由技能侧 `scripts/install_scheme.py` 装到 exe 目录；方案名照实输出，解析不到时报告仍给出名字（见 R3）。
+>
+> 注（P7 为何不用 `literal`）：`literal` 在引擎里走 `Regex.Escape`，而 JSON 里的 `\\u200B` 解码后是**六个普通字符**（反斜杠 u 2 0 0 B），再被 Escape 转义一次，于是只会匹配文本里字面的 `​` 序列——真实文本里的 U+200B 永远匹配不到，规则静默失效。写成 `regex` 则由正则引擎把 `​` 解释为真字符，且文件里仍看得见转义（优于在 JSON 里嵌真实不可见字符）。推论成一条不变量并由测试守住：**`literal` 规则的 Patterns 不得含反斜杠**。`L2`/`L7` 是纯中文文本，用 `literal` 正确。
 
 L 组——词汇层（7 条，全部数据化）：
 

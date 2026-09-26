@@ -4,6 +4,7 @@
   "TabJoin": "文件拼接",
   "TabReplace": "标点替换",
   "TabVN": "视觉小说",
+  "TabLint": "AI 味检查",
   "TabAbout": "关于",
 
   "LabelSourceFile": "源文件：",
@@ -196,5 +197,17 @@
   "VnSchemeRouteCount": "，{0} 条路线",
   "VnSchemeRoutePrefix": "[路线] ",
   "VnSchemeEditScenePattern": "场景标记正则（可选）：",
-  "VnSchemeEditPatternInvalid": "正则无效：{0}"
+  "VnSchemeEditPatternInvalid": "正则无效：{0}",
+
+  "LabelLintOnly": "只跑规则：",
+  "LabelLintMinSeverity": "最低严重度：",
+  "LintSeverityAll": "全部",
+  "LintSeverityWarn": "warn 及以上",
+  "BtnLint": "检查",
+  "LabelLintPaste": "或粘贴文本：",
+  "HintLint": "只报不改。可拖放文件，或在下方粘贴。",
+  "StatusLintReady": "就绪 — 请拖放/选择文件，或粘贴文本",
+  "StatusLintRunning": "正在检查...",
+  "StatusLintDone": "检查完成：命中 {0} 处，统计项 {1} 条",
+  "MsgLintNeedInput": "请选择至少一个文件，或粘贴文本。"
 }

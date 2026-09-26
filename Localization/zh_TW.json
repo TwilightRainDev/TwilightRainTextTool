@@ -4,6 +4,7 @@
   "TabJoin": "檔案拼接",
   "TabReplace": "標點替換",
   "TabVN": "視覺小說",
+  "TabLint": "AI 味檢查",
   "TabAbout": "關於",
 
   "LabelSourceFile": "來源檔案：",
@@ -196,5 +197,17 @@
   "VnSchemeRouteCount": "，{0} 條路線",
   "VnSchemeRoutePrefix": "[路線] ",
   "VnSchemeEditScenePattern": "場景標記正則（可選）：",
-  "VnSchemeEditPatternInvalid": "正則無效：{0}"
+  "VnSchemeEditPatternInvalid": "正則無效：{0}",
+
+  "LabelLintOnly": "只跑規則：",
+  "LabelLintMinSeverity": "最低嚴重度：",
+  "LintSeverityAll": "全部",
+  "LintSeverityWarn": "warn 及以上",
+  "BtnLint": "檢查",
+  "LabelLintPaste": "或貼上文字：",
+  "HintLint": "只報不改。可拖放檔案，或在下方貼上。",
+  "StatusLintReady": "就緒 — 請拖放/選擇檔案，或貼上文字",
+  "StatusLintRunning": "正在檢查...",
+  "StatusLintDone": "檢查完成：命中 {0} 處，統計項 {1} 條",
+  "MsgLintNeedInput": "請選擇至少一個檔案，或貼上文字。"
 }

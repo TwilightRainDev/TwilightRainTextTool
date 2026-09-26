@@ -40,7 +40,7 @@ public sealed class LintReport
         var only = onlyIds is null
             ? null
             : new HashSet<string>(onlyIds, StringComparer.OrdinalIgnoreCase);
-        bool WantWarnOnly = string.Equals(minSeverity, "warn", StringComparison.OrdinalIgnoreCase);
+        bool wantWarnOnly = string.Equals(minSeverity, "warn", StringComparison.OrdinalIgnoreCase);
 
         return new LintReport
         {
@@ -49,7 +49,7 @@ public sealed class LintReport
             Notes = Notes,
             Hits = Hits
                 .Where(h => only is null || only.Contains(h.Id))
-                .Where(h => !WantWarnOnly || h.Severity == "warn")
+                .Where(h => !wantWarnOnly || h.Severity == "warn")
                 .ToList(),
         };
     }

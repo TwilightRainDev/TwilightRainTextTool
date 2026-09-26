@@ -38,7 +38,7 @@ public static class ReplaceSchemeStore
         try
         {
             var assembly = Assembly.GetExecutingAssembly();
-            using var stream = assembly.GetManifestResourceStream("TextTool.Core.default_schemes.json");
+            using var stream = assembly.GetManifestResourceStream("TextTool.default_schemes.json");
             if (stream != null)
             {
                 using var reader = new StreamReader(stream, Encoding.UTF8);

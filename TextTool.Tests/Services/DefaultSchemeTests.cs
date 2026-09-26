@@ -22,4 +22,24 @@ public class DefaultSchemeTests
         Assert.All(schemes, s => Assert.True(s.IsBuiltIn));
         Assert.Contains(schemes, s => s.Name.Contains("Steins;Gate"));
     }
+
+    [Fact]
+    public void ReplaceSchemeStore_EmbeddedResourceName_IsResolvable()
+    {
+        // 直接查资源，绕过 store 的兜底逻辑——兜底数据与 JSON 相同，
+        // 只断言「有方案」无法区分两条路径，因此必须直查资源名
+        var stream = typeof(ReplaceSchemeStore).Assembly
+            .GetManifestResourceStream("TextTool.default_schemes.json");
+
+        Assert.NotNull(stream);
+    }
+
+    [Fact]
+    public void VNCharacterSchemeStore_EmbeddedResourceName_IsResolvable()
+    {
+        var stream = typeof(VNCharacterSchemeStore).Assembly
+            .GetManifestResourceStream("TextTool.default_vn_schemes.json");
+
+        Assert.NotNull(stream);
+    }
 }

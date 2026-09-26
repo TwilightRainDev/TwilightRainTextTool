@@ -217,6 +217,56 @@ public class AiToneLintServiceTests
     }
 
     [Fact]
+    public void Scan_括号全半角混用产出P5()
+    {
+        var hit = Assert.Single(Service().Scan("他说(好)，又说（行）。", "t.txt").Hits.Where(h => h.Id == "P5"));
+
+        Assert.Contains("半角 2 个", hit.Detail);
+        Assert.Contains("全角 2 个", hit.Detail);
+    }
+
+    [Fact]
+    public void Scan_句长过于整齐产出C2统计项()
+    {
+        // 10 句、每句 13 字，长度完全一致 → 变异系数 0
+        var text = string.Concat(Enumerable.Repeat("今天天气很好我们去公园散步。", 10));
+
+        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "C2"));
+
+        Assert.Contains("变异系数", note.Text);
+    }
+
+    [Fact]
+    public void Scan_段首重复产出C3统计项()
+    {
+        var text = string.Join("\n", "我们去看海。", "我们去爬山。", "我们回家吧。", "我们去吃饭。");
+
+        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "C3"));
+
+        Assert.Contains("我们", note.Text);
+    }
+
+    [Fact]
+    public void Scan_叹号密度偏高产出C4统计项()
+    {
+        var text = new string('好', 400) + "！！！";   // 403 字 / 3 个叹号，密度 7.4‰ > 3‰
+
+        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "C4"));
+
+        Assert.Contains("叹号密度偏高", note.Text);
+    }
+
+    [Fact]
+    public void Scan_序数词骨架密度产出C5统计项()
+    {
+        var text = "首先看甲。其次看乙。";
+
+        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "C5"));
+
+        Assert.Contains("序数词骨架", note.Text);
+    }
+
+    [Fact]
     public void AllRuleIds_含数据规则与算法规则()
     {
         var ids = AiToneLintService.AllRuleIds();

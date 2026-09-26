@@ -130,7 +130,7 @@ git commit -m "fix: 修正嵌入式资源名前缀并提为 store 常量，测�
 - 消费：`RegexGuard.Create(string, RegexOptions)`、`JsonFileStore.Load<T>(string)`
 - 产出：
   - `public class LintRule`，属性：`string Id`、`string Group`、`string Title`、`string Kind`、`List<string> Patterns`、`string Scope`、`int? TailChars`、`int MinCount`、`string Severity`、`string Detail`、`List<string>? Hints`、`string? SuggestScheme`
-  - `public static class LintRuleStore`：`const string EmbeddedResourceName`、`List<LintRule> Load()`、`List<LintRule> GetDefaultRules()`、`internal static List<LintRule> Merge(List<LintRule> builtIn, List<LintRule> external)`、`internal static void Validate(List<LintRule> rules)`
+  - `public static class LintRuleStore`：`const string EmbeddedResourceName`、`List<LintRule> Load()`（外部规则先校验、再合并、再整体校验）、`List<LintRule> GetDefaultRules()`、`internal static List<LintRule> Merge(List<LintRule> builtIn, List<LintRule> external)`、`internal static void Validate(List<LintRule> rules)`
 
 - [ ] **步骤 1：编写失败的测试**
 
@@ -249,7 +249,13 @@ public static class LintRuleStore
 
     public static List<LintRule> Load()
     {
-        var merged = Merge(GetDefaultRules(), JsonFileStore.Load<LintRule>("lint_rules.json"));
+        var builtIn = GetDefaultRules();
+        var external = JsonFileStore.Load<LintRule>("lint_rules.json");
+        // 外部先校验：重复 Id 必须在这里得到清晰报错。
+        // 若留到 Merge 之后再校验，重复 Id 会在 Merge 内部因索引指向已被替换的对象
+        // 而先抛 ArgumentOutOfRangeException，Validate 的报错永远轮不到。
+        Validate(external);
+        var merged = Merge(builtIn, external);
         Validate(merged);
         return merged;
     }

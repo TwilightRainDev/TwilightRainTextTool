@@ -4,6 +4,7 @@
   "TabJoin": "File Join",
   "TabReplace": "Punct. Replace",
   "TabVN": "Visual Novel",
+  "TabLint": "AI-tone Lint",
   "TabAbout": "About",
 
   "LabelSourceFile": "Source File:",
@@ -149,7 +150,7 @@
   "AboutTitle": "TwilightRain's Text Tool",
   "AboutVersion": "Version {0}",
   "AboutAuthor": "Author: TwilightRain",
-  "AboutDescription": "An all-in-one text processing tool:\nLine Merge, File Join, CJK Truncation Fix,\nPunct. Replacement, VN Reformat.",
+  "AboutDescription": "An all-in-one text processing tool:\nLine Merge, File Join, CJK Truncation Fix,\nPunct. Replacement, VN Reformat, AI-tone Lint.",
   "AboutLanguage": "Language:",
 
   "LangZhCN": "简体中文",
@@ -196,5 +197,17 @@
   "VnSchemeRouteCount": ", {0} route(s)",
   "VnSchemeRoutePrefix": "[route] ",
   "VnSchemeEditScenePattern": "Scene marker regex (optional):",
-  "VnSchemeEditPatternInvalid": "Invalid regex: {0}"
+  "VnSchemeEditPatternInvalid": "Invalid regex: {0}",
+
+  "LabelLintOnly": "Rule IDs:",
+  "LabelLintMinSeverity": "Min severity:",
+  "LintSeverityAll": "All",
+  "LintSeverityWarn": "warn and above",
+  "BtnLint": "Check",
+  "LabelLintPaste": "Or paste text:",
+  "HintLint": "Report only, never rewrite. Drop files, or paste below.",
+  "StatusLintReady": "Ready — drop or choose files, or paste text",
+  "StatusLintRunning": "Checking...",
+  "StatusLintDone": "Check complete: {0} hit(s), {1} note(s)",
+  "MsgLintNeedInput": "Choose at least one file, or paste some text."
 }

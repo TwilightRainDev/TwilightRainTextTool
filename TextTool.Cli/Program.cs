@@ -328,39 +328,26 @@ public static class Program
 
             if (files.Count == 0)
                 throw new ArgumentException("lint 需要至少一个输入文件（- 表示 stdin）");
-            if (minSeverity is not (null or "info" or "warn"))
-                throw new ArgumentException("--min-severity 只接受 info 或 warn");
 
             var onlyIds = only is null
                 ? null
                 : only.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            // 显式传了 --only 却解析不出 Id（如 --only ""）要响亮报错：静默按"空过滤集"
-            // 处理会输出 [OK]、退 0——CI 里 --only "$RULES" 变量为空就是假阴性
-            if (onlyIds is not null && onlyIds.Length == 0)
-                throw new ArgumentException("--only 需要至少一个规则 Id");
-            if (onlyIds is not null)
-            {
-                var known = AiToneLintService.AllRuleIds();
-                var unknown = onlyIds.Where(id => !known.Contains(id, StringComparer.OrdinalIgnoreCase)).ToList();
-                if (unknown.Count > 0)
-                    throw new ArgumentException($"未知规则 Id：{string.Join(", ", unknown)}");
-            }
 
-            var service = new AiToneLintService(LintRuleStore.Load());
-            var reportSet = new LintReportSet();
-
+            var inputs = new List<(string File, string Text)>();
             foreach (var file in files)
             {
                 string text = file == "-" ? ReadStdin() : ReadFileForLint(file);
-                var report = service.Scan(text, file == "-" ? "(stdin)" : Path.GetFileName(file))
-                    .Filter(onlyIds, minSeverity);
-                reportSet.Reports.Add(report);
-
-                if (!json)
-                    Console.WriteLine(LintTextFormatter.Format(report) + Environment.NewLine);
+                inputs.Add((file == "-" ? "(stdin)" : Path.GetFileName(file), text));
             }
 
-            if (json)
+            var reportSet = LintRunner.Run(inputs, onlyIds, minSeverity);
+
+            if (!json)
+            {
+                foreach (var report in reportSet.Reports)
+                    Console.WriteLine(LintTextFormatter.Format(report) + Environment.NewLine);
+            }
+            else
                 Console.WriteLine(reportSet.ToJson());
 
             bool anyHit = reportSet.Reports.Any(r => r.Hits.Count > 0);

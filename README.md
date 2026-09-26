@@ -22,8 +22,8 @@ Drag-and-drop a text file, pick your options, click **Process** — done.
 | **File Join** | Concatenate all matching files in a directory into one |
 | **Punct. Replace** | Freely configurable find-&-replace rules with reordering, persisted as JSON |
 | **Visual Novel** | Reformat VN scripts to natural paragraphs, complete dialogue punctuation, character/route presets |
+| **AI-tone Lint** | GUI tab and `texttool lint` share the same engine — reports only, never rewrites |
 | **About** | Version, author, avatar, GitHub link, language selector |
-| **CLI · lint** | Chinese AI-tone check — reports rule id, line and column of AI-flavored wording, never rewrites |
 
 #### Tab 1 · Line Merge
 
@@ -187,21 +187,22 @@ default, and excluded from a gate by `--min-severity warn`.
 ```text
 TextTool/
 ├── TextTool.sln                  # Solution file
-├── TextTool.csproj               # .NET 8 WinForms, v2.5.0
-├── Directory.Build.props         # Centralized version (2.5.0)
+├── TextTool.csproj               # .NET 8 WinForms, v2.6.0
+├── Directory.Build.props         # Centralized version (2.6.0)
 ├── Program.cs                    # Entry point, registers GBK encoding
-├── MainForm.cs                   # Main window (207 lines, hosts 5 tabs)
+├── MainForm.cs                   # Main window (214 lines, hosts 6 tabs)
 │
 ├── Controls/                     # Tab pages (extracted from MainForm)
 │   ├── MergeTabControl.cs        # Tab 1: Line merge (drag-drop, batch, preview)
 │   ├── JoinTabControl.cs         # Tab 2: File join (directory + pattern)
 │   ├── ReplaceTabControl.cs      # Tab 3: Punct. replace (CRUD, batch processing)
 │   ├── VNTabControl.cs           # Tab 4: Visual novel (reformat, punct. fix, presets)
+│   ├── LintTabControl.cs         # Tab 5: AI-tone lint (report only, shared engine)
 │   ├── VNCharacterSchemeForm.cs  # Character/route preset selection & editing
 │   ├── SchemeSelectionForm.cs    # Punct.-replace scheme selection dialog
 │   ├── SchemeSelectionFormBase.cs# Shared base for the two scheme dialogs
 │   ├── IThemedTab.cs             # Tab interface for theme traversal
-│   ├── AboutTabControl.cs        # Tab 5: About, language, dark mode, config I/O
+│   ├── AboutTabControl.cs        # Tab 6: About, language, dark mode, config I/O
 │   └── PreviewForm.cs            # Preview dialog (merge result before saving)
 │
 ├── TextTool.Core/                 # Pure logic class library (no UI deps)
@@ -227,6 +228,7 @@ TextTool/
 │   ├── LintReport.cs              # Lint report model and JSON contract
 │   ├── AiToneLintService.cs       # AI-tone check engine (data rules + algorithmic detectors)
 │   ├── LintTextFormatter.cs       # Human-readable report rendering (invisible chars escaped)
+│   ├── LintRunner.cs              # Shared CLI/GUI lint orchestration (validate + scan + filter)
 │   ├── UpdateChecker.cs           # GitHub latest-release version check
 │   ├── UpdateClient.cs            # Update-only HttpClient (pinned roots, no redirects)
 │   ├── ReleaseVerifier.cs         # Release zip signature verification (ECDsa P-256)
@@ -313,8 +315,8 @@ Per-version changelog is carried by git tags and GitHub Releases — see
 | **文件拼接** | 将目录中所有匹配文件合并为一个 |
 | **标点替换** | 自由配置查找/替换规则，支持排序，JSON 持久化 |
 | **视觉小说** | 将 VN 脚本重排为自然段落、补全对话标点、角色/路线预设方案 |
+| **AI 味检查** | GUI 页签与 `texttool lint` 共用引擎，只报不改 |
 | **关于** | 版本、作者、头像、GitHub 链接、语言切换 |
-| **CLI · lint** | 中文 AI 味检查 —— 报出规则 Id、行号与列号，只报不改 |
 
 #### Tab 1 · 行合并
 
@@ -468,21 +470,22 @@ texttool update [--check]           自更新（--check 仅检查）
 ```text
 TextTool/
 ├── TextTool.sln                  # 解决方案文件
-├── TextTool.csproj               # .NET 8 WinForms, v2.5.0
-├── Directory.Build.props         # 统一版本号 (2.5.0)
+├── TextTool.csproj               # .NET 8 WinForms, v2.6.0
+├── Directory.Build.props         # 统一版本号 (2.6.0)
 ├── Program.cs                    # 入口，注册 GBK 编码支持
-├── MainForm.cs                   # 主窗口 (207 行，承载 5 个页签)
+├── MainForm.cs                   # 主窗口 (214 行，承载 6 个页签)
 │
 ├── Controls/                     # 页签控件（从 MainForm 拆分）
 │   ├── MergeTabControl.cs        # Tab 1: 行合并（拖放、批量、预览）
 │   ├── JoinTabControl.cs         # Tab 2: 文件拼接（目录 + 匹配模式）
 │   ├── ReplaceTabControl.cs      # Tab 3: 标点替换（CRUD、批量处理）
 │   ├── VNTabControl.cs           # Tab 4: 视觉小说（排版、补标点、预设方案）
+│   ├── LintTabControl.cs         # Tab 5: AI 味检查（只报不改，与 CLI 共用引擎）
 │   ├── VNCharacterSchemeForm.cs  # 角色/路线预设方案勾选与编辑
 │   ├── SchemeSelectionForm.cs    # 标点替换方案勾选对话框
 │   ├── SchemeSelectionFormBase.cs# 两个方案对话框的共享基类
 │   ├── IThemedTab.cs             # 主题遍历所需的页签接口
-│   ├── AboutTabControl.cs        # Tab 5: 关于、语言切换、深色模式、配置导入导出
+│   ├── AboutTabControl.cs        # Tab 6: 关于、语言切换、深色模式、配置导入导出
 │   └── PreviewForm.cs            # 预览对话框（合并结果保存前查看）
 │
 ├── TextTool.Core/                 # 纯逻辑类库（无 UI 依赖）
@@ -508,6 +511,7 @@ TextTool/
 │   ├── LintReport.cs              # 检查报告模型与 JSON 契约
 │   ├── AiToneLintService.cs       # AI 味检查引擎（数据规则 + 算法检出器）
 │   ├── LintTextFormatter.cs       # 人读报告渲染（不可见字符转义）
+│   ├── LintRunner.cs              # CLI/GUI 共用检查编排（校验 + 扫描 + 过滤）
 │   ├── UpdateChecker.cs           # GitHub 最新 release 版本检查
 │   ├── UpdateClient.cs            # 自更新专用 HttpClient（固定根、禁重定向）
 │   ├── ReleaseVerifier.cs         # 发布包签名验签（ECDsa P-256）

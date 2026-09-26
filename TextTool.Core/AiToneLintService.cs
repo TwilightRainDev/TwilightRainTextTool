@@ -25,7 +25,19 @@ public sealed class AiToneLintService
                 ScanDocumentScope(rule, text, report);
         }
 
+        ScanAlgorithmRules(text, report);
         return report;
+    }
+
+    public static readonly IReadOnlyList<string> AlgorithmRuleIds =
+        new[] { "P4", "P5", "C1", "C2", "C3", "C4", "C5" };
+
+    public static IReadOnlyCollection<string> AllRuleIds()
+    {
+        var ids = new List<string>(AlgorithmRuleIds);
+        foreach (var rule in LintRuleStore.Load())
+            if (!ids.Contains(rule.Id)) ids.Add(rule.Id);
+        return ids;
     }
 
     private static void ScanDocumentScope(CompiledRule rule, string text, LintReport report)
@@ -57,6 +69,117 @@ public sealed class AiToneLintService
                     report.Hits.Add(Hit(rule.Rule, text, p.Offset + m.Index, m.Length, m.Value, hint));
             }
         }
+    }
+
+    private static readonly (string Name, Regex Pattern)[] QuoteStyles =
+    {
+        ("ASCII 直引号", RegexGuard.Create("\"")),
+        ("弯引号", RegexGuard.Create("[“”]")),
+        ("直角引号", RegexGuard.Create("[「」]")),
+        ("双直角引号", RegexGuard.Create("[『』]")),
+        ("ASCII 直单引号", RegexGuard.Create("'")),
+        ("弯单引号", RegexGuard.Create("[‘’]")),
+    };
+
+    private static readonly Regex OrdinalSkeleton = RegexGuard.Create("首先|其次|再次|最后|其一|其二|其三");
+
+    private static void ScanAlgorithmRules(string text, LintReport report)
+    {
+        // P4 引号风格混用：命中定位到全文最早出现的引号字符，规模写进 Detail
+        var used = QuoteStyles
+            .Select(s => (s.Name, Count: s.Pattern.Matches(text).Count, Index: s.Pattern.Match(text).Index))
+            .Where(s => s.Count > 0)
+            .ToList();
+        if (used.Count > 1)
+        {
+            int first = used.Min(s => s.Index);
+            string detail = string.Join(" / ", used.Select(s => $"{s.Name} {s.Count} 个"));
+            report.Hits.Add(new LintHit
+            {
+                Id = "P4", Group = "P", Title = "引号风格混用", Severity = "info",
+                Line = Position(text, first).Line, Col = Position(text, first).Col, Length = 1,
+                Match = text[first].ToString(), Snippet = Snippet(text, first, 1),
+                Detail = detail, SuggestScheme = "引号括号统一",
+            });
+        }
+
+        // P5 括号全半角混用
+        int half = RegexGuard.Create("[()]").Matches(text).Count;
+        int full = RegexGuard.Create("[（）]").Matches(text).Count;
+        if (half > 0 && full > 0)
+        {
+            var m = RegexGuard.Create("[()（）]").Match(text);
+            report.Hits.Add(new LintHit
+            {
+                Id = "P5", Group = "P", Title = "括号全半角混用", Severity = "info",
+                Line = Position(text, m.Index).Line, Col = Position(text, m.Index).Col, Length = 1,
+                Match = m.Value, Snippet = Snippet(text, m.Index, 1),
+                Detail = $"半角 {half} 个 / 全角 {full} 个", SuggestScheme = "引号括号统一",
+            });
+        }
+
+        var paragraphs = Paragraphs(text);
+
+        // C1 段落长度过于均一
+        if (paragraphs.Count >= 5)
+        {
+            var lens = paragraphs.Select(p => (double)p.Text.Length).ToList();
+            double mean = lens.Average(), cv = StdDev(lens, mean) / mean;
+            if (cv < 0.25)
+                report.Notes.Add(new LintNote
+                {
+                    Id = "C1",
+                    Text = $"段落长度过于均一（变异系数 {cv:0.00}，{paragraphs.Count} 段）——人写文本段落长短通常更参差",
+                });
+        }
+
+        // C2 句长分布过于整齐
+        var sentences = RegexGuard.Create("(?<=[。！？…])").Split(text)
+            .Select(s => s.Trim()).Where(s => s.Length >= 6).ToList();
+        if (sentences.Count >= 10)
+        {
+            var lens = sentences.Select(s => (double)s.Length).ToList();
+            double mean = lens.Average(), cv = StdDev(lens, mean) / mean;
+            if (cv < 0.35)
+                report.Notes.Add(new LintNote
+                {
+                    Id = "C2",
+                    Text = $"句长分布过于整齐（变异系数 {cv:0.00}，{sentences.Count} 句）",
+                });
+        }
+
+        // C3 段首两字高度重复
+        if (paragraphs.Count >= 4)
+        {
+            var dup = paragraphs.Select(p => p.Text[..Math.Min(2, p.Text.Length)])
+                .GroupBy(h => h).Where(g => g.Count() >= 3).ToList();
+            if (dup.Count > 0)
+                report.Notes.Add(new LintNote
+                {
+                    Id = "C3",
+                    Text = "段首两字高度重复：" + string.Join("、", dup.Select(g => $"「{g.Key}」×{g.Count()}")),
+                });
+        }
+
+        // C4 叹号密度偏高
+        int exclam = text.Count(c => c == '！');
+        if (text.Length >= 400 && exclam * 1000.0 / text.Length > 3)
+            report.Notes.Add(new LintNote { Id = "C4", Text = $"叹号密度偏高：{exclam} 个 / {text.Length} 字" });
+
+        // C5 序数词骨架密度
+        int ordinals = OrdinalSkeleton.Matches(text).Count;
+        if (ordinals >= 2)
+            report.Notes.Add(new LintNote
+            {
+                Id = "C5",
+                Text = $"序数词骨架「首先/其次/最后」出现 {ordinals} 次——结构化排版的典型痕迹",
+            });
+    }
+
+    private static double StdDev(List<double> values, double mean)
+    {
+        double sum = values.Sum(v => (v - mean) * (v - mean));
+        return Math.Sqrt(sum / values.Count);
     }
 
     /// <summary>

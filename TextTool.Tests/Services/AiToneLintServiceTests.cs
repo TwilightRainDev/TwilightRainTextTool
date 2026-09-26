@@ -166,4 +166,63 @@ public class AiToneLintServiceTests
         Assert.Equal(2, hit.Line);
         Assert.Equal(5, hit.Col);
     }
+
+    [Fact]
+    public void Scan_引号风格混用产出P4且给出规模()
+    {
+        var text = "他说\"好\"，又说「行」。";
+
+        var hit = Assert.Single(Service().Scan(text, "t.txt").Hits.Where(h => h.Id == "P4"));
+
+        Assert.Contains("ASCII 直引号", hit.Detail);
+        Assert.Contains("直角引号", hit.Detail);
+    }
+
+    [Fact]
+    public void Scan_引号风格单一不报P4()
+    {
+        var report = Service().Scan("他说「好」，又说「行」。", "t.txt");
+
+        Assert.DoesNotContain(report.Hits, h => h.Id == "P4");
+    }
+
+    [Fact]
+    public void Scan_段落长度均一产出C1统计项()
+    {
+        var text = string.Join("\n", Enumerable.Repeat(new string('字', 20), 5));
+
+        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "C1"));
+
+        Assert.Contains("变异系数", note.Text);
+    }
+
+    [Fact]
+    public void Scan_统计项不进Hits()
+    {
+        var text = string.Join("\n", Enumerable.Repeat(new string('字', 20), 5));
+
+        Assert.DoesNotContain(Service().Scan(text, "t.txt").Hits, h => h.Group == "C");
+    }
+
+    [Fact]
+    public void Scan_算法命中的Severity只用小写()
+    {
+        // 算法规则的命中不走 LintRuleStore.Validate，Severity 由代码直接给定；
+        // 而 Filter 的 warn 比较是大小写敏感的——写成 "Warn" 会被 --min-severity
+        // 静默丢弃、退出码变 0，是 CI 关卡最怕的失败方向。这条钉住契约。
+        var report = Service().Scan("他说\"好\"，又说「行」。", "t.txt");
+
+        Assert.All(report.Hits.Where(h => h.Group == "P"),
+            h => Assert.Contains(h.Severity, new[] { "info", "warn" }));
+    }
+
+    [Fact]
+    public void AllRuleIds_含数据规则与算法规则()
+    {
+        var ids = AiToneLintService.AllRuleIds();
+
+        Assert.Contains("P1", ids);
+        Assert.Contains("P4", ids);
+        Assert.Contains("C5", ids);
+    }
 }

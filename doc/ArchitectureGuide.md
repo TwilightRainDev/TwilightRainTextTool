@@ -81,6 +81,7 @@ Each tab is a `UserControl` with a consistent interface:
 | `RevealInExplorer(filePath)` | Open Explorer selecting a file | JoinTab, ReplaceTab |
 | `RevealFolder(folder)` | Open Explorer to a folder | MergeTab |
 | `CreateTextFileDialog(title)` | OpenFileDialog for .txt files | MergeTab, ReplaceTab |
+| `ApplyTheme(root)` | Recursive theme walker: dispatches by control type | All 5 tabs, incl. VN |
 
 These eliminate ~80 lines of duplicated factory code across tabs.
 
@@ -92,8 +93,8 @@ These eliminate ~80 lines of duplicated factory code across tabs.
 
 **Lifecycle:**
 
-1. `MainForm` constructor → `ThemeManager.Init()` (reads `app_config.json` once, exposes `InitialLanguage`)
-2. `Loc.Init()` → uses `ThemeManager.InitialLanguage` (no second file read) or auto-detects system language
+1. `MainForm` constructor → `ThemeManager.Init()` (reads `app_config.json` once, exposes `CurrentLanguage`)
+2. `Loc.Init()` → uses `ThemeManager.CurrentLanguage` (no second file read) or auto-detects system language
 3. `SetLanguage(code)` → switches locale, fires `LanguageChanged` event
 4. `MainForm` subscribes to `LanguageChanged` → calls `ApplyLocalization()` on all tabs
 
@@ -101,13 +102,14 @@ These eliminate ~80 lines of duplicated factory code across tabs.
 
 1. Add `Localization/{code}.json` with all keys
 2. Add the code to `DetectSystemLanguage()` if it should be auto-detected
-3. Add locale file to publish in `Publish.md`
+3. No publish-list edit needed — the CI zip ships `Localization/*.json` as a
+   wildcard (see `Publish.md` §三「发布产物内容」)
 
 **Locale key naming:** PascalCase (e.g., `BtnProcess`, `LabelSourceFile`).
 
 ---
 
-## 6. Processing Pipeline (`Services/ProcessingPipeline.cs`)
+## 6. Processing Pipeline (`TextTool.Core/ProcessingPipeline.cs`)
 
 **Single-pass design:** Read → Threshold merge → CJK fix → Punct. fix → Replace → Write.
 
@@ -141,24 +143,53 @@ TextTool/
 ├── Program.cs                   # Entry + GBK encoding registration
 ├── MainForm.cs                  # Tab host, theme & localization dispatch
 │
-├── Controls/                    # Tab pages
+├── Controls/                    # Tab pages & dialogs (all tabs implement IThemedTab)
 │   ├── MergeTabControl.cs       # Tab 1: Line merge
 │   ├── JoinTabControl.cs        # Tab 2: File join
 │   ├── ReplaceTabControl.cs     # Tab 3: Punct. replace
-│   ├── AboutTabControl.cs       # Tab 4: About + settings
-│   └── PreviewForm.cs           # Preview dialog (merge result)
+│   ├── VNTabControl.cs          # Tab 4: Visual novel
+│   ├── AboutTabControl.cs       # Tab 5: About + settings
+│   ├── PreviewForm.cs           # Preview dialog (merge result)
+│   ├── VNCharacterSchemeForm.cs # VN character/route scheme dialog
+│   ├── SchemeSelectionForm.cs   # Replace-scheme selection dialog
+│   ├── SchemeSelectionFormBase.cs # Shared base of the two scheme dialogs
+│   └── IThemedTab.cs            # Dispatched by MainForm.ApplyToAllTabs
 │
-├── Services/                    # Core logic & infrastructure
+├── Services/                    # UI-adjacent infrastructure (exactly 4 files)
 │   ├── ThemeManager.cs          # Semantic color palette
-│   ├── ControlsHelper.cs        # Shared UI factories
+│   ├── ControlsHelper.cs        # Shared UI factories + ApplyTheme walker
 │   ├── ThemedFlatButton.cs      # Disabled-state button fix
+│   └── IStatusSource.cs         # Status/error event interface for tabs
+│
+├── TextTool.Core/               # Pure logic, no UI deps
 │   ├── EncodingDetector.cs      # BOM → UTF-8 → GBK detection
 │   ├── LineMerger.cs            # Threshold merge algorithm
 │   ├── FileJoiner.cs            # Directory file concatenation
 │   ├── CjkParagraphMerger.cs    # CJK truncation fix
 │   ├── PunctTruncationMerger.cs # Punctuation truncation fix
 │   ├── PunctuationReplacer.cs   # Find-&-replace engine + RuleStore
-│   └── ProcessingPipeline.cs    # Single-pass orchestration
+│   ├── ProcessingPipeline.cs    # Single-pass orchestration
+│   ├── VNReformatterService.cs  # VN lines → natural paragraphs
+│   ├── PunctFixerService.cs     # Dialogue punctuation completion
+│   ├── VNCharacterScheme.cs     # VN preset scheme model & store
+│   ├── ReplaceScheme.cs         # Replace preset scheme model & store
+│   ├── DialogueLine.cs          # Shared dialogue regex
+│   ├── BackupHelper.cs          # Auto-backup with rotation
+│   ├── AtomicFile.cs            # Atomic output write
+│   ├── JsonFileStore.cs         # Generic JSON persistence
+│   ├── PathHelper.cs            # Path utilities
+│   ├── TextUtils.cs             # String extension methods
+│   ├── RegexGuard.cs            # Regex construction with ReDoS timeout
+│   ├── UpdateChecker.cs         # GitHub latest-release check
+│   ├── UpdateClient.cs          # Update-only HttpClient (pinned roots, no redirects)
+│   ├── ReleaseVerifier.cs       # Release signature verification (ECDsa P-256)
+│   ├── ReleaseSigningPublicKey.cs # Publisher public key constant
+│   ├── PinnedRoots.cs           # Public root CA allow-list
+│   ├── LastKnownVersion.cs      # Downgrade-replay detection
+│   ├── SelfUpdater.cs           # CLI self-update: download, verify, staged swap
+│   └── default_schemes.json / default_vn_schemes.json / pinned_roots.txt  # Embedded resources
+│
+├── TextTool.Cli/                # texttool.exe entry (merge/replace/vn/join/update)
 │
 ├── Localization/                # i18n
 │   ├── Strings.cs               # Loc singleton
@@ -167,10 +198,18 @@ TextTool/
 │   └── en_US.json
 │
 └── doc/                         # Documentation
-    ├── ARCHITECTURE.md          # ← This file
+    ├── ArchitectureGuide.md     # ← This file
     ├── Publish.md               # Release checklist
-    └── adr/                     # Architecture Decision Records
+    ├── UpdateSecurity.md        # Update trust model (TLS pinning, signing)
+    ├── ReplaceSchemesDesign.md  # Replace-scheme design note
+    ├── TECH-DEBT.md             # Open optimizations and known debt
+    ├── adr/                     # Architecture Decision Records
+    └── specs/                   # In-flight design specs
 ```
+
+**Split rule:** UI-adjacent code lives in `Services/` (or `Controls/`); anything
+that can be tested without a UI lives in `TextTool.Core/`. New text-processing
+logic goes to `TextTool.Core/`.
 
 ---
 

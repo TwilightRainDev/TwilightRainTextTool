@@ -168,10 +168,10 @@ Run `texttool <command> --help` for each command's options. `update` downloads t
 ```text
 TextTool/
 ├── TextTool.sln                  # Solution file
-├── TextTool.csproj               # .NET 8 WinForms, v2.3.0
-├── Directory.Build.props         # Centralized version (2.3.0)
+├── TextTool.csproj               # .NET 8 WinForms, v2.4.4
+├── Directory.Build.props         # Centralized version (2.4.4)
 ├── Program.cs                    # Entry point, registers GBK encoding
-├── MainForm.cs                   # Main window (~177 lines, hosts 5 tabs)
+├── MainForm.cs                   # Main window (207 lines, hosts 5 tabs)
 │
 ├── Controls/                     # Tab pages (extracted from MainForm)
 │   ├── MergeTabControl.cs        # Tab 1: Line merge (drag-drop, batch, preview)
@@ -179,6 +179,9 @@ TextTool/
 │   ├── ReplaceTabControl.cs      # Tab 3: Punct. replace (CRUD, batch processing)
 │   ├── VNTabControl.cs           # Tab 4: Visual novel (reformat, punct. fix, presets)
 │   ├── VNCharacterSchemeForm.cs  # Character/route preset selection & editing
+│   ├── SchemeSelectionForm.cs    # Punct.-replace scheme selection dialog
+│   ├── SchemeSelectionFormBase.cs# Shared base for the two scheme dialogs
+│   ├── IThemedTab.cs             # Tab interface for theme traversal
 │   ├── AboutTabControl.cs        # Tab 5: About, language, dark mode, config I/O
 │   └── PreviewForm.cs            # Preview dialog (merge result before saving)
 │
@@ -193,12 +196,24 @@ TextTool/
 │   ├── VNReformatterService.cs    # VN script reformatting engine (lines→paragraphs)
 │   ├── PunctFixerService.cs       # Dialogue punctuation completion
 │   ├── VNCharacterScheme.cs       # Character/route preset scheme model & store
+│   ├── ReplaceScheme.cs           # Replace-rule scheme model & store
 │   ├── BackupHelper.cs            # Auto-backup before overwrite (with rotation)
-│   ├── UpdateChecker.cs           # GitHub latest-release version check
+│   ├── AtomicFile.cs              # Atomic output write (temp file + replace)
 │   ├── DialogueLine.cs            # Shared dialogue-line regex detection
+│   ├── RegexGuard.cs              # Regex construction with ReDoS timeout
 │   ├── JsonFileStore.cs           # Generic JSON file persistence
 │   ├── PathHelper.cs              # Shared file path utilities
-│   └── TextUtils.cs               # Extension methods (EndsWithAny, etc.)
+│   ├── TextUtils.cs               # Extension methods (EndsWithAny, etc.)
+│   ├── UpdateChecker.cs           # GitHub latest-release version check
+│   ├── UpdateClient.cs            # Update-only HttpClient (pinned roots, no redirects)
+│   ├── ReleaseVerifier.cs         # Release zip signature verification (ECDsa P-256)
+│   ├── ReleaseSigningPublicKey.cs # Publisher public key constant (SPKI base64)
+│   ├── PinnedRoots.cs             # Public root CA allow-list (SPKI)
+│   ├── LastKnownVersion.cs        # Last installed version (downgrade-replay detection)
+│   ├── SelfUpdater.cs              # CLI self-update: download, verify, staged swap
+│   ├── default_schemes.json       # Embedded default replace schemes
+│   ├── default_vn_schemes.json    # Embedded default VN schemes
+│   └── pinned_roots.txt           # Embedded root CA list (certifi)
 │
 ├── TextTool.Cli/                  # Command-line entry (texttool.exe)
 │   └── Program.cs                 # merge / replace / vn / join / update subcommands
@@ -219,15 +234,19 @@ TextTool/
 │   ├── icon.ico                  # App icon
 │   └── TwilightRain.jpg          # Avatar in About page
 │
-├── TextTool.Tests/               # Unit tests (xUnit, 114 tests)
+├── TextTool.Tests/               # Unit tests (xUnit, 139 [Fact]/[Theory])
 │   ├── TextTool.Tests.csproj
 │   ├── TestHelpers.cs
 │   └── Services/                 # One test file per service
 │
 ├── doc/                          # Documentation
-│   ├── ARCHITECTURE.md           # Developer architecture guide
+│   ├── ArchitectureGuide.md      # Developer architecture guide
 │   ├── Publish.md                # Release checklist
-│   └── adr/                      # Architecture Decision Records (7 ADRs)
+│   ├── UpdateSecurity.md         # Update trust model (TLS pinning, signing)
+│   ├── ReplaceSchemesDesign.md   # Replace-scheme design note
+│   ├── TECH-DEBT.md              # Open optimizations and known debt
+│   ├── adr/                      # Architecture Decision Records (9 ADRs)
+│   └── specs/                    # In-flight design specs
 │
 ├── .github/workflows/
 │   └── build-test.yml            # CI: build + test + format + publish on release
@@ -249,31 +268,12 @@ TextTool/
 | Persistence | JSON (`System.Text.Json`) |
 | i18n | Custom `Loc` singleton with JSON locale files |
 
-### Legacy Script Mapping
-
-| Script | Equivalent Operation |
-|--------|---------------------|
-| `MergeLines.bat` | Tab 1, threshold=12, character mode, drag file |
-| `mergeline.bat` | Tab 1, threshold=20, byte mode, drag file |
-| `mergeline.ps1` | Tab 1, threshold=20, character mode, drag file |
-| `combine.bat` | Tab 2, pick folder, enter pattern |
-
 ### Version History
 
-| Version | Date | Update Content |
-| :-- | :--- | :------- |
-| 2.3.0 | 2026-08-01 | Migrated to .NET 8 LTS; VN engine de-hardcoded from Steins;Gate defaults (character/route/scene-regex moved to presets); VN tab single-file preview; i18n holes fixed; async batch processing with cancel; shared dialogue regex; strict encoding detection (full-file re-verify); .editorconfig + analyzers + pre-commit; unified scheme form base class; auto-backup before overwrite; scheme export/import; TextTool.Core library + CLI (merge/replace/vn/join); auto GitHub Release + check for updates |
-| 2.2.0 | 2026-07-20 | Visual Novel tab: reformat VN scripts from hard-wrapped lines to natural paragraphs (dialogue/narrative/scene/route detection), dialogue punctuation completion, character/route preset schemes; unit tests for VN engine |
-| 2.1.0 | 2026-07-19 | Codebase optimization: unified theme traverser, generic JSON store, unified config, StringBuilder performance; dangerous overwrite mode; embedded default schemes |
-| 2.0.2 | 2026-07-18 | Preset replacement scheme selection; UI/business layer decoupling; emoji icons removal |
-| 2.0.1 | 2026-07-18 | Semantic color palette refactoring; extracted shared factory; code review fixes; added development documentation |
-| 2.0.0 | 2026-07-18 | Batch processing support for punctuation replacement tab; dark mode expansion; button color scheme inversion; fixed disabled button font color |
-| 1.5.2 | 2026-07-18 | Threshold merging no longer ignores no‑merge rules; optimized line‑end no‑merge rule logic |
-| 1.5.1 | 2026-07-17 | Fixed encoding detector issue |
-| 1.5.0 | 2026-07-17 | Sortable replacement rules; language selection moved from status bar to About page; added punctuation truncation segment repair; added line‑end no‑merge rule; compact About page layout |
-| 1.4.0 | 2026-07-17 | Internationalization; single‑pass traversal refactoring; CJK merge complexity simplification; 4KB header scanning; file I/O simplification |
-| 1.3.0 | 2026-07-17 | Added punctuation replacement tab; About tab and program icon; Chinese truncation fix; layout bug fixes |
-| 1.0.0 | 2026-07 | Initial release: line merging + file concatenation |
+Per-version changelog is carried by git tags and GitHub Releases — see
+[Tags](https://github.com/TwilightRainDev/TwilightRainTextTool/tags) and
+[Releases](https://github.com/TwilightRainDev/TwilightRainTextTool/releases)
+(10 tags, latest `v2.4.4`). This file does not duplicate it.
 
 ---
 
@@ -432,7 +432,7 @@ TextTool/
 ├── TextTool.csproj               # .NET 8 WinForms, v2.4.4
 ├── Directory.Build.props         # 统一版本号 (2.4.4)
 ├── Program.cs                    # 入口，注册 GBK 编码支持
-├── MainForm.cs                   # 主窗口 (~177 行，承载 5 个页签)
+├── MainForm.cs                   # 主窗口 (207 行，承载 5 个页签)
 │
 ├── Controls/                     # 页签控件（从 MainForm 拆分）
 │   ├── MergeTabControl.cs        # Tab 1: 行合并（拖放、批量、预览）
@@ -440,6 +440,9 @@ TextTool/
 │   ├── ReplaceTabControl.cs      # Tab 3: 标点替换（CRUD、批量处理）
 │   ├── VNTabControl.cs           # Tab 4: 视觉小说（排版、补标点、预设方案）
 │   ├── VNCharacterSchemeForm.cs  # 角色/路线预设方案勾选与编辑
+│   ├── SchemeSelectionForm.cs    # 标点替换方案勾选对话框
+│   ├── SchemeSelectionFormBase.cs# 两个方案对话框的共享基类
+│   ├── IThemedTab.cs             # 主题遍历所需的页签接口
 │   ├── AboutTabControl.cs        # Tab 5: 关于、语言切换、深色模式、配置导入导出
 │   └── PreviewForm.cs            # 预览对话框（合并结果保存前查看）
 │
@@ -454,12 +457,24 @@ TextTool/
 │   ├── VNReformatterService.cs    # VN 脚本排版引擎（行→段落）
 │   ├── PunctFixerService.cs       # 对话标点补齐
 │   ├── VNCharacterScheme.cs       # 角色/路线预设方案模型与存储
+│   ├── ReplaceScheme.cs           # 替换规则方案模型与存储
 │   ├── BackupHelper.cs            # 覆盖写前自动备份（含轮换）
-│   ├── UpdateChecker.cs           # GitHub 最新 release 版本检查
+│   ├── AtomicFile.cs              # 输出原子写入（临时文件 + 整体替换）
 │   ├── DialogueLine.cs            # 共享对话行正则检测
+│   ├── RegexGuard.cs              # 带 ReDoS 超时的正则构造入口
 │   ├── JsonFileStore.cs           # 泛型 JSON 文件持久化
 │   ├── PathHelper.cs              # 共享文件路径工具
-│   └── TextUtils.cs               # 扩展方法（EndsWithAny 等）
+│   ├── TextUtils.cs               # 扩展方法（EndsWithAny 等）
+│   ├── UpdateChecker.cs           # GitHub 最新 release 版本检查
+│   ├── UpdateClient.cs            # 自更新专用 HttpClient（固定根、禁重定向）
+│   ├── ReleaseVerifier.cs         # 发布包签名验签（ECDsa P-256）
+│   ├── ReleaseSigningPublicKey.cs # 发布者公钥常量（SPKI base64）
+│   ├── PinnedRoots.cs             # 公共根 CA 白名单（SPKI）
+│   ├── LastKnownVersion.cs        # 最近安装版本（降级重放检测）
+│   ├── SelfUpdater.cs             # CLI 自更新：下载、校验、延迟替换
+│   ├── default_schemes.json       # 内置默认替换方案
+│   ├── default_vn_schemes.json    # 内置默认 VN 方案
+│   └── pinned_roots.txt           # 内置根 CA 清单（certifi）
 │
 ├── TextTool.Cli/                  # 命令行入口（texttool.exe）
 │   └── Program.cs                 # merge / replace / vn / join / update 子命令
@@ -480,15 +495,19 @@ TextTool/
 │   ├── icon.ico                  # 程序图标
 │   └── TwilightRain.jpg          # 关于页头像
 │
-├── TextTool.Tests/               # 单元测试（xUnit，114 项）
+├── TextTool.Tests/               # 单元测试（xUnit，139 个 [Fact]/[Theory]）
 │   ├── TextTool.Tests.csproj
 │   ├── TestHelpers.cs
 │   └── Services/                 # 每个服务对应一个测试文件
 │
 ├── doc/                          # 文档
-│   ├── ARCHITECTURE.md           # 开发者架构指南
+│   ├── ArchitectureGuide.md      # 开发者架构指南
 │   ├── Publish.md                # 发布清单
-│   └── adr/                      # 架构决策记录（7 份 ADR）
+│   ├── UpdateSecurity.md         # 更新信任模型（TLS 固定、签名验签）
+│   ├── ReplaceSchemesDesign.md   # 替换方案设计说明
+│   ├── TECH-DEBT.md              # 未落地优化项与技术债
+│   ├── adr/                      # 架构决策记录（9 份 ADR）
+│   └── specs/                    # 在途设计稿
 │
 ├── .github/workflows/
 │   └── build-test.yml            # CI：构建 + 测试 + 格式 + 发布
@@ -510,36 +529,12 @@ TextTool/
 | 持久化 | JSON（`System.Text.Json`） |
 | 国际化 | 自定义 `Loc` 单例 + JSON 语言包 |
 
-### 旧脚本映射
-
-| 旧脚本 | 新工具操作 |
-|--------|-----------|
-| `MergeLines.bat` | Tab 1 行合并，阈值=12，字符数，拖放文件 |
-| `mergeline.bat` | Tab 1 行合并，阈值=20，字节数，拖放文件 |
-| `mergeline.ps1` | Tab 1 行合并，阈值=20，字符数，拖放文件 |
-| `combine.bat` | Tab 2 文件拼接，选择目录，输入匹配模式 |
-
 ### 版本历史
 
-| 版本 | 日期 | 更新内容 |
-| :-- | :--- | :------- |
-| 2.4.4 | 2026-08-03 | 自更新安全加固：ECDsa P-256 离线签名验签（发布包必须带 `.sig`，缺失/无效一律中止）、TLS 公共根固定（可选 `TEXTTOOL_UPDATE_STRICT_TLS=1`）、下载主机白名单 + 禁自动重定向、严格版本号校验、随机临时目录与解压上限；行尾规范化（dotnet format 全绿） |
-| 2.4.3 | 2026-08-02 | 修复 GitHub Release 创建失败：workflow 补充 `permissions: contents: write`（默认 GITHUB_TOKEN 只读，无法创建 release） |
-| 2.4.2 | 2026-08-02 | 修复 CI 发布路径：GUI 主项目在仓库根目录，`dotnet publish` 改用 `TextTool.csproj` |
-| 2.4.1 | 2026-08-02 | 移除文档装饰 emoji 并声明不使用 emoji 风格；CLI/终端状态标记改为 `[成功]`/`[失败]` |
-| 2.4.0 | 2026-08-02 | CLI 自更新（`texttool update`/`--check`，GitHub Release 源 + SHA256 校验 + 延迟替换）；发布安装包 Authenticode 签名（可选）；`.gitattributes` 行尾规范化；CI 修复（setup-dotnet 缓存、README 中文锚点） |
-| 2.3.0 | 2026-08-01 | 迁移至 .NET 8 LTS；VN 引擎去 Steins;Gate 硬编码（角色/路线/场景正则迁至预设方案）；VN 页签单文件预览；i18n 漏洞修复；异步批处理+取消；共享对话正则；编码严格检测（全文件二次验证）；.editorconfig+分析器+pre-commit；方案表单共享基类；覆盖写前自动备份；方案导出/导入；TextTool.Core 类库 + CLI（merge/replace/vn/join）；自动 GitHub Release + 检查更新 |
-| 2.2.0 | 2026-07-20 | 新增「视觉小说」页签：将 VN 脚本从固定宽度硬换行排版为自然段落（对话/叙事/场景/路线识别）、对话补全标点、角色/路线预设方案；VN 引擎单元测试 |
-| 2.1.0 | 2026-07-19 | 代码库优化：统一主题遍历器、泛型JSON存储、统一配置管理、StringBuilder性能优化；危险覆盖模式；嵌入式默认方案 |
-| 2.0.2 | 2026-07-18 | 预设替换方案勾选；UI/业务层解耦；emoji 图标移除 |
-| 2.0.1 | 2026-07-18 | 语义化色板重构；提取共享工厂；代码审查修复；新增开发文档 |
-| 2.0.0 | 2026-07-18 | 标点替换页签支持批量处理；深色模式拓展；按钮反转配色方案；修复禁用按钮字体颜色 |
-| 1.5.2 | 2026-07-18 | 阈值合并时不再无视不合并规则；行尾部不合并规则逻辑优化 |
-| 1.5.1 | 2026-07-17 | 修复编码检测器问题 |
-| 1.5.0 | 2026-07-17 | 替换规则可排序；语言选择从状态栏迁移至关于页；新增标点截断断段修复；新增行尾部不合并规则；关于页紧凑布局 |
-| 1.4.0 | 2026-07-17 | 国际化；单次遍历重构；CJK 合并复杂度简化；4KB头部扫描；文件 I/O 简化 |
-| 1.3.0 | 2026-07-17 | 新增标点替换页签；关于页签与程序图标；中文截断修复；布局 bug 修复 |
-| 1.0.0 | 2026-07 | 初始版本：行合并 + 文件拼接 |
+逐版本变更由 git tag 与 GitHub Releases 承载，见
+[Tags](https://github.com/TwilightRainDev/TwilightRainTextTool/tags) 与
+[Releases](https://github.com/TwilightRainDev/TwilightRainTextTool/releases)
+（共 10 个 tag，最新 `v2.4.4`）。本文件不再重复维护。
 
 ### 风格约定
 

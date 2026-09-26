@@ -94,13 +94,3 @@ public class ReplaceScheme
   → 刷新规则列表
 ```
 
-## 修改文件清单
-
-| 文件 | 操作 | 说明 |
-|------|------|------|
-| `Services/ReplaceScheme.cs` | 新增 | 数据模型 + 持久化存储 + 默认方案定义 |
-| `Controls/SchemeSelectionForm.cs` | 新增 | 方案选择窗口 + 方案编辑对话框 |
-| `Controls/ReplaceTabControl.cs` | 修改 | 添加按钮字段、初始化、事件处理、本地化、主题 |
-| `Localization/zh_CN.json` | 修改 | 添加 19 条新翻译键 |
-| `Localization/en_US.json` | 修改 | 添加 19 条新翻译键 |
-| `Localization/zh_TW.json` | 修改 | 添加 19 条新翻译键 |

@@ -12,14 +12,14 @@
 ```xml
 <Project>
   <PropertyGroup>
-    <Version>1.6.1</Version>
+    <Version>X.Y.Z</Version>   <!-- 示例；当前实际值见仓库 Directory.Build.props -->
   </PropertyGroup>
 </Project>
 ```
 
 - `TextTool.csproj` 不再设置 `<Version>`，自动继承
 - `AboutTabControl` 通过 `Assembly.GetName().Version` 运行时读取，不再有硬编码
-- `AssemblyVersion` = `1.6.1.0`（.NET 自动追加 Revision=0）
+- `AssemblyVersion` = `<Version>.0`（.NET 自动追加 Revision=0）
 
 ## 后果
 

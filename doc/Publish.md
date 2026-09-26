@@ -6,67 +6,12 @@
 
 ## 一、项目结构
 
-```text
-TextTool/
-├── Directory.Build.props        # 统一版本号（所有版本在此定义）
-├── TextTool.sln                 # 解决方案（主项目 + 测试项目）
-├── TextTool.csproj              # 项目配置（版本继承自 Directory.Build.props）
-├── Program.cs                   # 程序入口
-├── MainForm.cs                  # 主窗口（组装 4 个 Controls）
-├── Controls/                    # 各页签独立 UserControl
-│   ├── MergeTabControl.cs       # 行合并页签
-│   ├── JoinTabControl.cs        # 文件拼接页签
-│   ├── ReplaceTabControl.cs     # 标点替换页签
-│   └── AboutTabControl.cs       # 关于页签（版本号从程序集读取）
-├── Services/                    # 服务层（文本处理核心算法）
-│   ├── EncodingDetector.cs      # 编码自动检测
-│   ├── LineMerger.cs            # 行合并核心算法
-│   ├── FileJoiner.cs            # 文件拼接
-│   ├── CjkParagraphMerger.cs    # 中文截断修复
-│   ├── PunctuationReplacer.cs   # 标点替换引擎
-│   ├── ProcessingPipeline.cs    # 流程编排
-│   ├── PunctTruncationMerger.cs # 标点截断合并
-│   └── TextUtils.cs             # 文本处理工具函数
-├── Localization/                # 国际化
-│   ├── Strings.cs               # Loc 单例
-│   ├── en_US.json
-│   ├── zh_CN.json
-│   └── zh_TW.json
-├── Resources/
-│   ├── icon.ico
-│   └── TwilightRain.jpg
-├── doc/                        # 开发文档
-│   ├── Publish.md               # 发布指南
-│   └── adr/                     # 架构决策记录
-│       ├── ADR-001-pure-csharp-ui.md
-│       ├── ADR-002-single-pass-pipeline.md
-│       ├── ADR-003-loc-singleton-i18n.md
-│       ├── ADR-004-4kb-encoding-detection.md
-│       ├── ADR-005-controls-extraction.md
-│       ├── ADR-006-directory-build-props-version.md
-│       └── ADR-007-test-driven-services.md
-├── .github/workflows/           # CI/CD 流水线
-│   └── build-test.yml
-├── README.md
-├── LICENSE                      # MIT
-└── .gitignore
+目录树与各文件职责以根目录 `README.md`「项目结构」节为准（单一权威，此处不再重复）。
+拆分规则见 `doc/ArchitectureGuide.md` §8：UI 相邻代码在 `Services/`、`Controls/`，
+可脱离 UI 测试的逻辑在 `TextTool.Core/`。
 
-TextTool.Tests/                  # 单元测试（xUnit）
-├── TextTool.Tests.csproj        # 测试项目配置
-├── GlobalUsings.cs              # 全局 using
-├── TestHelpers.cs               # TempFile / TempDir 夹具
-└── Services/                    # 每个 Service 一个测试文件
-    ├── LineMergerTests.cs
-    ├── CjkParagraphMergerTests.cs
-    ├── PunctTruncationMergerTests.cs
-    ├── PunctuationReplacerTests.cs
-    ├── TextUtilsTests.cs
-    ├── EncodingDetectorTests.cs
-    ├── ProcessingPipelineTests.cs
-    └── FileJoinerTests.cs
-```
-
-**不纳入版本控制：** `bin/`、`obj/`、`publish/`、`doc/Publish.md`、`*.user`、`*.lnk`、`replace_rules.json`
+**不纳入版本控制**（见 `.gitignore`）：`bin/`、`obj/`、`.codegraph/`、`*.user`、`*.lnk`。
+另有本地 `publish/` 输出目录，以及运行时自动生成的 `replace_rules.json`、`app_config.json`。
 
 ---
 
@@ -210,16 +155,7 @@ signtool verify /pa /v TextTool.exe
 
 ## 三·六、CLI 自更新
 
-CLI（`texttool`）支持自更新：
-
-```bash
-texttool update          # 检查 → 下载 → 校验 → 替换 → 重启为新版本
-texttool update --check  # 仅检查，打印是否有新版本
-```
-
-- 更新源为 GitHub Release 上的 `TextTool-CLI-*-win-x64.zip`，配套 `.sha256` 校验文件
-- SHA256 不匹配时中止更新（防篡改）
-- 运行中的 exe 无法覆盖自身，由延迟批处理在本进程退出后完成替换并启动新版本
+`texttool update` / `texttool update --check` 的信任模型、校验链与离线签名流程见 [`UpdateSecurity.md`](UpdateSecurity.md)（单一权威，此处不重复）。
 
 ---
 
@@ -249,15 +185,3 @@ git push origin vX.Y.Z
 dotnet publish TextTool.csproj -c Release -r win-x64 -o publish/TextTool
 # 输出 → publish/TextTool/
 ```
-
----
-
-## 五、版本历史
-
-| 版本 | 日期 | 概要 |
-|------|------|------|
-| 1.6.1 | 2026-07-18 | Controls 目录提取、Directory.Build.props 版本集中、xUnit 测试套件（63 用例）、ADR 文档、GitHub Actions CI/CD |
-| 1.5.1 | 2026-07-17 | 修复 UTF-8 编码检测在 4KB 边界截断多字节字符的误判 |
-| 1.5.0 | 2026-07-17 | ProcessingPipeline 流程编排、PunctTruncationMerger、TextUtils |
-| 1.4.0 | 2026-07-17 | 完整 i18n、Loc 单例、CJK O(n²)→O(n)、EncodingDetector 4KB 扫描 |
-| 1.3.0 | 2026-07-17 | 标点替换页签、CJK 截断修复 |

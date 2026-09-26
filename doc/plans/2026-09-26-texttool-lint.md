@@ -1757,7 +1757,7 @@ git commit -m "feat: 新增 texttool lint 子命令（只报不改，JSON 契约
 
 英文与中文两处功能概览各加一行 `lint`（只报不改的 AI 味检查）；英文与中文两处项目结构树在 `TextTool.Cli/` 一行补上 `lint`，并在 `TextTool.Core/` 列表中补 `LintRule.cs`、`LintReport.cs`、`LintTextFormatter.cs`、`AiToneLintService.cs`、`default_lint_rules.json`；命令用法段补 `lint` 的示例与**退出码差异**说明。
 
-同一段里用两三行交代**启发式规则的边界**（Task 7 评审 Minor 5 的建议，写文档而非改代码）：`P4` 引号风格混用会把「英文缩写 + 中文引号」的文本判为混用，`P5` 括号混用只认字符不看上下文（代码片段、ASCII 括号引用都会计入），`C` 组是统计观察、不进退出码；因此这些规则一律 `info` 级，默认只报不卡。
+同一段里用两三行交代**启发式规则的边界**（Task 7 评审 Minor 5 的建议，写文档而非改代码）：`P4` 引号风格混用会把「英文缩写 + 中文引号」的文本判为混用，`P5` 括号混用只认字符不看上下文（代码片段、ASCII 括号引用都会计入），`C` 组是统计观察、不进退出码；因此这些规则一律 `info` 级：默认（不加 `--min-severity`）命中仍会让退出码变 1，只有 `--min-severity warn` 才把它们排除在关卡之外（初版此句写成「默认只报不卡」，与实测不符，由实施者指出并订正）。
 
 - [ ] **步骤 2：更新 TECH-DEBT 验证锚点**
 

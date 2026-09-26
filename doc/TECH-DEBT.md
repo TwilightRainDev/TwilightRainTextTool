@@ -69,8 +69,8 @@
 | `TextTool.Core/ReleaseSigningPublicKey.cs`（注释） | 1 |
 | `tools/ReleaseSigner/Program.cs`（注释） | 1 |
 
-复核方式：`grep -rn "H:[/\\\\]work_zone" --include=*.md --include=*.cs` 全仓已无命中；
-本文件此前对该失真的描述表已随本次订正一并移除。
+复核方式：`grep -rn "H:[/\\\\]work_zone" --include=*.md --include=*.cs` 全仓只剩本节这一处
+描述性引用（上面那行示例），真实路径已无命中；本文件此前对该失真的清单表已随本次订正移除。
 
 ### 已消解项
 

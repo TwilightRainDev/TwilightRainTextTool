@@ -757,7 +757,7 @@ git commit -m "feat: 新增 AI 味检查报告模型与 JSON 契约"
 
 - 消费：`LintRule`（任务 2）、`LintReport`/`LintHit`/`LintNote`（任务 4）
 - 产出：
-  - `public sealed class AiToneLintService`：构造函数 `AiToneLintService(IEnumerable<LintRule> rules)`、`LintReport Scan(string text, string fileName)`、`public static IReadOnlyCollection<string> AllRuleIds()`
+  - `public sealed class AiToneLintService`：构造函数 `AiToneLintService(IEnumerable<LintRule> rules)`、`LintReport Scan(string text, string fileName)`（`AllRuleIds()` 属任务 7，本任务不实现）
   - 本任务先实现 `Scope=document` 的数据规则；段落与算法规则在任务 6、7 补
 
 - [ ] **步骤 1：编写失败的测试**
@@ -819,21 +819,6 @@ public class AiToneLintServiceTests
 
         Assert.Empty(Service(rule).Scan("此外只有一次。", "t.txt").Hits);
         Assert.Equal(3, Service(rule).Scan("此外，此外，此外。", "t.txt").Hits.Count);
-    }
-
-    [Fact]
-    public void Scan_真实规则集端到端冒烟()
-    {
-        // 前面各例都用自带规则，从不碰 default_lint_rules.json 的真实数据——
-        // P7 静默失效（literal + JSON 转义）正是这样漏掉的，这条负责端到端兜底
-        var service = new AiToneLintService(LintRuleStore.Load());
-        var text = "此外，此外，此外。这不是数据问题而是口径问题。\u200B";
-
-        var ids = service.Scan(text, "t.txt").Hits.Select(h => h.Id).Distinct().OrderBy(x => x).ToList();
-
-        Assert.Contains("L2", ids);   // AI 高频词（MinCount 3 达标才报）
-        Assert.Contains("S1", ids);   // 对举句式
-        Assert.Contains("P7", ids);   // 隐形字符——写作 literal 时这条会静默消失
     }
 
     [Fact]
@@ -990,7 +975,9 @@ public sealed class AiToneLintService
 - [ ] **步骤 4：运行测试以确认通过**
 
 运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "AiToneLintServiceTests"`
-预期：PASS（7 个）
+预期：PASS（6 个）
+
+> 端到端冒烟测试（用 `LintRuleStore.Load()` 的真实 19 条数据）**放在 Task 6**：真实规则集含 `S2`/`S3` 两条段落作用域规则，本任务的 `ScanParagraphScope` 还是抛异常的桩，`Scan` 会先撞上它。放进 Task 6 能让该护栏永远跑全量规则集，无需先过滤再记得取消过滤。
 
 - [ ] **步骤 5：提交**
 
@@ -1037,6 +1024,22 @@ git commit -m "feat: AI 味检查引擎支持全文作用域规则与行列定�
 
         Assert.Empty(Service(rule).Scan(段中, "t.txt").Hits);
         Assert.Single(Service(rule).Scan(段末, "t.txt").Hits);
+    }
+
+    [Fact]
+    public void Scan_真实规则集端到端冒烟()
+    {
+        // 前面各例都用自带规则，从不碰 default_lint_rules.json 的真实数据——
+        // P7 静默失效（literal + JSON 转义）正是这样漏掉的，这条负责端到端兜底。
+        // 本任务让段落作用域落地后，这条才能跑全量规则集（Task 5 时 S2/S3 会撞上抛异常的桩）。
+        var service = new AiToneLintService(LintRuleStore.Load());
+        var text = "此外，此外，此外。这不是数据问题而是口径问题。\u200B";
+
+        var ids = service.Scan(text, "t.txt").Hits.Select(h => h.Id).Distinct().OrderBy(x => x).ToList();
+
+        Assert.Contains("L2", ids);   // AI 高频词（MinCount 3 达标才报）
+        Assert.Contains("S1", ids);   // 对举句式
+        Assert.Contains("P7", ids);   // 隐形字符——写作 literal 时这条会静默消失
     }
 
     [Fact]
@@ -1337,7 +1340,7 @@ git commit -m "feat: AI 味检查引擎支持段落作用域与段末窗口"
 - [ ] **步骤 4：运行测试以确认通过**
 
 运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "AiToneLintServiceTests"`
-预期：PASS（15 个）
+预期：PASS（16 个）
 
 - [ ] **步骤 5：提交**
 

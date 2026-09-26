@@ -1043,6 +1043,27 @@ git commit -m "feat: AI 味检查引擎支持全文作用域规则与行列定�
     }
 
     [Fact]
+    public void Scan_Snippet右边界也不劈开代理对()
+    {
+        // 命中在前、emoji 在后：右边界 = index+length+8 = 14 正落在 emoji 的代理对中间
+        // （Task 5 的用例窗口右端一律到 text.Length，hi++ 分支从未被执行）
+        var text = "不是A而是B" + new string('x', 5) + "😀😀";
+        var hit = Assert.Single(Service(Rule("S1", "regex", "不是A而是B")).Scan(text, "t.txt").Hits);
+
+        Assert.False(HasLoneSurrogate(hit.Snippet));
+    }
+
+    [Fact]
+    public void Scan_MinCount按Pattern各自计数而非整规则合计()
+    {
+        // 三条 Pattern 各出现 1 次：整规则合计 3 已达阈值，按 Pattern 计数则都不达标
+        var rule = Rule("L2", "literal", "此外", "赋能", "抓手");
+        rule.MinCount = 2;
+
+        Assert.Empty(Service(rule).Scan("此外，赋能，抓手。", "t.txt").Hits);
+    }
+
+    [Fact]
     public void Scan_段落命中位置为绝对行列()
     {
         var rule = Rule("S3", "regex", "未来可期");
@@ -1110,7 +1131,7 @@ git commit -m "feat: AI 味检查引擎支持全文作用域规则与行列定�
 - [ ] **步骤 4：运行测试以确认通过**
 
 运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "AiToneLintServiceTests"`
-预期：PASS（10 个）
+预期：PASS（12 个）
 
 - [ ] **步骤 5：提交**
 
@@ -1340,7 +1361,7 @@ git commit -m "feat: AI 味检查引擎支持段落作用域与段末窗口"
 - [ ] **步骤 4：运行测试以确认通过**
 
 运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "AiToneLintServiceTests"`
-预期：PASS（16 个）
+预期：PASS（18 个）
 
 - [ ] **步骤 5：提交**
 
@@ -1376,8 +1397,10 @@ public class LintTextFormatterTests
             File = "a.md", Chars = 100,
             Hits = new List<LintHit>
             {
-                new() { Id = "S1", Title = "对举句式", Line = 12, Col = 5, Snippet = "…不是A而是B…", Detail = "不是A而是B" },
+                // 故意倒序给：引擎的命中顺序是 规则→Pattern→位置，同一规则的多条
+                // Pattern 会让行号来回跳，渲染层负责排序
                 new() { Id = "S1", Title = "对举句式", Line = 20, Col = 1, Snippet = "…", Detail = "不是A而是B" },
+                new() { Id = "S1", Title = "对举句式", Line = 12, Col = 5, Snippet = "…不是A而是B…", Detail = "不是A而是B" },
                 new() { Id = "L7", Title = "填充短语", Line = 3, Col = 2, Snippet = "…在这个时间点…", Hint = "现在" },
             },
             Notes = new List<LintNote> { new() { Id = "C1", Text = "段落长度过于均一" } },
@@ -1387,6 +1410,7 @@ public class LintTextFormatterTests
 
         Assert.Contains("[命中] S1 对举句式（2 处）", text);
         Assert.Contains("第 12 行 第 5 列", text);
+        Assert.True(text.IndexOf("第 12 行") < text.IndexOf("第 20 行"), "组内应按行号升序");
         Assert.Contains("<- 现在", text);            // Hint 随命中给出
         Assert.Contains("[统计]", text);
         Assert.Contains("只报位置", text);
@@ -1450,7 +1474,9 @@ public static class LintTextFormatter
             foreach (var group in report.Hits.GroupBy(h => $"{h.Id} {h.Title}"))
             {
                 sb.AppendLine($"[命中] {group.Key}（{group.Count()} 处）");
-                foreach (var hit in group)
+                // 组内按 (行, 列) 升序：命中在引擎里的顺序是 规则→Pattern→位置，
+                // 同一规则的多条 Pattern 会让行号来回跳，人读报告需要单调
+                foreach (var hit in group.OrderBy(h => h.Line).ThenBy(h => h.Col))
                 {
                     string hint = string.IsNullOrEmpty(hit.Hint) ? "" : $"  <- {hit.Hint}";
                     string detail = string.IsNullOrEmpty(hit.Detail) ? "" : $"  <- {hit.Detail}";

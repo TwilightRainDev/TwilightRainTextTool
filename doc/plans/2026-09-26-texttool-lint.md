@@ -31,7 +31,7 @@
 
 ## 任务
 
-### 任务 1：修正嵌入式资源名，并让测试能真正失败
+### Task 1：修正嵌入式资源名，并让测试能真正失败
 
 **文件：**
 
@@ -104,7 +104,7 @@ git add TextTool.Core/ReplaceScheme.cs TextTool.Core/VNCharacterScheme.cs TextTo
 git commit -m "fix: 修正嵌入式资源名前缀，内联兜底不再掩盖 JSON 读取失败"
 ```
 
-### 任务 2：规则模型与存储
+### Task 2：规则模型与存储
 
 **文件：**
 
@@ -327,7 +327,7 @@ git add TextTool.Core/LintRule.cs TextTool.Tests/Services/LintRuleStoreTests.cs
 git commit -m "feat: 新增 AI 味检查规则模型与存储（内置 + 外部按 Id 合并）"
 ```
 
-### 任务 3：规则数据 `default_lint_rules.json`
+### Task 3：规则数据 `default_lint_rules.json`
 
 **文件：**
 
@@ -508,7 +508,7 @@ git add TextTool.Core/default_lint_rules.json TextTool.Core/TextTool.Core.csproj
 git commit -m "feat: 新增 19 条 AI 味检查数据规则（P/L/S 三组）"
 ```
 
-### 任务 4：报告模型与 JSON 契约
+### Task 4：报告模型与 JSON 契约
 
 **文件：**
 
@@ -683,7 +683,7 @@ git add TextTool.Core/LintReport.cs TextTool.Tests/Services/LintReportTests.cs
 git commit -m "feat: 新增 AI 味检查报告模型与 JSON 契约"
 ```
 
-### 任务 5：引擎——数据规则扫描与定位
+### Task 5：引擎——数据规则扫描与定位
 
 **文件：**
 
@@ -891,7 +891,7 @@ git add TextTool.Core/AiToneLintService.cs TextTool.Tests/Services/AiToneLintSer
 git commit -m "feat: AI 味检查引擎支持全文作用域规则与行列定位"
 ```
 
-### 任务 6：引擎——段落作用域（TailChars / 段内 MinCount）
+### Task 6：引擎——段落作用域（TailChars / 段内 MinCount）
 
 **文件：**
 
@@ -1008,7 +1008,7 @@ git add TextTool.Core/AiToneLintService.cs TextTool.Tests/Services/AiToneLintSer
 git commit -m "feat: AI 味检查引擎支持段落作用域与段末窗口"
 ```
 
-### 任务 7：引擎——算法规则（P4/P5 与 C1–C5）
+### Task 7：引擎——算法规则（P4/P5 与 C1–C5）
 
 **文件：**
 
@@ -1226,7 +1226,7 @@ git add TextTool.Core/AiToneLintService.cs TextTool.Tests/Services/AiToneLintSer
 git commit -m "feat: AI 味检查引擎新增引号/括号与篇章统计算法规则"
 ```
 
-### 任务 8：人读渲染与不可见字符转义
+### Task 8：人读渲染与不可见字符转义
 
 **文件：**
 
@@ -1374,7 +1374,7 @@ git add TextTool.Core/LintTextFormatter.cs TextTool.Tests/Services/LintTextForma
 git commit -m "feat: AI 味检查人读报告渲染与不可见字符转义"
 ```
 
-### 任务 9：`texttool lint` 子命令
+### Task 9：`texttool lint` 子命令
 
 **文件：**
 
@@ -1525,7 +1525,7 @@ git add TextTool.Cli/Program.cs
 git commit -m "feat: 新增 texttool lint 子命令（只报不改，JSON 契约与退出码）"
 ```
 
-### 任务 10：文档与版本
+### Task 10：文档与版本
 
 **文件：**
 
@@ -1565,7 +1565,7 @@ git add README.md doc/TECH-DEBT.md Directory.Build.props
 git commit -m "docs: 补充 lint 子命令文档与验证锚点，版本升至 2.5.0"
 ```
 
-### 任务 11：技能侧收编（仓外）
+### Task 11：技能侧收编（仓外）
 
 **文件：**
 

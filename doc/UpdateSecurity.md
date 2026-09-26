@@ -32,6 +32,10 @@
 
 ## 发布流程（每次发版）
 
+推荐 `.\scripts\publish.ps1 -Version <x.y.z> [-SkipUpload] [-Force]`。先 `-SkipUpload` 演练签名与自检，确认后再去掉该开关上传 `.sig`。release 上已有 `.sig` 时须加 `-Force` 才会覆盖。可选 `-KeyPath <priv.pem>`、`-Repo owner/name`。
+
+以下手工步骤仅作对照：
+
 1. CI 构建 + 打包 zip + 生成 `.sha256`（现有 build-test.yml 流程不变）
 2. 下载 CI 产物 zip 到本地（例如 `gh run download`）
 3. 离线签名：

@@ -38,6 +38,7 @@ public static class Program
                 "replace" => RunReplace(args[1..]),
                 "vn" => RunVn(args[1..]),
                 "join" => RunJoin(args[1..]),
+                "lint" => RunLint(args[1..]),
                 "update" => RunUpdate(args[1..]),
                 "help" or "--help" or "-h" => PrintUsage(),
                 _ => UnknownCommand(args[0]),
@@ -297,6 +298,105 @@ public static class Program
         return 0;
     }
 
+    /// <summary>
+    /// lint：只报不改的 AI 味检查。
+    /// 退出码与其它子命令不同：0 = 无命中，1 = 有命中，2 = 用法/读取错误。
+    /// </summary>
+    private static int RunLint(string[] args)
+    {
+        try
+        {
+            // Windows 控制台默认 GBK 码页：报隐形字符/中文时可能编码失败，强制 UTF-8 输出
+            try { Console.OutputEncoding = new UTF8Encoding(false); } catch (IOException) { }
+
+            var files = new List<string>();
+            bool json = false;
+            string? only = null, minSeverity = null;
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                switch (args[i])
+                {
+                    case "--json": json = true; break;
+                    case "--only": only = ParseValue(args, ref i, "--only"); break;
+                    case "--min-severity": minSeverity = ParseValue(args, ref i, "--min-severity"); break;
+                    case "--help" or "-h": PrintLintHelp(); return 0;
+                    default: files.Add(args[i]); break;
+                }
+            }
+
+            if (files.Count == 0)
+                throw new ArgumentException("lint 需要至少一个输入文件（- 表示 stdin）");
+            if (minSeverity is not (null or "info" or "warn"))
+                throw new ArgumentException("--min-severity 只接受 info 或 warn");
+
+            var onlyIds = only is null
+                ? null
+                : only.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (onlyIds is not null)
+            {
+                var known = AiToneLintService.AllRuleIds();
+                var unknown = onlyIds.Where(id => !known.Contains(id, StringComparer.OrdinalIgnoreCase)).ToList();
+                if (unknown.Count > 0)
+                    throw new ArgumentException($"未知规则 Id：{string.Join(", ", unknown)}");
+            }
+
+            var service = new AiToneLintService(LintRuleStore.Load());
+            var reportSet = new LintReportSet();
+
+            foreach (var file in files)
+            {
+                string text = file == "-" ? ReadStdin() : ReadFileForLint(file);
+                var report = service.Scan(text, file == "-" ? "(stdin)" : Path.GetFileName(file))
+                    .Filter(onlyIds, minSeverity);
+                reportSet.Reports.Add(report);
+
+                if (!json)
+                    Console.WriteLine(LintTextFormatter.Format(report) + Environment.NewLine);
+            }
+
+            if (json)
+                Console.WriteLine(reportSet.ToJson());
+
+            bool anyHit = reportSet.Reports.Any(r => r.Hits.Count > 0);
+            return anyHit ? 1 : 0;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"错误：{ex.Message}");
+            return 2;
+        }
+    }
+
+    private static string ReadFileForLint(string file)
+    {
+        if (!File.Exists(file))
+            throw new ArgumentException($"文件不存在：{file}");
+        var encoding = EncodingDetector.DetectStrict(file);
+        return File.ReadAllText(file, encoding.Encoding);
+    }
+
+    /// <summary>stdin 按 UTF-8 读原始字节，不受控制台码页影响。</summary>
+    private static string ReadStdin()
+    {
+        using var stream = Console.OpenStandardInput();
+        using var reader = new StreamReader(stream, new UTF8Encoding(false));
+        return reader.ReadToEnd();
+    }
+
+    private static void PrintLintHelp() =>
+        Console.WriteLine("""
+            lint 选项：
+              --json                以 JSON 输出（契约见 doc/specs/2026-09-26-texttool-lint-design.md）
+              --only <Id,...>       只跑指定规则，如 --only S1,L1
+              --min-severity <info|warn>  只输出 warn 及以上（统计项不受影响）
+
+            输入：文件路径可多个；传 - 表示从 stdin 读。
+
+            退出码（与其它子命令不同）：0 = 无命中，1 = 有命中，2 = 用法/读取错误。
+            命中判定基于过滤后的集合，因此 --min-severity warn 即「只在有 warn 时退 1」。
+            """);
+
     // ================================================================
     //  Helpers
     // ================================================================
@@ -341,6 +441,7 @@ public static class Program
               texttool replace <文件...> [选项]    标点符号替换
               texttool vn <文件...> [选项]        视觉小说排版
               texttool join <目录> [选项]         文件拼接
+              texttool lint <文件...> [选项]        AI 味检查（只报不改）
               texttool update [--check]           自更新（--check 仅检查）
 
             运行 texttool <命令> --help 查看各命令选项。

@@ -40,7 +40,43 @@ public sealed class AiToneLintService
     }
 
     private static void ScanParagraphScope(CompiledRule rule, string text, LintReport report)
-        => throw new NotImplementedException("任务 6 实现");
+    {
+        var paragraphs = Paragraphs(text);
+        foreach (var (regex, hint) in rule.Patterns)
+        {
+            // MinCount 按段判定：段内序数词必须是同一段里凑够次数才算骨架，
+            // 分散在多段的单次出现合计到达阈值不算（任务名与用例的「段内」口径）。
+            foreach (var p in paragraphs)
+            {
+                int windowStart = rule.Rule.TailChars is int tail && p.Text.Length > tail
+                    ? p.Text.Length - tail
+                    : 0;
+                var matches = regex.Matches(p.Text, windowStart);
+                if (matches.Count < rule.Rule.MinCount) continue;
+                foreach (Match m in matches)
+                    report.Hits.Add(Hit(rule.Rule, text, p.Offset + m.Index, m.Length, m.Value, hint));
+            }
+        }
+    }
+
+    /// <summary>
+    /// 非空行即一段（与技能侧 tone_lint 的段落口径一致，Markdown 软换行会被拆开——已知简化）。
+    /// Offset 为去空白后段首在全文中的绝对下标。
+    /// </summary>
+    internal static List<(int Offset, string Text)> Paragraphs(string text)
+    {
+        var result = new List<(int, string)>();
+        int offset = 0;
+        foreach (var raw in text.Split('\n'))
+        {
+            var line = raw.TrimEnd('\r');
+            var trimmed = line.Trim();
+            if (trimmed.Length > 0)
+                result.Add((offset + (line.Length - line.TrimStart().Length), trimmed));
+            offset += raw.Length + 1;
+        }
+        return result;
+    }
 
     internal static LintHit Hit(LintRule rule, string text, int index, int length, string match, string? hint)
     {

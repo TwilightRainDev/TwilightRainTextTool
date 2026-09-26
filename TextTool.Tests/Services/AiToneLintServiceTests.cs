@@ -91,4 +91,79 @@ public class AiToneLintServiceTests
         Assert.Equal(7, report.Chars);
         Assert.Equal("t.txt", report.File);
     }
+
+    [Fact]
+    public void Scan_段内序数词需同段出现两次才报()
+    {
+        var rule = Rule("S2", "regex", "首先|其次|最后");
+        rule.Scope = "paragraph";
+        rule.MinCount = 2;
+
+        Assert.Empty(Service(rule).Scan("首先看这件事。\n其次看那件事。", "t.txt").Hits);
+        Assert.Equal(2, Service(rule).Scan("首先看这件事，其次看那件事。", "t.txt").Hits.Count);
+    }
+
+    [Fact]
+    public void Scan_TailChars只在段末范围内命中()
+    {
+        var rule = Rule("S3", "regex", "未来可期");
+        rule.Scope = "paragraph";
+        rule.TailChars = 30;
+
+        var 段中 = "未来可期" + new string('字', 40);
+        var 段末 = new string('字', 40) + "未来可期";
+
+        Assert.Empty(Service(rule).Scan(段中, "t.txt").Hits);
+        Assert.Single(Service(rule).Scan(段末, "t.txt").Hits);
+    }
+
+    [Fact]
+    public void Scan_真实规则集端到端冒烟()
+    {
+        // 前面各例都用自带规则，从不碰 default_lint_rules.json 的真实数据——
+        // P7 静默失效（literal + JSON 转义）正是这样漏掉的，这条负责端到端兜底。
+        // 本任务让段落作用域落地后，这条才能跑全量规则集（Task 5 时 S2/S3 会撞上抛异常的桩）。
+        var service = new AiToneLintService(LintRuleStore.Load());
+        var text = "此外，此外，此外。这不是数据问题而是口径问题。\u200B";
+
+        var ids = service.Scan(text, "t.txt").Hits.Select(h => h.Id).Distinct().OrderBy(x => x).ToList();
+
+        Assert.Contains("L2", ids);   // AI 高频词（MinCount 3 达标才报）
+        Assert.Contains("S1", ids);   // 对举句式
+        Assert.Contains("P7", ids);   // 隐形字符——写作 literal 时这条会静默消失
+    }
+
+    [Fact]
+    public void Scan_Snippet右边界也不劈开代理对()
+    {
+        // 命中在前、emoji 在后：右边界 = index+length+8 = 14 正落在 emoji 的代理对中间
+        // （Task 5 的用例窗口右端一律到 text.Length，hi++ 分支从未被执行）
+        var text = "不是A而是B" + new string('x', 5) + "😀😀";
+        var hit = Assert.Single(Service(Rule("S1", "regex", "不是A而是B")).Scan(text, "t.txt").Hits);
+
+        Assert.False(HasLoneSurrogate(hit.Snippet));
+    }
+
+    [Fact]
+    public void Scan_MinCount按Pattern各自计数而非整规则合计()
+    {
+        // 三条 Pattern 各出现 1 次：整规则合计 3 已达阈值，按 Pattern 计数则都不达标
+        var rule = Rule("L2", "literal", "此外", "赋能", "抓手");
+        rule.MinCount = 2;
+
+        Assert.Empty(Service(rule).Scan("此外，赋能，抓手。", "t.txt").Hits);
+    }
+
+    [Fact]
+    public void Scan_段落命中位置为绝对行列()
+    {
+        var rule = Rule("S3", "regex", "未来可期");
+        rule.Scope = "paragraph";
+        var text = "第一段。\n第二段末未来可期";
+
+        var hit = Assert.Single(Service(rule).Scan(text, "t.txt").Hits);
+
+        Assert.Equal(2, hit.Line);
+        Assert.Equal(5, hit.Col);
+    }
 }

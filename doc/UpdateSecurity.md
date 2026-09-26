@@ -21,11 +21,11 @@
 
 ## 密钥管理
 
-- **私钥**：`H:\work_zone\ApiKey\TextTool-signing.priv.pem`（ECDsa P-256，PKCS#8 PEM）
-- **公钥**：`H:\work_zone\ApiKey\TextTool-signing.pub.pem`（SPKI PEM，与客户端内嵌常量一致）
+- **私钥**：`E:\work_zone\ApiKey\TextTool-signing.priv.pem`（ECDsa P-256，PKCS#8 PEM）
+- **公钥**：`E:\work_zone\ApiKey\TextTool-signing.pub.pem`（SPKI PEM，与客户端内嵌常量一致）
 - 生成/重建（私钥文件存在时会拒绝覆盖，需先手动备份）：
   ```
-  dotnet run --project tools/ReleaseSigner -- keygen H:\work_zone\ApiKey [--passphrase <p>]
+  dotnet run --project tools/ReleaseSigner -- keygen E:\work_zone\ApiKey [--passphrase <p>]
   ```
 - 私钥当前未加密存储（与 ApiKey 目录内其他明文 token 同一保护水平）。若需要加密：`--passphrase` 重建，签名时用 `--passphrase` 或环境变量 `TEXTTOOL_SIGN_PASSPHRASE`
 - **绝不**把私钥放进 GitHub/CI（仓库被攻破时 secret 会一起被偷）
@@ -36,7 +36,7 @@
 2. 下载 CI 产物 zip 到本地（例如 `gh run download`）
 3. 离线签名：
    ```
-   dotnet run --project tools/ReleaseSigner -- sign TextTool-CLI-2.4.4-win-x64.zip -k H:\work_zone\ApiKey\TextTool-signing.priv.pem
+   dotnet run --project tools/ReleaseSigner -- sign TextTool-CLI-2.4.4-win-x64.zip -k E:\work_zone\ApiKey\TextTool-signing.priv.pem
    ```
    （或先 `cd tools/ReleaseSigner && dotnet build -c Release`，再直接运行 exe）
 4. 上传 `.sig` 到 release：
@@ -45,7 +45,7 @@
    ```
 5. 自检：
    ```
-   dotnet run --project tools/ReleaseSigner -- verify TextTool-CLI-2.4.4-win-x64.zip TextTool-CLI-2.4.4-win-x64.zip.sig -k H:\work_zone\ApiKey\TextTool-signing.pub.pem
+   dotnet run --project tools/ReleaseSigner -- verify TextTool-CLI-2.4.4-win-x64.zip TextTool-CLI-2.4.4-win-x64.zip.sig -k E:\work_zone\ApiKey\TextTool-signing.pub.pem
    texttool update --check   # 或在新版本上跑一次真实 update
    ```
 

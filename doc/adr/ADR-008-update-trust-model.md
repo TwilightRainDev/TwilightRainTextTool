@@ -13,7 +13,7 @@
 ## 决策
 重建更新信任链，信任根从"GitHub 网站"移到"开发机私钥"：
 
-1. **签名验证（信任根）**：ECDsa P-256，私钥仅存开发机（`H:\work_zone\ApiKey`）离线签名，产出 `<zip>.sig`；公钥 SPKI 内嵌客户端（`ReleaseSigningPublicKey.cs`）。客户端下载 zip + `.sig` 验签，**缺失/无效一律中止，无 sha256-only 降级路径**。`.sha256` 保留，仅作传输完整性检查。
+1. **签名验证（信任根）**：ECDsa P-256，私钥仅存开发机（`E:\work_zone\ApiKey`）离线签名，产出 `<zip>.sig`；公钥 SPKI 内嵌客户端（`ReleaseSigningPublicKey.cs`）。客户端下载 zip + `.sig` 验签，**缺失/无效一律中止，无 sha256-only 降级路径**。`.sha256` 保留，仅作传输完整性检查。
 2. **TLS 公共根固定（默认关闭）**：`pinned_roots.txt`（嵌入式资源，由 certifi/Mozilla 公共根清单生成，121 个 SPKI）——仅 `TEXTTOOL_UPDATE_STRICT_TLS=1` 时启用，链根公钥不在白名单即拒绝。默认模式为 OS 信任 + 检测告警（链根非公共 CA 时 CLI 提示，不中断）。**不**做叶证书/精确根固定：GitHub 会轮换 CA，且本机 TLS 被劫持无法取证真实链。
 
 ### 修订说明（决策 2）

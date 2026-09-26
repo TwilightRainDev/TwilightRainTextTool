@@ -55,27 +55,22 @@
 
 ---
 
-## 2. 待人工确认：`H:\` 盘符失真
+## 2. 已消解：`H:\` 盘符失真
 
-以下文档中的绝对路径写作 `H:\work_zone\...`，但本机**不存在 H: 盘**
-（`ls H:/` → `No such file or directory`），实际凭据目录为 `E:\work_zone\ApiKey\`（实测存在
-`TextTool-signing.priv.pem` / `TextTool-signing.pub.pem`）。属可机械化替换的失真，等待确认后统一修正。
+以下文档与注释中的绝对路径曾写作 `H:\work_zone\...`，但本机不存在 H: 盘（真实凭据目录为
+`E:\work_zone\ApiKey\`，实测存在 `TextTool-signing.priv.pem` / `TextTool-signing.pub.pem`）。
+**2026-09-26 经用户确认后统一修正为 `E:\`，共 9 处**：
 
-| 位置 | 内容 |
+| 位置 | 处数 |
 |---|---|
-| `doc/UpdateSecurity.md:24` | 私钥路径 `H:\work_zone\ApiKey\TextTool-signing.priv.pem` |
-| `doc/UpdateSecurity.md:25` | 公钥路径 `H:\work_zone\ApiKey\TextTool-signing.pub.pem` |
-| `doc/UpdateSecurity.md:28` | keygen 命令参数 `H:\work_zone\ApiKey` |
-| `doc/UpdateSecurity.md:39` | sign 命令 `-k H:\work_zone\ApiKey\...priv.pem` |
-| `doc/UpdateSecurity.md:48` | verify 命令 `-k H:\work_zone\ApiKey\...pub.pem` |
-| `doc/adr/ADR-008:16` | 私钥路径 |
-| `doc/specs/2026-08-03-texttool-2.4.5-design.md:112` | 私钥默认路径 |
+| `doc/UpdateSecurity.md` | 5 |
+| `doc/adr/ADR-008-update-trust-model.md` | 1 |
+| `doc/specs/2026-08-03-texttool-2.4.5-design.md` | 1 |
+| `TextTool.Core/ReleaseSigningPublicKey.cs`（注释） | 1 |
+| `tools/ReleaseSigner/Program.cs`（注释） | 1 |
 
-**另有一处在代码中，本次未改（不可改代码）：**
-
-| 位置 | 内容 |
-|---|---|
-| `TextTool.Core/ReleaseSigningPublicKey.cs:6` | 注释中的 `H:\work_zone\ApiKey\TextTool-signing.pub.pem` |
+复核方式：`grep -rn "H:[/\\\\]work_zone" --include=*.md --include=*.cs` 全仓已无命中；
+本文件此前对该失真的描述表已随本次订正一并移除。
 
 ### 已消解项
 

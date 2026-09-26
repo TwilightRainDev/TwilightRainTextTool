@@ -8,10 +8,22 @@ namespace TextTool.Services;
 /// </summary>
 public static class LintTextFormatter
 {
-    private static readonly HashSet<char> Escaped = new()
+    internal static readonly HashSet<char> Escaped = new()
     {
         '\u200B', '\u200C', '\u200D', '\u200E', '\u200F', '\u2060', '\u00AD', '\u00A0', '\uFEFF',
     };
+
+    /// <summary>
+    /// 只替换隐形字符集本身（不碰 JSON 自身的换行等控制字符），供 --json 路径复用：
+    /// JSON 文本里出现转义字面量，任何解析方都会把它解回原字符，语义不变。
+    /// </summary>
+    internal static string EscapeInvisible(string text)
+    {
+        var sb = new StringBuilder(text.Length);
+        foreach (char c in text)
+            sb.Append(Escaped.Contains(c) ? $"\\u{(int)c:x4}" : c);
+        return sb.ToString();
+    }
 
     public static string Format(LintReport report)
     {

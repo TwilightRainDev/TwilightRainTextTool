@@ -13,6 +13,7 @@ namespace TextTool.Cli;
 ///   texttool replace &lt;file...&gt; [--scheme &lt;name&gt;]
 ///   texttool vn &lt;file...&gt; [--scheme &lt;name...&gt;] [--max-para N] [--reformat-only|--punct-only]
 ///   texttool join &lt;directory&gt; [--pattern &quot;*.txt&quot;] [--output &lt;name&gt;]
+///   texttool lint &lt;file...&gt; [--only &lt;id...&gt;] [--min-severity warn] [--json]
 ///   texttool update [--check]
 /// </summary>
 public static class Program

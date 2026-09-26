@@ -14,7 +14,7 @@ public class LintReportTests
     };
 
     [Fact]
-    public void Filter_按严重度保留warn及以上_统计项不受影响()
+    public void Filter_按严重度保留warn及以上_统计项不受严重度影响()
     {
         var filtered = Sample().Filter(null, "warn");
 
@@ -30,6 +30,24 @@ public class LintReportTests
 
         Assert.Single(filtered.Hits);
         Assert.Equal("L1", filtered.Hits[0].Id);
+    }
+
+    [Fact]
+    public void Filter_按Id过滤_统计项同受约束()
+    {
+        // --only 是规则选择轴：C 组也是合法 Id（--only C1 就只报 C1 统计项），
+        // 选中的 Id 与统计项无关时不应带出任何统计项
+        var noNotes = Sample().Filter(new[] { "S1" }, null);
+
+        Assert.Single(noNotes.Hits);
+        Assert.Equal("S1", noNotes.Hits[0].Id);
+        Assert.Empty(noNotes.Notes);
+
+        var onlyNote = Sample().Filter(new[] { "c1" }, null);   // 小写，顺带钉大小写不敏感
+
+        Assert.Empty(onlyNote.Hits);
+        Assert.Single(onlyNote.Notes);
+        Assert.Equal("C1", onlyNote.Notes[0].Id);
     }
 
     [Fact]
@@ -55,5 +73,6 @@ public class LintReportTests
         var json = new LintReportSet { Reports = new List<LintReport> { report } }.ToJson();
 
         Assert.Contains("P7", json);
+        Assert.Contains("\\u200b", json);   // JSON 文本里是可读的 \uXXXX 字面量
     }
 }

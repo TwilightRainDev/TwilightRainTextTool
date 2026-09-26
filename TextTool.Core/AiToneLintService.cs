@@ -29,9 +29,11 @@ public sealed class AiToneLintService
         return report;
     }
 
+    /// <summary>代码内算法规则的 Id 全集（数据规则之外的 P4/P5 与 C1-C5）。</summary>
     public static readonly IReadOnlyList<string> AlgorithmRuleIds =
         new[] { "P4", "P5", "C1", "C2", "C3", "C4", "C5" };
 
+    /// <summary>算法规则与数据规则的 Id 并集，即引擎实际可能产出的 Id 全集（--only 的校验集）。</summary>
     public static IReadOnlyCollection<string> AllRuleIds()
     {
         var ids = new List<string>(AlgorithmRuleIds);

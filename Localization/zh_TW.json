@@ -53,6 +53,11 @@
   "ChkOverwrite": "危險覆蓋模式（直接寫回原始檔案）",
 
   "EncodingNotSelected": "（尚未選擇檔案）",
+  "EncodingUtf8Bom": "UTF-8（BOM）",
+  "EncodingUtf8": "UTF-8",
+  "EncodingUtf16Le": "UTF-16 小端",
+  "EncodingUtf16Be": "UTF-16 大端",
+  "EncodingGbk": "GBK（ANSI）",
 
   "HintRuleEdit": "提示：選擇列表中規則可編輯；修改「尋找」/「取代為」後點選「新增/更新」儲存修改",
 

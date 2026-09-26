@@ -53,6 +53,11 @@
   "ChkOverwrite": "Dangerous Overwrite Mode (overwrite original)",
 
   "EncodingNotSelected": "(No file selected)",
+  "EncodingUtf8Bom": "UTF-8 (BOM)",
+  "EncodingUtf8": "UTF-8",
+  "EncodingUtf16Le": "UTF-16 LE",
+  "EncodingUtf16Be": "UTF-16 BE",
+  "EncodingGbk": "GBK (ANSI)",
 
   "HintRuleEdit": "Hint: Select a rule in the list to edit; modify \"Find\"/\"Replace With\" then click \"Add/Update\" to save",
 

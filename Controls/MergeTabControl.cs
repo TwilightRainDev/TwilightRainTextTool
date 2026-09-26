@@ -211,7 +211,10 @@ public sealed class MergeTabControl : UserControl, IStatusSource, IThemedTab
         _rbByte.Text = Loc.T("RadioByte");
         _rbChar.Text = Loc.T("RadioChar");
         _lblEncodingTag.Text = Loc.T("LabelEncoding");
-        if (_lastDetection == null) _lblEncoding.Text = Loc.T("EncodingNotSelected");
+        if (_lastDetection == null)
+            _lblEncoding.Text = Loc.T("EncodingNotSelected");
+        else
+            _lblEncoding.Text = Loc.T(_lastDetection.LocKey);
         _lblPostProcess.Text = Loc.T("LabelPostProcess");
         _chkFixCjk.Text = Loc.T("ChkFixCjk");
         _chkFixPunct.Text = Loc.T("ChkFixPunct");
@@ -280,7 +283,7 @@ public sealed class MergeTabControl : UserControl, IStatusSource, IThemedTab
         try
         {
             _lastDetection = EncodingDetector.Detect(valid[0]);
-            _lblEncoding.Text = _lastDetection.DisplayName;
+            _lblEncoding.Text = Loc.T(_lastDetection.LocKey);
             _lblEncoding.ForeColor = SystemColors.ControlText;
         }
         catch

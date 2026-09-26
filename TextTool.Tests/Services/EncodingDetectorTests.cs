@@ -19,7 +19,7 @@ public class EncodingDetectorTests
         File.WriteAllBytes(tf.Path, new byte[] { 0xEF, 0xBB, 0xBF, 0x68, 0x65, 0x6C, 0x6C, 0x6F });
         var result = EncodingDetector.Detect(tf.Path);
 
-        Assert.Equal("UTF-8 (BOM)", result.DisplayName);
+        Assert.Equal(DetectedEncoding.Utf8Bom, result.Kind);
         Assert.Equal(Encoding.UTF8, result.Encoding);
     }
 
@@ -30,7 +30,7 @@ public class EncodingDetectorTests
         File.WriteAllBytes(tf.Path, new byte[] { 0xFF, 0xFE, 0x68, 0x00, 0x65, 0x00 });
         var result = EncodingDetector.Detect(tf.Path);
 
-        Assert.Equal("UTF-16 LE", result.DisplayName);
+        Assert.Equal(DetectedEncoding.Utf16Le, result.Kind);
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class EncodingDetectorTests
         File.WriteAllBytes(tf.Path, new byte[] { 0xFE, 0xFF, 0x00, 0x68, 0x00, 0x65 });
         var result = EncodingDetector.Detect(tf.Path);
 
-        Assert.Equal("UTF-16 BE", result.DisplayName);
+        Assert.Equal(DetectedEncoding.Utf16Be, result.Kind);
     }
 
     // ================================================================
@@ -56,7 +56,7 @@ public class EncodingDetectorTests
         File.WriteAllBytes(tf.Path, utf8NoBom);
         var result = EncodingDetector.Detect(tf.Path);
 
-        Assert.Equal("UTF-8", result.DisplayName);
+        Assert.Equal(DetectedEncoding.Utf8, result.Kind);
         Assert.Equal(Encoding.UTF8, result.Encoding);
     }
 
@@ -67,7 +67,7 @@ public class EncodingDetectorTests
         File.WriteAllBytes(tf.Path, new byte[] { 0x48, 0x65, 0x6C, 0x6C, 0x6F }); // "Hello"
         var result = EncodingDetector.Detect(tf.Path);
 
-        Assert.Equal("UTF-8", result.DisplayName);
+        Assert.Equal(DetectedEncoding.Utf8, result.Kind);
     }
 
     // ================================================================
@@ -83,7 +83,7 @@ public class EncodingDetectorTests
         File.WriteAllBytes(tf.Path, gbkBytes);
         var result = EncodingDetector.Detect(tf.Path);
 
-        Assert.Equal("GBK (ANSI)", result.DisplayName);
+        Assert.Equal(DetectedEncoding.Gbk, result.Kind);
         Assert.Equal(Encoding.GetEncoding(936), result.Encoding);
     }
 
@@ -111,7 +111,7 @@ public class EncodingDetectorTests
         File.WriteAllBytes(tf.Path, Encoding.UTF8.GetBytes(content));
         var result = EncodingDetector.Detect(tf.Path);
 
-        Assert.Equal("UTF-8", result.DisplayName);
+        Assert.Equal(DetectedEncoding.Utf8, result.Kind);
     }
 
     [Fact]
@@ -127,7 +127,7 @@ public class EncodingDetectorTests
         var result = EncodingDetector.Detect(tf.Path);
 
         // Should not crash, trimmed incomplete seq → valid UTF-8
-        Assert.Equal("UTF-8", result.DisplayName);
+        Assert.Equal(DetectedEncoding.Utf8, result.Kind);
     }
 
     // ================================================================
@@ -145,8 +145,8 @@ public class EncodingDetectorTests
         bytes.Add(0x40);
         File.WriteAllBytes(tf.Path, bytes.ToArray());
 
-        Assert.Equal("UTF-8", EncodingDetector.Detect(tf.Path).DisplayName);
-        Assert.Equal("GBK (ANSI)", EncodingDetector.DetectStrict(tf.Path).DisplayName);
+        Assert.Equal(DetectedEncoding.Utf8, EncodingDetector.Detect(tf.Path).Kind);
+        Assert.Equal(DetectedEncoding.Gbk, EncodingDetector.DetectStrict(tf.Path).Kind);
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public class EncodingDetectorTests
         bytes.AddRange(new byte[] { 0xE4, 0xB8, 0x96, 0xE7, 0x95, 0x8C }); // "世界"
         File.WriteAllBytes(tf.Path, bytes.ToArray());
 
-        Assert.Equal("UTF-8", EncodingDetector.DetectStrict(tf.Path).DisplayName);
+        Assert.Equal(DetectedEncoding.Utf8, EncodingDetector.DetectStrict(tf.Path).Kind);
     }
 
     [Fact]
@@ -168,7 +168,7 @@ public class EncodingDetectorTests
         File.WriteAllBytes(tf.Path, new byte[] { 0xEF, 0xBB, 0xBF, 0x68, 0x65, 0x6C, 0x6C, 0x6F });
         var result = EncodingDetector.DetectStrict(tf.Path);
 
-        Assert.Equal("UTF-8 (BOM)", result.DisplayName);
+        Assert.Equal(DetectedEncoding.Utf8Bom, result.Kind);
     }
 
     [Fact]
@@ -183,7 +183,7 @@ public class EncodingDetectorTests
         bytes.Add(0x96); // 续接在下一块
         File.WriteAllBytes(tf.Path, bytes.ToArray());
 
-        Assert.Equal("UTF-8", EncodingDetector.DetectStrict(tf.Path).DisplayName);
+        Assert.Equal(DetectedEncoding.Utf8, EncodingDetector.DetectStrict(tf.Path).Kind);
     }
 
     [Fact]
@@ -195,8 +195,23 @@ public class EncodingDetectorTests
         bytes.Add(0xE4); // 缺少两个续接字节
         File.WriteAllBytes(tf.Path, bytes.ToArray());
 
-        Assert.Equal("UTF-8", EncodingDetector.Detect(tf.Path).DisplayName);
-        Assert.Equal("GBK (ANSI)", EncodingDetector.DetectStrict(tf.Path).DisplayName);
+        Assert.Equal(DetectedEncoding.Utf8, EncodingDetector.Detect(tf.Path).Kind);
+        Assert.Equal(DetectedEncoding.Gbk, EncodingDetector.DetectStrict(tf.Path).Kind);
+    }
+
+    [Theory]
+    [InlineData(DetectedEncoding.Utf8Bom, "EncodingUtf8Bom")]
+    [InlineData(DetectedEncoding.Utf8, "EncodingUtf8")]
+    [InlineData(DetectedEncoding.Utf16Le, "EncodingUtf16Le")]
+    [InlineData(DetectedEncoding.Utf16Be, "EncodingUtf16Be")]
+    [InlineData(DetectedEncoding.Gbk, "EncodingGbk")]
+    public void DetectionResult_LocKey_MatchesKind(DetectedEncoding kind, string key)
+    {
+        var encoding = kind is DetectedEncoding.Gbk
+            ? Encoding.GetEncoding(936)
+            : Encoding.UTF8;
+        var result = new DetectionResult(encoding, kind);
+        Assert.Equal(key, result.LocKey);
     }
 
     // ================================================================

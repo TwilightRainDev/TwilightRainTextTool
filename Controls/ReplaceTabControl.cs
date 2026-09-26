@@ -41,6 +41,7 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource, IThemedTab
     private Button _btnPresetSchemes = null!;
 
     private readonly List<string> _selectedFiles = new();
+    private DetectionResult? _lastDetection;
     private CancellationTokenSource? _cts;   // 批处理取消令牌
 
     public ReplaceTabControl(List<ReplaceRule> rules)
@@ -242,7 +243,12 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource, IThemedTab
         _lblReplaceFile.Text = Loc.T("LabelSourceFile");
         _btnBrowseReplaceFile.Text = Loc.T("BtnBrowse");
         _lblReplaceEncodingTag.Text = Loc.T("LabelEncoding");
-        if (_selectedFiles.Count == 0) _lblReplaceEncoding.Text = Loc.T("EncodingNotSelected");
+        if (_selectedFiles.Count > 1)
+            _lblReplaceEncoding.Text = Loc.T("StatusFilesSelected", _selectedFiles.Count);
+        else if (_lastDetection != null)
+            _lblReplaceEncoding.Text = Loc.T(_lastDetection.LocKey);
+        else
+            _lblReplaceEncoding.Text = Loc.T("EncodingNotSelected");
         _lblRulesHeader.Text = Loc.T("LabelRules");
         _lblFind.Text = Loc.T("LabelFind");
         _lblReplaceWith.Text = Loc.T("LabelReplaceWith");
@@ -312,12 +318,14 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource, IThemedTab
             try
             {
                 var detection = EncodingDetector.Detect(valid[0]);
-                _lblReplaceEncoding.Text = detection.DisplayName;
+                _lastDetection = detection;
+                _lblReplaceEncoding.Text = Loc.T(detection.LocKey);
                 _lblReplaceEncoding.ForeColor = SystemColors.ControlText;
             }
             catch
             {
                 // 检测失败时清空状态，避免以错误的编码继续处理
+                _lastDetection = null;
                 _lblReplaceEncoding.Text = Loc.T("EncodingNotSelected");
                 _lblReplaceEncoding.ForeColor = ThemeManager.MutedFg;
             }
@@ -325,6 +333,7 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource, IThemedTab
         else
         {
             _txtReplaceFile.Text = $"[{valid.Count} files selected]";
+            _lastDetection = null;
             _lblReplaceEncoding.Text = Loc.T("StatusFilesSelected", valid.Count);
             _lblReplaceEncoding.ForeColor = SystemColors.ControlText;
         }

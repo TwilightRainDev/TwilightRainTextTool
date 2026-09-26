@@ -191,6 +191,8 @@ public sealed class VNTabControl : UserControl, IStatusSource, IThemedTab
         _lblEncodingTag.Text = Loc.T("LabelVNEncoding");
         if (_lastDetection == null)
             _lblEncoding.Text = Loc.T("EncodingNotSelected");
+        else
+            _lblEncoding.Text = Loc.T(_lastDetection.LocKey);
         _lblMode.Text = Loc.T("LabelVNMode");
         _rbAll.Text = Loc.T("RadioVNAll");
         _rbReformat.Text = Loc.T("RadioVNReformat");
@@ -257,7 +259,7 @@ public sealed class VNTabControl : UserControl, IStatusSource, IThemedTab
         try
         {
             _lastDetection = EncodingDetector.Detect(valid[0]);
-            _lblEncoding.Text = _lastDetection.DisplayName;
+            _lblEncoding.Text = Loc.T(_lastDetection.LocKey);
             _lblEncoding.ForeColor = SystemColors.ControlText;
         }
         catch

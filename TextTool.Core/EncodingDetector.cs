@@ -43,7 +43,9 @@ public static class EncodingDetector
         var headerResult = Detect(filePath);
 
         // BOM 或 UTF-16：字节序标记明确，信任快速路径
-        if (headerResult.DisplayName is "UTF-8 (BOM)" or "UTF-16 LE" or "UTF-16 BE")
+        if (headerResult.Kind is DetectedEncoding.Utf8Bom
+            or DetectedEncoding.Utf16Le
+            or DetectedEncoding.Utf16Be)
             return headerResult;
 
         // 头部判为 UTF-8：全文二次验证。头部 4KB 合法但全文存在非法序列，
@@ -53,7 +55,7 @@ public static class EncodingDetector
         {
             return IsStrictUtf8(filePath)
                 ? headerResult
-                : new DetectionResult(Encoding.GetEncoding(936), "GBK (ANSI)");
+                : new DetectionResult(Encoding.GetEncoding(936), DetectedEncoding.Gbk);
         }
 
         // 头部判为 GBK：信任快速路径（真正的 UTF-8 文件头部必为合法 UTF-8，
@@ -90,20 +92,20 @@ public static class EncodingDetector
 
         // 1. 检查 BOM
         if (read >= 3 && header[0] == 0xEF && header[1] == 0xBB && header[2] == 0xBF)
-            return new DetectionResult(Encoding.UTF8, "UTF-8 (BOM)");
+            return new DetectionResult(Encoding.UTF8, DetectedEncoding.Utf8Bom);
 
         if (read >= 2 && header[0] == 0xFF && header[1] == 0xFE)
-            return new DetectionResult(Encoding.Unicode, "UTF-16 LE");
+            return new DetectionResult(Encoding.Unicode, DetectedEncoding.Utf16Le);
 
         if (read >= 2 && header[0] == 0xFE && header[1] == 0xFF)
-            return new DetectionResult(Encoding.BigEndianUnicode, "UTF-16 BE");
+            return new DetectionResult(Encoding.BigEndianUnicode, DetectedEncoding.Utf16Be);
 
         // 2. 尝试 UTF-8 解码（无 BOM）
         if (IsValidUtf8(header))
-            return new DetectionResult(Encoding.UTF8, "UTF-8");
+            return new DetectionResult(Encoding.UTF8, DetectedEncoding.Utf8);
 
         // 3. 回退到 GBK
-        return new DetectionResult(Encoding.GetEncoding(936), "GBK (ANSI)");
+        return new DetectionResult(Encoding.GetEncoding(936), DetectedEncoding.Gbk);
     }
 
     /// <summary>
@@ -171,6 +173,29 @@ public static class EncodingDetector
 }
 
 /// <summary>
+/// 已识别的文本编码种类（显示名由 UI 经 Loc 解析）
+/// </summary>
+public enum DetectedEncoding
+{
+    Utf8Bom,
+    Utf8,
+    Utf16Le,
+    Utf16Be,
+    Gbk
+}
+
+/// <summary>
 /// 编码检测结果（不可变记录）
 /// </summary>
-public record DetectionResult(Encoding Encoding, string DisplayName);
+public record DetectionResult(Encoding Encoding, DetectedEncoding Kind)
+{
+    public string LocKey => Kind switch
+    {
+        DetectedEncoding.Utf8Bom => "EncodingUtf8Bom",
+        DetectedEncoding.Utf8 => "EncodingUtf8",
+        DetectedEncoding.Utf16Le => "EncodingUtf16Le",
+        DetectedEncoding.Utf16Be => "EncodingUtf16Be",
+        DetectedEncoding.Gbk => "EncodingGbk",
+        _ => throw new ArgumentOutOfRangeException(nameof(Kind), Kind, null)
+    };
+}

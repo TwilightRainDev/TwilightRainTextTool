@@ -36,15 +36,17 @@ public class LintRule
 public static class LintRuleStore
 {
     /// <summary>资源名前缀取 RootNamespace（TextTool），不是程序集名（TextTool.Core）。</summary>
-    public const string EmbeddedResourceName = "TextTool.default_lint_rules.json";
+    internal const string EmbeddedResourceName = "TextTool.default_lint_rules.json";
 
     public static List<LintRule> Load()
     {
         var builtIn = GetDefaultRules();
         var external = JsonFileStore.Load<LintRule>("lint_rules.json");
-        // 外部先校验：重复 Id 必须在这里得到清晰报错。
-        // 若留到 Merge 之后再校验，重复 Id 会在 Merge 内部因索引指向已被替换的对象
-        // 而先抛 ArgumentOutOfRangeException，Validate 的报错永远轮不到。
+        // 两侧各自先校验，再合并，再校验合并结果。三个边界各有理由：
+        // 内置侧——Merge 会 Clone，Patterns 为 null 时 Clone 先 NRE；
+        // 外部侧——重复 Id 必须在这里得到清晰报错，否则 Merge 内部索引指向已被替换的
+        //   对象、IndexOf 返回 -1，先抛 ArgumentOutOfRangeException，Validate 轮不到。
+        Validate(builtIn);
         Validate(external);
         var merged = Merge(builtIn, external);
         Validate(merged);
@@ -93,8 +95,12 @@ public static class LintRuleStore
                 throw new ArgumentException($"规则 {rule.Id} 的 Scope 非法：{rule.Scope}");
             if (rule.Severity is not ("info" or "warn"))
                 throw new ArgumentException($"规则 {rule.Id} 的 Severity 非法：{rule.Severity}");
-            if (rule.Patterns.Count == 0)
+            // 显式 null 会被 System.Text.Json 写回属性，模型上的 = new() 默认值挡不住，
+            // 不在这里拦就会变成 NullReferenceException 而非清晰的校验报错
+            if (rule.Patterns is null || rule.Patterns.Count == 0)
                 throw new ArgumentException($"规则 {rule.Id} 的 Patterns 为空");
+            if (rule.Patterns.Any(string.IsNullOrEmpty))
+                throw new ArgumentException($"规则 {rule.Id} 的 Patterns 含空串");
             if (rule.MinCount < 1)
                 throw new ArgumentException($"规则 {rule.Id} 的 MinCount 必须 >= 1");
             if (rule.TailChars is <= 0)

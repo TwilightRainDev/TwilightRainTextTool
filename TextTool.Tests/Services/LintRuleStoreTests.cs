@@ -57,4 +57,22 @@ public class LintRuleStoreTests
 
         Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
     }
+
+    [Fact]
+    public void Validate_Patterns为null即抛而非NRE()
+    {
+        var rule = Rule("L1");
+        rule.Patterns = null!;   // JSON 里的 "Patterns": null 会走到这里
+
+        var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
+        Assert.Contains("Patterns", ex.Message);
+    }
+
+    [Fact]
+    public void Validate_Patterns含空串即抛()
+    {
+        var rule = Rule("L1", "");   // 空串模式会匹配任意位置，是配置错误
+
+        Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
+    }
 }

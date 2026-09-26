@@ -1578,7 +1578,8 @@ public static class LintTextFormatter
 - [ ] **步骤 5：提交**
 
 ```bash
-git add TextTool.Core/LintTextFormatter.cs TextTool.Tests/Services/LintTextFormatterTests.cs
+git add TextTool.Core/LintTextFormatter.cs TextTool.Tests/Services/LintTextFormatterTests.cs \
+        TextTool.Tests/Services/AiToneLintServiceTests.cs
 git commit -m "feat: AI 味检查人读报告渲染与不可见字符转义" \
            -m "Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ```

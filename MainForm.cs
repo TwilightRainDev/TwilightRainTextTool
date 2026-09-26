@@ -5,7 +5,7 @@ using TextTool.Services;
 namespace TextTool;
 
 /// <summary>
-/// 主窗口 — 组装 4 个 UserControl 页签 + 状态栏。
+/// 主窗口 — 组装 6 个 UserControl 页签 + 状态栏。
 /// 每个页签独立管理自己的 UI、事件和状态。
 /// </summary>
 public sealed class MainForm : Form
@@ -15,6 +15,7 @@ public sealed class MainForm : Form
     private JoinTabControl _joinTab = null!;
     private ReplaceTabControl _replaceTab = null!;
     private VNTabControl _vnTab = null!;
+    private LintTabControl _lintTab = null!;
     private AboutTabControl _aboutTab = null!;
 
     // ===== 共享状态 =====
@@ -104,6 +105,11 @@ public sealed class MainForm : Form
         _vnTab.ErrorOccurred += ShowError;
         _tabControl.TabPages.Add(CreateTabPage(_vnTab, "Visual Novel"));
 
+        _lintTab = new LintTabControl();
+        _lintTab.StatusChanged += SetStatus;
+        _lintTab.ErrorOccurred += ShowError;
+        _tabControl.TabPages.Add(CreateTabPage(_lintTab, "AI-tone Lint"));
+
         // Tab 5: 关于
         _aboutTab = new AboutTabControl();
         _aboutTab.StatusChanged += SetStatus;
@@ -164,7 +170,8 @@ public sealed class MainForm : Form
         _tabControl.TabPages[1].Text = Loc.T("TabJoin");
         _tabControl.TabPages[2].Text = Loc.T("TabReplace");
         _tabControl.TabPages[3].Text = Loc.T("TabVN");
-        _tabControl.TabPages[4].Text = Loc.T("TabAbout");
+        _tabControl.TabPages[4].Text = Loc.T("TabLint");
+        _tabControl.TabPages[5].Text = Loc.T("TabAbout");
 
         _statusLabel.Text = Loc.T("StatusReady");
 

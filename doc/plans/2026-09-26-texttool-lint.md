@@ -180,12 +180,6 @@ public class LintRuleStoreTests
 
         Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
     }
-
-    [Fact]
-    public void Validate_内置规则集合法()
-    {
-        Assert.NotEmpty(LintRuleStore.GetDefaultRules());
-    }
 }
 ```
 
@@ -322,7 +316,9 @@ public static class LintRuleStore
 - [ ] **步骤 4：运行测试以确认通过**
 
 运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "LintRuleStoreTests"`
-预期：PASS（7 个，其中 `Validate_内置规则集合法` 会在任务 3 落地 JSON 后才通过——本步允许它失败，任务 3 结束时必须全绿）
+预期：PASS（5 个）
+
+> 注意：断言"内置规则集合法"的测试放在任务 3——本任务提交时 pre-commit 会跑**全量测试**，任何失败都会挡住提交，所以本任务不得留下未通过的测试。
 
 - [ ] **步骤 5：提交**
 
@@ -359,6 +355,19 @@ JSON 里写 `\\uXXXX`（JSON 转义后成为正则的 `\uXXXX`）；含 CJK 的�
                     "L1", "L2", "L3", "L4", "L5", "L6", "L7",
                     "S1", "S2", "S3", "S4", "S5", "S6" },
             ids);
+    }
+
+    [Fact]
+    public void Load_内置规则集可加载且通过校验()
+    {
+        var rules = LintRuleStore.Load();
+
+        Assert.Equal(19, rules.Count);
+        Assert.All(rules, r =>
+        {
+            Assert.False(string.IsNullOrWhiteSpace(r.Title));
+            Assert.False(string.IsNullOrWhiteSpace(r.Detail));
+        });
     }
 ```
 
@@ -490,7 +499,7 @@ JSON 里写 `\\uXXXX`（JSON 转义后成为正则的 `\uXXXX`）；含 CJK 的�
 - [ ] **步骤 4：运行测试以确认通过**
 
 运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "LintRuleStoreTests"`
-预期：PASS（全绿，含任务 2 遗留的 `Validate_内置规则集合法`）
+预期：PASS（7 个：任务 2 的 5 个 + 本任务的 2 个）
 
 - [ ] **步骤 5：提交**
 

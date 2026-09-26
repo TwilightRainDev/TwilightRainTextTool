@@ -263,7 +263,7 @@ public class LintRule
 public static class LintRuleStore
 {
     /// <summary>资源名前缀取 RootNamespace（TextTool），不是程序集名（TextTool.Core）。</summary>
-    public const string EmbeddedResourceName = "TextTool.default_lint_rules.json";
+    internal const string EmbeddedResourceName = "TextTool.default_lint_rules.json";
 
     public static List<LintRule> Load()
     {

@@ -100,4 +100,19 @@ public class LintRuleStoreTests
             Assert.False(string.IsNullOrWhiteSpace(r.Detail));
         });
     }
+
+    [Fact]
+    public void GetDefaultRules_literal规则的Patterns不含反斜杠()
+    {
+        // literal 走 Regex.Escape：JSON 里写的 \uXXXX 解码后是六个普通字符，
+        // 被 Escape 再转义一次后永远匹配不到真实字符——这类规则必须写成 regex
+        var offenders = LintRuleStore.GetDefaultRules()
+            .Where(r => r.Kind == "literal")
+            .SelectMany(r => r.Patterns.Select(p => (r.Id, Pattern: p)))
+            .Where(x => x.Pattern.Contains('\\'))
+            .Select(x => x.Id)
+            .ToList();
+
+        Assert.Empty(offenders);
+    }
 }

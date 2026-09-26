@@ -23,7 +23,7 @@
     "Severity": "info", "Detail": "破折号/波浪号写法不规范",
     "SuggestScheme": "去AI味标点归一" },
 
-  { "Id": "P7", "Group": "P", "Title": "隐形字符", "Kind": "literal",
+  { "Id": "P7", "Group": "P", "Title": "隐形字符", "Kind": "regex",
     "Patterns": ["\\u200B", "\\u200C", "\\u200D", "\\u200E", "\\u200F", "\\u2060", "\\u00AD", "\\u00A0"],
     "Severity": "warn", "Detail": "隐形字符（零宽/软连字符/不换行空格）",
     "SuggestScheme": "去AI味标点归一" },

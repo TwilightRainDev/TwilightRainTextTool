@@ -18,14 +18,8 @@ public sealed class PreviewForm : Form
     private static readonly UTF8Encoding Utf8Bom = new(true);
 
     public PreviewForm(List<string> lines, string outputPath)
-        : this(string.Join(Environment.NewLine, lines), outputPath)
     {
-    }
-
-    /// <summary>以整段文本创建预览（VN 等以 string 返回结果的场景）。</summary>
-    public PreviewForm(string text, string outputPath)
-    {
-        _lines = text.Split('\n').Select(l => l.TrimEnd('\r')).ToList();
+        _lines = lines;
         _outputPath = outputPath;
 
         Text = Loc.T("PreviewTitle");
@@ -96,6 +90,12 @@ public sealed class PreviewForm : Form
 
         // 应用全局主题
         ApplyTheme();
+    }
+
+    /// <summary>以整段文本创建预览（VN 等以 string 返回结果的场景）。</summary>
+    public PreviewForm(string text, string outputPath)
+        : this(text.Split('\n').Select(l => l.TrimEnd('\r')).ToList(), outputPath)
+    {
     }
 
     private void OnSave(object? sender, EventArgs e)

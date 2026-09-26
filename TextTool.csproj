@@ -37,6 +37,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="TextTool.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="Localization\*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

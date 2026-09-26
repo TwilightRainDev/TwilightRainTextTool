@@ -15,4 +15,9 @@
     <EmbeddedResource Include="pinned_roots.txt" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- 测试需断言 store 的嵌入式资源名常量，使其在查询串写错时真正失败 -->
+    <InternalsVisibleTo Include="TextTool.Tests" />
+  </ItemGroup>
+
 </Project>

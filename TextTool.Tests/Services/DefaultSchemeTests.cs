@@ -24,21 +24,21 @@ public class DefaultSchemeTests
     }
 
     [Fact]
-    public void ReplaceSchemeStore_EmbeddedResourceName_IsResolvable()
+    public void ReplaceSchemeStore_ResourceName_ResolvesToEmbeddedResource()
     {
-        // 直接查资源，绕过 store 的兜底逻辑——兜底数据与 JSON 相同，
-        // 只断言「有方案」无法区分两条路径，因此必须直查资源名
+        // 引用 store 自己的常量而非字面串：兜底数据与 JSON 相同，只断言「有方案」
+        // 无法区分两条路径，故直查资源；用常量才能让查询串写错时测试真正失败
         var stream = typeof(ReplaceSchemeStore).Assembly
-            .GetManifestResourceStream("TextTool.default_schemes.json");
+            .GetManifestResourceStream(ReplaceSchemeStore.ResourceName);
 
         Assert.NotNull(stream);
     }
 
     [Fact]
-    public void VNCharacterSchemeStore_EmbeddedResourceName_IsResolvable()
+    public void VNCharacterSchemeStore_ResourceName_ResolvesToEmbeddedResource()
     {
         var stream = typeof(VNCharacterSchemeStore).Assembly
-            .GetManifestResourceStream("TextTool.default_vn_schemes.json");
+            .GetManifestResourceStream(VNCharacterSchemeStore.ResourceName);
 
         Assert.NotNull(stream);
     }

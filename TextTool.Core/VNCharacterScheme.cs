@@ -28,6 +28,12 @@ public class VNCharacterScheme
 /// </summary>
 public static class VNCharacterSchemeStore
 {
+    /// <summary>
+    /// 嵌入式资源名。前缀取 csproj 的 RootNamespace（TextTool），不是程序集名（TextTool.Core）——
+    /// 资源名由 RootNamespace + 文件名生成，写成程序集名会查不到，并静默回退到内联兜底数据。
+    /// </summary>
+    internal const string ResourceName = "TextTool.default_vn_schemes.json";
+
     public static List<VNCharacterScheme> Load()
     {
         var schemes = JsonFileStore.Load<VNCharacterScheme>("vn_schemes.json");
@@ -44,7 +50,7 @@ public static class VNCharacterSchemeStore
         try
         {
             var assembly = Assembly.GetExecutingAssembly();
-            using var stream = assembly.GetManifestResourceStream("TextTool.default_vn_schemes.json");
+            using var stream = assembly.GetManifestResourceStream(ResourceName);
             if (stream != null)
             {
                 using var reader = new StreamReader(stream, Encoding.UTF8);

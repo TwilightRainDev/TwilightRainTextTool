@@ -555,7 +555,7 @@ JSON 里写 `\\uXXXX`（JSON 转义后成为正则的 `\uXXXX`）；含 CJK 的�
 ]
 ```
 
-> **P7 为什么是 `regex` 而不是 `literal`**：`literal` 走 `Regex.Escape`，JSON 里写的 `\\u200B` 解码后是六个普通字符（反斜杠 u 2 0 0 B），再被 `Regex.Escape` 转义一次，于是去匹配文本里字面的 `​` 序列——真实文本里的 U+200B 永远匹配不到，规则静默失效。写成 `regex` 则由正则引擎把 `​` 解释为真字符，且文件里仍看得见转义（比在 JSON 里嵌真实不可见字符可靠得多）。`L2`/`L7` 是纯中文文本、不含反斜杠，用 `literal` 正确。下面那条不变量测试负责拦住这类写法。
+> **P7 为什么是 `regex` 而不是 `literal`**：`literal` 走 `Regex.Escape`，JSON 里写的 `\\u200B` 解码后是六个普通字符（反斜杠 u 2 0 0 B），再被 `Regex.Escape` 转义一次，于是去匹配文本里字面的 `\u200B` 序列——真实文本里的 U+200B 永远匹配不到，规则静默失效。写成 `regex` 则由正则引擎把 `\u200B` 解释为真字符，且文件里仍看得见转义（比在 JSON 里嵌真实不可见字符可靠得多）。`L2`/`L7` 是纯中文文本、不含反斜杠，用 `literal` 正确。下面那条不变量测试负责拦住这类写法。
 
 - [ ] **步骤 4：运行测试以确认通过**
 
@@ -639,7 +639,7 @@ public class LintReportTests
         var report = new LintReport
         {
             File = "a.md", Chars = 3,
-            Hits = new List<LintHit> { new() { Id = "P7", Severity = "warn", Match = "​" } },
+            Hits = new List<LintHit> { new() { Id = "P7", Severity = "warn", Match = "\u200B" } },
         };
 
         var json = new LintReportSet { Reports = new List<LintReport> { report } }.ToJson();
@@ -820,6 +820,21 @@ public class AiToneLintServiceTests
     }
 
     [Fact]
+    public void Scan_真实规则集端到端冒烟()
+    {
+        // 前面各例都用自带规则，从不碰 default_lint_rules.json 的真实数据——
+        // P7 静默失效（literal + JSON 转义）正是这样漏掉的，这条负责端到端兜底
+        var service = new AiToneLintService(LintRuleStore.Load());
+        var text = "此外，此外，此外。这不是数据问题而是口径问题。\u200B";
+
+        var ids = service.Scan(text, "t.txt").Hits.Select(h => h.Id).Distinct().OrderBy(x => x).ToList();
+
+        Assert.Contains("L2", ids);   // AI 高频词（MinCount 3 达标才报）
+        Assert.Contains("S1", ids);   // 对举句式
+        Assert.Contains("P7", ids);   // 隐形字符——写作 literal 时这条会静默消失
+    }
+
+    [Fact]
     public void Scan_未命中返回空报告且Chars正确()
     {
         var report = Service(Rule("L1", "literal", "赋能")).Scan("干净的一段话。", "t.txt");
@@ -943,7 +958,7 @@ public sealed class AiToneLintService
 - [ ] **步骤 4：运行测试以确认通过**
 
 运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "AiToneLintServiceTests"`
-预期：PASS（5 个）
+预期：PASS（6 个）
 
 - [ ] **步骤 5：提交**
 
@@ -1060,7 +1075,7 @@ git commit -m "feat: AI 味检查引擎支持全文作用域规则与行列定�
 - [ ] **步骤 4：运行测试以确认通过**
 
 运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "AiToneLintServiceTests"`
-预期：PASS（8 个）
+预期：PASS（9 个）
 
 - [ ] **步骤 5：提交**
 
@@ -1278,7 +1293,7 @@ git commit -m "feat: AI 味检查引擎支持段落作用域与段末窗口"
 - [ ] **步骤 4：运行测试以确认通过**
 
 运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "AiToneLintServiceTests"`
-预期：PASS（13 个）
+预期：PASS（14 个）
 
 - [ ] **步骤 5：提交**
 

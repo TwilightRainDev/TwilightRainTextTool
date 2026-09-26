@@ -1,0 +1,107 @@
+[
+  { "Id": "P1", "Group": "P", "Title": "重复标点", "Kind": "regex",
+    "Patterns": ["([。，、？！；：～])\\1+", "([!?])\\1+"],
+    "Severity": "warn", "Detail": "连续重复的标点",
+    "SuggestScheme": "重复矛盾标点整理" },
+
+  { "Id": "P2", "Group": "P", "Title": "省略号风格", "Kind": "regex",
+    "Patterns": ["\\.{3,}", "。{3,}", "(?<!…)…(?!…)"],
+    "Severity": "warn", "Detail": "非标准省略号写法（标准为 ……）",
+    "SuggestScheme": "去AI味标点归一" },
+
+  { "Id": "P3", "Group": "P", "Title": "全半角混用", "Kind": "regex",
+    "Patterns": [
+      "[,;:?!()\"'][\\u3400-\\u4DBF\\u4E00-\\u9FFF\\uF900-\\uFAFF\\u3000-\\u303F\\uFF00-\\uFFEF]",
+      "[\\u3400-\\u4DBF\\u4E00-\\u9FFF\\uF900-\\uFAFF\\u3000-\\u303F\\uFF00-\\uFFEF][,;:?!()\"']"
+    ],
+    "Severity": "warn", "Detail": "半角标点与中文相邻",
+    "SuggestScheme": "去AI味标点归一" },
+
+  { "Id": "P6", "Group": "P", "Title": "破折号与波浪号", "Kind": "regex",
+    "Patterns": ["--+", "(?<!—)—(?!—)",
+      "[\\u3400-\\u4DBF\\u4E00-\\u9FFF] ?- ?[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "~{2,}|[～]"],
+    "Severity": "info", "Detail": "破折号/波浪号写法不规范",
+    "SuggestScheme": "去AI味标点归一" },
+
+  { "Id": "P7", "Group": "P", "Title": "隐形字符", "Kind": "literal",
+    "Patterns": ["\\u200B", "\\u200C", "\\u200D", "\\u200E", "\\u200F", "\\u2060", "\\u00AD", "\\u00A0"],
+    "Severity": "warn", "Detail": "隐形字符（零宽/软连字符/不换行空格）",
+    "SuggestScheme": "去AI味标点归一" },
+
+  { "Id": "P8", "Group": "P", "Title": "表情与装饰符号", "Kind": "regex",
+    "Patterns": ["[\\uFE0F]", "\\uD83C[\\uDF00-\\uDFFF]", "\\uD83D[\\uDC00-\\uDEFF]",
+      "\\uD83E[\\uDD00-\\uDDFF]", "[\\u2600-\\u27BF\\u2B00-\\u2BFF]"],
+    "Severity": "info", "Detail": "表情符号或装饰性符号",
+    "SuggestScheme": "特殊符号清除" },
+
+  { "Id": "L1", "Group": "L", "Title": "套话词", "Kind": "regex",
+    "Patterns": ["赋能", "抓手", "闭环", "生态位", "护城河", "降本增效", "提质增效",
+      "不可否认", "毋庸置疑", "值得注意的是", "众所周知", "在当今社会",
+      "随着.{0,10}的发展", "极大地", "深入地", "全方位", "多维度", "深层次",
+      "带来.{0,6}的.{0,6}体验", "具有重要意义", "发挥着重要作用", "起到了关键作用",
+      "在.{0,10}的背景下", "从某种意义上说", "换句话说", "简而言之"],
+    "Severity": "info", "Detail": "套话/空词" },
+
+  { "Id": "L2", "Group": "L", "Title": "AI 高频词", "Kind": "literal", "MinCount": 3,
+    "Patterns": ["此外", "至关重要", "深入探讨", "持久的", "增强", "培养", "相互作用",
+      "复杂性", "格局", "织锦", "宝贵的", "充满活力的", "获得", "展示", "与……保持一致"],
+    "Severity": "info", "Detail": "AI 高频词密度偏高" },
+
+  { "Id": "L3", "Group": "L", "Title": "模糊归因", "Kind": "regex",
+    "Patterns": ["行业报告显示", "观察者指出", "专家认为", "一些批评者认为", "多个来源",
+      "有观点认为", "业内人士指出"],
+    "Severity": "warn", "Detail": "观点归因于模糊来源" },
+
+  { "Id": "L4", "Group": "L", "Title": "知识截止免责", "Kind": "regex",
+    "Patterns": ["截至\\s*\\d{4}\\s*年", "根据我最后的训练更新", "根据我的训练数据",
+      "虽然具体细节(?:有限|稀缺)", "基于(?:我)?(?:现有|可用)的?信息", "我的知识截止"],
+    "Severity": "warn", "Detail": "模型免责声明残留" },
+
+  { "Id": "L5", "Group": "L", "Title": "协作交流痕迹", "Kind": "regex",
+    "Patterns": ["希望这对您有(?:所)?帮助", "当然！", "一定！", "您说得(?:完全)?正确",
+      "请(?:随时)?告诉我", "这是一个很好的?问题"],
+    "Severity": "warn", "Detail": "聊天对话痕迹残留" },
+
+  { "Id": "L6", "Group": "L", "Title": "谄媚语气", "Kind": "regex",
+    "Patterns": ["好问题[！!]", "您说得完全正确", "这是一个(?:很好的|非常棒的)观点",
+      "非常抱歉", "感谢您的耐心"],
+    "Severity": "warn", "Detail": "过度讨好或客套" },
+
+  { "Id": "L7", "Group": "L", "Title": "填充短语", "Kind": "literal",
+    "Patterns": ["为了实现这一目标", "由于下雨的事实", "在这个时间点",
+      "在您需要帮助的情况下", "系统具有处理的能力", "值得注意的是数据显示"],
+    "Hints": ["为了实现这一点", "因为下雨", "现在", "如果您需要帮助",
+      "系统可以处理", "数据显示"],
+    "Severity": "info", "Detail": "填充短语，可直接替换" },
+
+  { "Id": "S1", "Group": "S", "Title": "对举句式", "Kind": "regex",
+    "Patterns": ["不是[^。！？\\n]{1,25}?而是", "并非[^。！？\\n]{1,25}?而是",
+      "与其说[^。！？\\n]{1,25}?不如说", "不只是[^。！？\\n]{1,25}?更是",
+      "不在于[^。！？\\n]{1,25}?而在于", "既[^。！？\\n]{1,15}?又[^。！？\\n]{1,15}?又"],
+    "Severity": "warn", "Detail": "对举句式（AI 骨架）" },
+
+  { "Id": "S2", "Group": "S", "Title": "段内序数词", "Kind": "regex",
+    "Patterns": ["首先|其次|再次|最后|其一|其二|其三"],
+    "Scope": "paragraph", "MinCount": 2,
+    "Severity": "warn", "Detail": "段内序数词骨架" },
+
+  { "Id": "S3", "Group": "S", "Title": "结尾升华", "Kind": "regex",
+    "Patterns": ["不仅仅", "总而言之", "总之", "综上", "由此可见", "值得我们", "让我们",
+      "这正是", "在这个.{0,12}的时代", "不仅.{0,10}更是", "未来可期", "值得期待",
+      "方能", "唯有", "方得", "行稳致远"],
+    "Scope": "paragraph", "TailChars": 30,
+    "Severity": "warn", "Detail": "段末拔高收尾" },
+
+  { "Id": "S4", "Group": "S", "Title": "定语堆叠", "Kind": "regex",
+    "Patterns": ["的[^。，、\\n]{0,8}的[^。，、\\n]{0,8}的"],
+    "Severity": "info", "Detail": "短距离内三个「的」" },
+
+  { "Id": "S5", "Group": "S", "Title": "系动词回避", "Kind": "regex",
+    "Patterns": ["作为.{0,10}的?(?:象征|标志|证明|体现|代表)", "代表着.{0,10}",
+      "标志着.{0,10}", "充当着?.{0,10}"],
+    "Severity": "info", "Detail": "用复杂结构替代「是/有」" },
+
+  { "Id": "S6", "Group": "S", "Title": "内联标题列表", "Kind": "regex",
+    "Patterns": ["(?m)^[-*]\\s+\\*\\*[^*\\n]{1,20}\\*\\*[：:]"],
+    "Severity": "info", "Detail": "粗体标题 + 冒号的清单项" }
+]

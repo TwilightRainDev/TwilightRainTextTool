@@ -75,4 +75,29 @@ public class LintRuleStoreTests
 
         Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
     }
+
+    [Fact]
+    public void GetDefaultRules_数据规则19条且顺序完整()
+    {
+        var ids = LintRuleStore.GetDefaultRules().Select(r => r.Id).ToArray();
+
+        Assert.Equal(
+            new[] { "P1", "P2", "P3", "P6", "P7", "P8",
+                    "L1", "L2", "L3", "L4", "L5", "L6", "L7",
+                    "S1", "S2", "S3", "S4", "S5", "S6" },
+            ids);
+    }
+
+    [Fact]
+    public void Load_内置规则集可加载且通过校验()
+    {
+        var rules = LintRuleStore.Load();
+
+        Assert.Equal(19, rules.Count);
+        Assert.All(rules, r =>
+        {
+            Assert.False(string.IsNullOrWhiteSpace(r.Title));
+            Assert.False(string.IsNullOrWhiteSpace(r.Detail));
+        });
+    }
 }

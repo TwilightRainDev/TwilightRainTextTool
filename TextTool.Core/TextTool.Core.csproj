@@ -11,6 +11,7 @@
   <ItemGroup>
     <EmbeddedResource Include="default_schemes.json" />
     <EmbeddedResource Include="default_vn_schemes.json" />
+    <EmbeddedResource Include="default_lint_rules.json" />
     <!-- TLS 固定锚点：公共根 CA SPKI 白名单（certifi 生成，见 doc/UpdateSecurity.md） -->
     <EmbeddedResource Include="pinned_roots.txt" />
   </ItemGroup>

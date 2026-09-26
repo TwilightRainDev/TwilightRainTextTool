@@ -24,6 +24,8 @@
 - 目标框架：`net8.0`（Core / CLI / Tests）。**本计划不碰 GUI 项目**（`TextTool.csproj`、`Controls/`、`Services/` 一律不动）。
 - 行尾 LF、无 BOM（`.gitattributes` 强制）；**禁用 emoji**（工作区约定，用 `[OK]`/`[FAIL]`/`>` 等纯文本标记）。
 - 命名与风格以现有 Core 文件为准：file-scoped namespace（`namespace TextTool.Services;`）、私有字段 `_camelCase`、`PascalCase.cs` 文件名、XML 文档注释写中文。
+- **局部变量与参数一律 camel_case**（`.editorconfig:97` 的 `locals_should_be_camelcase`）。违反会被 `dotnet format --verify-no-changes` 报为 `IDE1006` 并让 CI 的 `code-quality` job 失败（`dotnet build -warnaserror` **不会**命中——本仓未开 `EnforceCodeStyleInBuild`，所以 pre-commit 钩子也拦不住，只有 CI 暴露）。这条约束是本计划自己的代码踩过之后补的。
+- **量门禁退出码时不要接管道**：`cmd | tail` 之后 `$?` 取的是 `tail` 的状态，会把失败读成 0。要 `cmd > log 2>&1; echo $?`。
 - **所有来自 JSON 的正则必须经 `RegexGuard.Create` 构造**（2s 超时，防 ReDoS），不得直接 `new Regex(...)`。
 - 质量门禁（每个任务提交前跑）：`dotnet build TextTool.sln -c Release -warnaserror`、`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release`、`dotnet format TextTool.sln --verify-no-changes`。
 - 提交信息中文，前缀 `feat:` / `fix:` / `docs:` / `test:`；**署名沿用本仓既有惯例**（`git log -1 --format=%an <%ae>` 当前为 `TwilightRainDev <122437146+TwilightRainDev@users.noreply.github.com>`），不要用本机其它身份顶替。
@@ -701,7 +703,7 @@ public sealed class LintReport
         var only = onlyIds is null
             ? null
             : new HashSet<string>(onlyIds, StringComparer.OrdinalIgnoreCase);
-        bool WantWarnOnly = string.Equals(minSeverity, "warn", StringComparison.OrdinalIgnoreCase);
+        bool wantWarnOnly = string.Equals(minSeverity, "warn", StringComparison.OrdinalIgnoreCase);
 
         return new LintReport
         {
@@ -710,7 +712,7 @@ public sealed class LintReport
             Notes = Notes,
             Hits = Hits
                 .Where(h => only is null || only.Contains(h.Id))
-                .Where(h => !WantWarnOnly || h.Severity == "warn")
+                .Where(h => !wantWarnOnly || h.Severity == "warn")
                 .ToList(),
         };
     }

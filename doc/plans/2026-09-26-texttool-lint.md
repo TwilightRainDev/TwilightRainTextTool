@@ -1376,6 +1376,7 @@ git commit -m "feat: AI 味检查引擎新增引号/括号与篇章统计算法�
 
 - 创建：`TextTool.Core/LintTextFormatter.cs`
 - 测试：`TextTool.Tests/Services/LintTextFormatterTests.cs`
+- 修改：`TextTool.Tests/Services/AiToneLintServiceTests.cs`（补 5 条算法规则正向用例，见步骤 1 末）
 
 **接口：**
 
@@ -1440,10 +1441,67 @@ public class LintTextFormatterTests
 }
 ```
 
+**顺带补齐 Task 7 的覆盖缺口**（Task 7 评审的 Minor 1：`P5`/`C2`/`C3`/`C4`/`C5` 只有实现没有正向用例；本任务本就要驱动 `Notes`，顺手覆盖）。追加到 `TextTool.Tests/Services/AiToneLintServiceTests.cs`：
+
+```csharp
+    [Fact]
+    public void Scan_括号全半角混用产出P5()
+    {
+        var hit = Assert.Single(Service().Scan("他说(好)，又说（行）。", "t.txt").Hits.Where(h => h.Id == "P5"));
+
+        Assert.Contains("半角 2 个", hit.Detail);
+        Assert.Contains("全角 2 个", hit.Detail);
+    }
+
+    [Fact]
+    public void Scan_句长过于整齐产出C2统计项()
+    {
+        // 10 句、每句 13 字，长度完全一致 → 变异系数 0
+        var text = string.Concat(Enumerable.Repeat("今天天气很好我们去公园散步。", 10));
+
+        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "C2"));
+
+        Assert.Contains("变异系数", note.Text);
+    }
+
+    [Fact]
+    public void Scan_段首重复产出C3统计项()
+    {
+        var text = string.Join("\n", "我们去看海。", "我们去爬山。", "我们回家吧。", "我们去吃饭。");
+
+        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "C3"));
+
+        Assert.Contains("我们", note.Text);
+    }
+
+    [Fact]
+    public void Scan_叹号密度偏高产出C4统计项()
+    {
+        var text = new string('好', 400) + "！！！";   // 403 字 / 3 个叹号，密度 7.4‰ > 3‰
+
+        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "C4"));
+
+        Assert.Contains("叹号密度偏高", note.Text);
+    }
+
+    [Fact]
+    public void Scan_序数词骨架密度产出C5统计项()
+    {
+        var text = "首先看甲。其次看乙。";
+
+        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "C5"));
+
+        Assert.Contains("序数词骨架", note.Text);
+    }
+```
+
 - [ ] **步骤 2：运行测试以确认失败**
 
-运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "LintTextFormatterTests"`
+运行：
+`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "LintTextFormatterTests"`
 预期：FAIL，提示 `LintTextFormatter` 不存在
+
+再跑 `--filter "AiToneLintServiceTests"`：这 5 条**应当全绿**（它们测的是 Task 7 已实现的规则，属补覆盖不属新行为）——若有一条红，说明 Task 7 的实现与门槛不符，**停下上报**，不要改 Task 7 的代码。
 
 - [ ] **步骤 3：编写最小实现**
 
@@ -1515,6 +1573,7 @@ public static class LintTextFormatter
 
 运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "LintTextFormatterTests"`
 预期：PASS（4 个）
+再跑 `--filter "AiToneLintServiceTests"`：预期 PASS（23 个 = 原 18 + 本任务补的 5）
 
 - [ ] **步骤 5：提交**
 
@@ -1692,6 +1751,8 @@ git commit -m "feat: 新增 texttool lint 子命令（只报不改，JSON 契约
 - [ ] **步骤 1：更新 README**
 
 英文与中文两处功能概览各加一行 `lint`（只报不改的 AI 味检查）；英文与中文两处项目结构树在 `TextTool.Cli/` 一行补上 `lint`，并在 `TextTool.Core/` 列表中补 `LintRule.cs`、`LintReport.cs`、`LintTextFormatter.cs`、`AiToneLintService.cs`、`default_lint_rules.json`；命令用法段补 `lint` 的示例与**退出码差异**说明。
+
+同一段里用两三行交代**启发式规则的边界**（Task 7 评审 Minor 5 的建议，写文档而非改代码）：`P4` 引号风格混用会把「英文缩写 + 中文引号」的文本判为混用，`P5` 括号混用只认字符不看上下文（代码片段、ASCII 括号引用都会计入），`C` 组是统计观察、不进退出码；因此这些规则一律 `info` 级，默认只报不卡。
 
 - [ ] **步骤 2：更新 TECH-DEBT 验证锚点**
 

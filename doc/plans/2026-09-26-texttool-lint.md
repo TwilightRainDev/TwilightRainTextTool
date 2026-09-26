@@ -837,6 +837,31 @@ public class AiToneLintServiceTests
     }
 
     [Fact]
+    public void Scan_Snippet不劈开代理对()
+    {
+        // 5 个 emoji（10 个 UTF-16 码元）+ 1 个字符后命中：左边界 11-8=3 正落在
+        // 第 2 个 emoji 的代理对中间，不外扩就会切出落单代理项
+        var text = "😀😀😀😀😀x不是A而是B";
+        var hit = Assert.Single(Service(Rule("S1", "regex", "不是A而是B")).Scan(text, "t.txt").Hits);
+
+        Assert.False(HasLoneSurrogate(hit.Snippet));
+    }
+
+    private static bool HasLoneSurrogate(string s)
+    {
+        for (int i = 0; i < s.Length; i++)
+        {
+            if (char.IsHighSurrogate(s[i]))
+            {
+                if (i + 1 >= s.Length || !char.IsLowSurrogate(s[i + 1])) return true;
+                i++;
+            }
+            else if (char.IsLowSurrogate(s[i])) return true;
+        }
+        return false;
+    }
+
+    [Fact]
     public void Scan_未命中返回空报告且Chars正确()
     {
         var report = Service(Rule("L1", "literal", "赋能")).Scan("干净的一段话。", "t.txt");
@@ -924,11 +949,16 @@ public sealed class AiToneLintService
         return (line, index - lineStart + 1);
     }
 
-    /// <summary>前后各 8 字的上下文，换行去除。</summary>
+    /// <summary>
+    /// 前后各 8 字的上下文，换行去除。窗口边界不劈开代理对——
+    /// P8 会命中 emoji，命中点附近的窗口若不外扩，切片会产出落单代理项。
+    /// </summary>
     internal static string Snippet(string text, int index, int length, int pad = 8)
     {
         int lo = Math.Max(0, index - pad);
         int hi = Math.Min(text.Length, index + length + pad);
+        if (lo > 0 && char.IsLowSurrogate(text[lo])) lo--;          // 左边界落在低代理上：回退一格
+        if (hi < text.Length && char.IsHighSurrogate(text[hi - 1])) hi++;   // 右边界停在高代理后：前进一格
         var s = text[lo..hi].Replace("\r", "").Replace("\n", "");
         if (lo > 0) s = "…" + s;
         if (hi < text.Length) s += "…";
@@ -960,7 +990,7 @@ public sealed class AiToneLintService
 - [ ] **步骤 4：运行测试以确认通过**
 
 运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "AiToneLintServiceTests"`
-预期：PASS（6 个）
+预期：PASS（7 个）
 
 - [ ] **步骤 5：提交**
 
@@ -1077,7 +1107,7 @@ git commit -m "feat: AI 味检查引擎支持全文作用域规则与行列定�
 - [ ] **步骤 4：运行测试以确认通过**
 
 运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "AiToneLintServiceTests"`
-预期：PASS（9 个）
+预期：PASS（10 个）
 
 - [ ] **步骤 5：提交**
 
@@ -1139,6 +1169,18 @@ git commit -m "feat: AI 味检查引擎支持段落作用域与段末窗口"
         var text = string.Join("\n", Enumerable.Repeat(new string('字', 20), 5));
 
         Assert.DoesNotContain(Service().Scan(text, "t.txt").Hits, h => h.Group == "C");
+    }
+
+    [Fact]
+    public void Scan_算法命中的Severity只用小写()
+    {
+        // 算法规则的命中不走 LintRuleStore.Validate，Severity 由代码直接给定；
+        // 而 Filter 的 warn 比较是大小写敏感的——写成 "Warn" 会被 --min-severity
+        // 静默丢弃、退出码变 0，是 CI 关卡最怕的失败方向。这条钉住契约。
+        var report = Service().Scan("他说\"好\"，又说「行」。", "t.txt");
+
+        Assert.All(report.Hits.Where(h => h.Group == "P"),
+            h => Assert.Contains(h.Severity, new[] { "info", "warn" }));
     }
 
     [Fact]
@@ -1295,7 +1337,7 @@ git commit -m "feat: AI 味检查引擎支持段落作用域与段末窗口"
 - [ ] **步骤 4：运行测试以确认通过**
 
 运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "AiToneLintServiceTests"`
-预期：PASS（14 个）
+预期：PASS（15 个）
 
 - [ ] **步骤 5：提交**
 

@@ -697,7 +697,10 @@ public sealed class LintReport
     public List<LintHit> Hits { get; set; } = new();
     public List<LintNote> Notes { get; set; } = new();
 
-    /// <summary>过滤命中（Notes 不受影响）。退出码基于过滤后的集合判定。</summary>
+    /// <summary>
+    /// 过滤命中与统计项。--only 是规则选择轴，Hits 与 Notes 都按 Id 过滤；
+    /// --min-severity 是严重度轴，Notes 无 severity 故不受它影响。退出码基于过滤后的 Hits 判定。
+    /// </summary>
     public LintReport Filter(IReadOnlyCollection<string>? onlyIds, string? minSeverity)
     {
         var only = onlyIds is null
@@ -709,7 +712,7 @@ public sealed class LintReport
         {
             File = File,
             Chars = Chars,
-            Notes = Notes,
+            Notes = only is null ? Notes : Notes.Where(n => only.Contains(n.Id)).ToList(),
             Hits = Hits
                 .Where(h => only is null || only.Contains(h.Id))
                 .Where(h => !wantWarnOnly || h.Severity == "warn")

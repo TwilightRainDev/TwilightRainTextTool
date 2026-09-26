@@ -179,6 +179,10 @@ TextTool/
 │   ├── JsonFileStore.cs         # Generic JSON persistence
 │   ├── PathHelper.cs            # Path utilities
 │   ├── TextUtils.cs             # String extension methods
+│   ├── LintRule.cs              # AI-tone rule model + store (per-id merge with external file)
+│   ├── LintReport.cs            # Lint report model and JSON contract
+│   ├── AiToneLintService.cs     # AI-tone check engine (data rules + algorithmic detectors)
+│   ├── LintTextFormatter.cs     # Human-readable report rendering (invisible chars escaped)
 │   ├── RegexGuard.cs            # Regex construction with ReDoS timeout
 │   ├── UpdateChecker.cs         # GitHub latest-release check
 │   ├── UpdateClient.cs          # Update-only HttpClient (pinned roots, no redirects)
@@ -187,9 +191,9 @@ TextTool/
 │   ├── PinnedRoots.cs           # Public root CA allow-list
 │   ├── LastKnownVersion.cs      # Downgrade-replay detection
 │   ├── SelfUpdater.cs           # CLI self-update: download, verify, staged swap
-│   └── default_schemes.json / default_vn_schemes.json / pinned_roots.txt  # Embedded resources
+│   └── default_schemes.json / default_vn_schemes.json / default_lint_rules.json / pinned_roots.txt  # Embedded resources
 │
-├── TextTool.Cli/                # texttool.exe entry (merge/replace/vn/join/update)
+├── TextTool.Cli/                # texttool.exe entry (merge/replace/vn/join/lint/update)
 │
 ├── Localization/                # i18n
 │   ├── Strings.cs               # Loc singleton

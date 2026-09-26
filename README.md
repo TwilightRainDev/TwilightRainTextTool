@@ -16,7 +16,7 @@ Drag-and-drop a text file, pick your options, click **Process** — done.
 
 ### Features
 
-| Tab | Description |
+| Tab / CLI | Description |
 | :-- | :---------- |
 | **Line Merge** | Merge short lines up to a configurable threshold, with optional post-processing |
 | **File Join** | Concatenate all matching files in a directory into one |
@@ -179,7 +179,7 @@ means "exit 1 only when a `warn` hit exists".
 context: the `'` in an English word such as `don't` counts as a quote style, so a Chinese
 quote elsewhere in the same text is reported as mixed, and ASCII brackets written inside a
 code sample count towards bracket-width mixing. The `C` group (`C1`-`C5`) is statistical
-observation and never affects the exit code. These rules are all `info` level — reported by
+observation and never affects the exit code. `P4`/`P5` are all `info` level — reported by
 default, and excluded from a gate by `--min-severity warn`.
 
 ### Project Structure
@@ -258,7 +258,7 @@ TextTool/
 │   ├── icon.ico                  # App icon
 │   └── TwilightRain.jpg          # Avatar in About page
 │
-├── TextTool.Tests/               # Unit tests (xUnit, 182 [Fact]/[Theory])
+├── TextTool.Tests/               # Unit tests (xUnit, 183 [Fact]/[Theory])
 │   ├── TextTool.Tests.csproj
 │   ├── TestHelpers.cs
 │   └── Services/                 # One test file per service
@@ -307,7 +307,7 @@ Per-version changelog is carried by git tags and GitHub Releases — see
 
 ### 功能概览
 
-| 页签 | 说明 |
+| 页签 / CLI | 说明 |
 | :-- | :--- |
 | **行合并** | 短行自动拼接至指定阈值，可选多重后处理 |
 | **文件拼接** | 将目录中所有匹配文件合并为一个 |
@@ -461,7 +461,7 @@ texttool update [--check]           自更新（--check 仅检查）
 **启发式规则的边界。** `P4`（引号风格）、`P5`（括号全半角）只看字符不看上下文：
 英文词里的 `'`（如 `don't`）会被当作一种引号风格，与文中别处的中文引号并列为「混用」；
 代码片段里写的 ASCII 括号同样计入括号混用。`C` 组（`C1`–`C5`）是统计观察，不进退出码。
-这些规则一律 `info` 级：默认只报，用 `--min-severity warn` 即可把它们排除在关卡之外。
+`P4`/`P5` 一律 `info` 级：默认只报，用 `--min-severity warn` 即可把它们排除在关卡之外。
 
 ### 项目结构
 
@@ -539,7 +539,7 @@ TextTool/
 │   ├── icon.ico                  # 程序图标
 │   └── TwilightRain.jpg          # 关于页头像
 │
-├── TextTool.Tests/               # 单元测试（xUnit，182 个 [Fact]/[Theory]）
+├── TextTool.Tests/               # 单元测试（xUnit，183 个 [Fact]/[Theory]）
 │   ├── TextTool.Tests.csproj
 │   ├── TestHelpers.cs
 │   └── Services/                 # 每个服务对应一个测试文件

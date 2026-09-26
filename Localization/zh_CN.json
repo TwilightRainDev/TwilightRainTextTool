@@ -150,7 +150,7 @@
   "AboutTitle": "TwilightRain 的文本工具",
   "AboutVersion": "版本 {0}",
   "AboutAuthor": "作者：TwilightRain",
-  "AboutDescription": "集行合并、文件拼接、中文截断修复、\n标点替换、视觉小说排版于一体的文本处理工具。",
+  "AboutDescription": "集行合并、文件拼接、中文截断修复、\n标点替换、视觉小说排版、AI 味检查于一体的文本处理工具。",
   "AboutLanguage": "语言：",
 
   "LangZhCN": "简体中文",

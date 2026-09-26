@@ -150,7 +150,7 @@
   "AboutTitle": "TwilightRain's Text Tool",
   "AboutVersion": "Version {0}",
   "AboutAuthor": "Author: TwilightRain",
-  "AboutDescription": "An all-in-one text processing tool:\nLine Merge, File Join, CJK Truncation Fix,\nPunct. Replacement, VN Reformat.",
+  "AboutDescription": "An all-in-one text processing tool:\nLine Merge, File Join, CJK Truncation Fix,\nPunct. Replacement, VN Reformat, AI-tone Lint.",
   "AboutLanguage": "Language:",
 
   "LangZhCN": "简体中文",

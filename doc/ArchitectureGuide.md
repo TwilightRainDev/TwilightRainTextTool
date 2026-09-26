@@ -148,7 +148,8 @@ TextTool/
 │   ├── JoinTabControl.cs        # Tab 2: File join
 │   ├── ReplaceTabControl.cs     # Tab 3: Punct. replace
 │   ├── VNTabControl.cs          # Tab 4: Visual novel
-│   ├── AboutTabControl.cs       # Tab 5: About + settings
+│   ├── LintTabControl.cs        # Tab 5: AI-tone lint (report only)
+│   ├── AboutTabControl.cs       # Tab 6: About + settings
 │   ├── PreviewForm.cs           # Preview dialog (merge result)
 │   ├── VNCharacterSchemeForm.cs # VN character/route scheme dialog
 │   ├── SchemeSelectionForm.cs   # Replace-scheme selection dialog
@@ -183,6 +184,7 @@ TextTool/
 │   ├── LintReport.cs            # Lint report model and JSON contract
 │   ├── AiToneLintService.cs     # AI-tone check engine (data rules + algorithmic detectors)
 │   ├── LintTextFormatter.cs     # Human-readable report rendering (invisible chars escaped)
+│   ├── LintRunner.cs            # Shared CLI/GUI lint orchestration (validate + scan + filter)
 │   ├── RegexGuard.cs            # Regex construction with ReDoS timeout
 │   ├── UpdateChecker.cs         # GitHub latest-release check
 │   ├── UpdateClient.cs          # Update-only HttpClient (pinned roots, no redirects)

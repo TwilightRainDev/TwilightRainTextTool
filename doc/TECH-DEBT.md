@@ -110,16 +110,16 @@
 
 ```bash
 # 当前版本号（唯一权威）
-grep -oP '(?<=<Version>)[0-9.]+(?=<)' Directory.Build.props  # 期望 2.5.0
+grep -oP '(?<=<Version>)[0-9.]+(?=<)' Directory.Build.props  # 期望 2.6.0
 
 # 测试用例数（[Fact] + [Theory]）
-grep -roE '\[(Fact|Theory)' TextTool.Tests --include=*.cs | wc -l   # 期望 183
+grep -roE '\[(Fact|Theory)' TextTool.Tests --include=*.cs | wc -l   # 期望 188
 
 # ADR 份数
 ls doc/adr/ | wc -l                                          # 期望 9
 
 # MainForm 行数
-wc -l MainForm.cs                                            # 期望 207
+wc -l MainForm.cs                                            # 期望 214
 
 # Services/ 文件数（UI 相邻基础设施）
 ls Services/ | wc -l                                         # 期望 4

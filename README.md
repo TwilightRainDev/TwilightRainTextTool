@@ -187,8 +187,8 @@ default, and excluded from a gate by `--min-severity warn`.
 ```text
 TextTool/
 ├── TextTool.sln                  # Solution file
-├── TextTool.csproj               # .NET 8 WinForms, v2.6.0
-├── Directory.Build.props         # Centralized version (2.6.0)
+├── TextTool.csproj               # .NET 8 WinForms, v2.6.1
+├── Directory.Build.props         # Centralized version (2.6.1)
 ├── Program.cs                    # Entry point, registers GBK encoding
 ├── MainForm.cs                   # Main window (214 lines, hosts 6 tabs)
 │
@@ -273,6 +273,9 @@ TextTool/
 │   ├── TECH-DEBT.md              # Open optimizations and known debt
 │   ├── adr/                      # Architecture Decision Records (9 ADRs)
 │   └── specs/                    # In-flight design specs
+│
+├── scripts/
+│   └── publish.ps1               # Release publish (download, sign, upload)
 │
 ├── .github/workflows/
 │   └── build-test.yml            # CI: build + test + format + publish on release
@@ -470,8 +473,8 @@ texttool update [--check]           自更新（--check 仅检查）
 ```text
 TextTool/
 ├── TextTool.sln                  # 解决方案文件
-├── TextTool.csproj               # .NET 8 WinForms, v2.6.0
-├── Directory.Build.props         # 统一版本号 (2.6.0)
+├── TextTool.csproj               # .NET 8 WinForms, v2.6.1
+├── Directory.Build.props         # 统一版本号 (2.6.1)
 ├── Program.cs                    # 入口，注册 GBK 编码支持
 ├── MainForm.cs                   # 主窗口 (214 行，承载 6 个页签)
 │
@@ -556,6 +559,9 @@ TextTool/
 │   ├── TECH-DEBT.md              # 未落地优化项与技术债
 │   ├── adr/                      # 架构决策记录（9 份 ADR）
 │   └── specs/                    # 在途设计稿
+│
+├── scripts/
+│   └── publish.ps1               # 发布脚本（下载、签名、上传）
 │
 ├── .github/workflows/
 │   └── build-test.yml            # CI：构建 + 测试 + 格式 + 发布

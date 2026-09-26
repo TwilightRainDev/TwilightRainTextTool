@@ -193,6 +193,7 @@ TextTool/
 │   ├── PinnedRoots.cs           # Public root CA allow-list
 │   ├── LastKnownVersion.cs      # Downgrade-replay detection
 │   ├── SelfUpdater.cs           # CLI self-update: download, verify, staged swap
+│   ├── EmbeddedResource.cs      # Embedded JSON loader (missing throws)
 │   └── default_schemes.json / default_vn_schemes.json / default_lint_rules.json / pinned_roots.txt  # Embedded resources
 │
 ├── TextTool.Cli/                # texttool.exe entry (merge/replace/vn/join/lint/update)
@@ -203,14 +204,17 @@ TextTool/
 │   ├── zh_TW.json
 │   └── en_US.json
 │
-└── doc/                         # Documentation
-    ├── ArchitectureGuide.md     # ← This file
-    ├── Publish.md               # Release checklist
-    ├── UpdateSecurity.md        # Update trust model (TLS pinning, signing)
-    ├── ReplaceSchemesDesign.md  # Replace-scheme design note
-    ├── TECH-DEBT.md             # Open optimizations and known debt
-    ├── adr/                     # Architecture Decision Records
-    └── specs/                   # In-flight design specs
+├── doc/                         # Documentation
+│   ├── ArchitectureGuide.md     # ← This file
+│   ├── Publish.md               # Release checklist
+│   ├── UpdateSecurity.md        # Update trust model (TLS pinning, signing)
+│   ├── ReplaceSchemesDesign.md  # Replace-scheme design note
+│   ├── TECH-DEBT.md             # Open optimizations and known debt
+│   ├── adr/                     # Architecture Decision Records
+│   └── specs/                   # In-flight design specs
+│
+└── scripts/
+    └── publish.ps1              # Release publish (download, sign, upload)
 ```
 
 **Split rule:** UI-adjacent code lives in `Services/` (or `Controls/`); anything

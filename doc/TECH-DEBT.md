@@ -8,50 +8,7 @@
 
 ## 1. 未落地项（核实确认）
 
-### D-1 `EncodingDetector` 显示串未国际化
-
-- 现状：`TextTool.Core/EncodingDetector.cs:176` 的 `DetectionResult.DisplayName` 直接产出英文串
-  （`"UTF-8 (BOM)"` / `"UTF-16 LE"` / `"UTF-16 BE"` / `"GBK"` / `"UTF-8"` 等），
-  `Controls/ReplaceTabControl.cs:315` 把它原样写入 `_lblReplaceEncoding.Text`。
-- 影响：切换到简体/繁体中文时，替换页签的编码标签仍显示英文。
-- 建议方向：`DetectionResult` 改为携带枚举/键，UI 侧经 `Loc.T("EncodingUtf8")` 等键翻译。
-- 状态：未落地（`EncodingUtf8` / `EncodingGbk` 等键在 `Localization/*.json` 中不存在）。
-
-### D-2 `PreviewForm` 构造期字符串往返（H3-1 残留）
-
-- 已落地部分：`Controls/PreviewForm.cs` 持有 `List<string> _lines`，`OnSave` 经 `AtomicFile.WriteAllLines(_lines, ...)` 直写，保存路径不再往返。
-- 残留：`PreviewForm(List<string>)` 仍委托 `: this(string.Join(Environment.NewLine, lines), ...)`，
-  而 `string` 重载又 `text.Split('\n')` 还原成 `_lines` —— 每次打开预览多做一次 join + split。
-- 建议方向：两个重载共用私有构造，避免 List→string→List。
-- 状态：残留（非功能缺陷，仅冗余分配）
-
-### D-3 `scripts/publish.ps1` 不存在（P2 未落地）
-
-- 核实：仓库内无 `scripts/` 目录，全仓无任何 `.ps1` 文件（`find . -name "*.ps1"` 为空）。
-- 当前发布仍为手工步骤（下载 CI 产物 → 离线签名 → 上传 `.sig` → 自检），见 `doc/UpdateSecurity.md`。
-- 该脚本已在**在途计划**中设计：`doc/specs/2026-08-03-texttool-2.4.5-design.md` 的 B1 项
-  （目标路径 `scripts/publish.ps1`，含 `-Version` / `-SkipUpload` / `-Force` 参数）。
-- 状态：未落地，已在在途计划中排期
-
-### D-4 主题遍历器无单元测试覆盖（H1-1 测试配套）
-
-- 现状：`ControlsHelper.ApplyTheme(Control root)` 是全部 5 个页签 + 对话框的主题入口，
-  `TextTool.Tests/` 下无任何引用 `ApplyTheme` / `IThemedTab` 的测试文件。
-- 原计划要求补 3 项（覆盖 Label/Button/TextBox/CheckBox/RadioButton/ComboBox 类型分派）。
-- 状态：未落地
-
-### D-5 内置方案的内联硬编码兜底待删（R0 遗留）
-
-- 现状：R0 已把资源名修正为 `TextTool.default_schemes.json`（`TextTool.Core/ReplaceScheme.cs:27`）
-  与 `TextTool.default_vn_schemes.json`（`TextTool.Core/VNCharacterScheme.cs:35`），资源解析成功即不再走兜底，
-  于是 `ReplaceScheme.cs:65-253` 的 `GetHardcodedSchemes()`（189 行）与 `VNCharacterScheme.cs:69-139`
-  的同名方法（71 行）成为**纯冗余**：实测两份内联数据与对应 `default_*.json` 的条目数相同
-  （替换方案各 9 方案 / 176 规则，VN 方案各 4 方案）。
-- 影响：同一份数据两处真相。改 JSON 已生效，但代码内的副本会随时间漂移，且给人「改哪里才对」的错误暗示；
-  `GetDefaultSchemes()` 的 `catch { }`（`ReplaceScheme.cs:57`）还会把嵌入式资源解析失败一并吞掉，静默降级到兜底。
-- 建议方向：删除两份内联数据，让资源缺失像 `TextTool.Core/PinnedRoots.cs:19-20` 那样
-  `throw new InvalidOperationException`，而不是静默兜底。
-- 状态：未落地（规格 `doc/specs/2026-09-26-texttool-lint-design.md` §2 明确列为范围之外，属独立重构）
+暂无。D-1–D-5 已移入 §3。
 
 ---
 
@@ -103,6 +60,11 @@
 | P1 `.editorconfig` + 分析器 | `.editorconfig` 存在；`Directory.Build.props` 启用 `EnableNETAnalyzers` |
 | P4 提交前检查 | `.githooks/pre-commit` 存在 |
 | .NET 8 迁移 | `Directory.Build.props` + 各 csproj 目标 `net8.0` / `net8.0-windows` |
+| D-1 EncodingDetector 显示串国际化 | `DetectionResult.Kind` + `LocKey`（`EncodingUtf8Bom` 等）；Merge/Replace/VN 经 `Loc.T` |
+| D-2 PreviewForm 构造期往返 | `PreviewForm(List<string>)` 直赋 `_lines`，不再 join/split |
+| D-3 scripts/publish.ps1 | `scripts/publish.ps1` 存在 |
+| D-4 主题遍历器测试 | `ControlsHelperThemeTests` 三例；`InternalsVisibleTo` |
+| D-5 内联硬编码兜底 | `EmbeddedResource.cs`；`GetHardcodedSchemes` 已删 |
 
 ---
 
@@ -110,10 +72,10 @@
 
 ```bash
 # 当前版本号（唯一权威）
-grep -oP '(?<=<Version>)[0-9.]+(?=<)' Directory.Build.props  # 期望 2.6.0
+grep -oP '(?<=<Version>)[0-9.]+(?=<)' Directory.Build.props  # 期望 2.6.1
 
 # 测试用例数（[Fact] + [Theory]）
-grep -roE '\[(Fact|Theory)' TextTool.Tests --include=*.cs | wc -l   # 期望 188
+grep -roE '\[(Fact|Theory)' TextTool.Tests --include=*.cs | wc -l   # 期望 197
 
 # ADR 份数
 ls doc/adr/ | wc -l                                          # 期望 9
@@ -124,8 +86,8 @@ wc -l MainForm.cs                                            # 期望 214
 # Services/ 文件数（UI 相邻基础设施）
 ls Services/ | wc -l                                         # 期望 4
 
-# 全仓无 PowerShell 脚本（D-3 的复现条件）
-find . -name "*.ps1" -not -path "./.git/*"                   # 期望无输出
+# 发布脚本（D-3）
+test -f scripts/publish.ps1                                  # 期望存在
 
 # 构建 + 测试
 dotnet build TextTool.sln -c Release

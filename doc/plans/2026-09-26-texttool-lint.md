@@ -1641,6 +1641,10 @@ git commit -m "feat: AI 味检查人读报告渲染与不可见字符转义" \
             var onlyIds = only is null
                 ? null
                 : only.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            // 显式传了 --only 却解析不出 Id（如 --only ""）要响亮报错：静默按"空过滤集"
+            // 处理会输出 [OK]、退 0——CI 里 --only "$RULES" 变量为空就是假阴性
+            if (onlyIds is not null && onlyIds.Length == 0)
+                throw new ArgumentException("--only 需要至少一个规则 Id");
             if (onlyIds is not null)
             {
                 var known = AiToneLintService.AllRuleIds();

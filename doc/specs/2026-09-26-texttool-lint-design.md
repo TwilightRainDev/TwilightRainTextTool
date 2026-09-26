@@ -230,7 +230,7 @@ texttool lint <文件...> [--json] [--only S1,L1] [--min-severity warn]
 ```
 
 - 文件参数支持多个；`-` 表示从 stdin 读（沿用工具批量处理与管道两种用法）
-- `--only` 只跑指定 id（逗号分隔，大小写不敏感），同时作用于 hits 与 notes
+- `--only` 只跑指定 id（逗号分隔，大小写不敏感），同时作用于 hits 与 notes；**传了 `--only` 却解析不出 id（如空串）即报错退 2**——静默当成"空过滤集"会输出 `[OK]` 退 0，在 CI 里就是假阴性
 - `--min-severity warn` 只输出 `warn` 及以上的命中，`notes` 不受影响
 - `--json` 输出上述契约
 - 编码识别沿用 `EncodingDetector`（BOM → UTF-8 → GBK），与其它子命令一致

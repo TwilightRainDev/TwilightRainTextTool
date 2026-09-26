@@ -1366,7 +1366,8 @@ git commit -m "feat: AI 味检查引擎支持段落作用域与段末窗口"
 
 ```bash
 git add TextTool.Core/AiToneLintService.cs TextTool.Tests/Services/AiToneLintServiceTests.cs
-git commit -m "feat: AI 味检查引擎新增引号/括号与篇章统计算法规则"
+git commit -m "feat: AI 味检查引擎新增引号/括号与篇章统计算法规则" \
+           -m "Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ```
 
 ### Task 8：人读渲染与不可见字符转义
@@ -1519,7 +1520,8 @@ public static class LintTextFormatter
 
 ```bash
 git add TextTool.Core/LintTextFormatter.cs TextTool.Tests/Services/LintTextFormatterTests.cs
-git commit -m "feat: AI 味检查人读报告渲染与不可见字符转义"
+git commit -m "feat: AI 味检查人读报告渲染与不可见字符转义" \
+           -m "Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ```
 
 ### Task 9：`texttool lint` 子命令
@@ -1670,7 +1672,8 @@ $CLI lint /tmp/lint-sample.txt --only NOPE ; echo "退出码=$?"   # 期望：�
 dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release
 dotnet format TextTool.sln --verify-no-changes
 git add TextTool.Cli/Program.cs
-git commit -m "feat: 新增 texttool lint 子命令（只报不改，JSON 契约与退出码）"
+git commit -m "feat: 新增 texttool lint 子命令（只报不改，JSON 契约与退出码）" \
+           -m "Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ```
 
 ### Task 10：文档与版本
@@ -1710,7 +1713,8 @@ grep -roE '\[(Fact|Theory)' TextTool.Tests --include=*.cs | wc -l
 dotnet build TextTool.sln -c Release -warnaserror
 dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release
 git add README.md doc/TECH-DEBT.md Directory.Build.props
-git commit -m "docs: 补充 lint 子命令文档与验证锚点，版本升至 2.5.0"
+git commit -m "docs: 补充 lint 子命令文档与验证锚点，版本升至 2.5.0" \
+           -m "Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ```
 
 ### Task 11：技能侧收编（仓外）

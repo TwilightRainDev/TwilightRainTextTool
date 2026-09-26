@@ -130,7 +130,7 @@ git commit -m "fix: 修正嵌入式资源名前缀并提为 store 常量，测�
 - 消费：`RegexGuard.Create(string, RegexOptions)`、`JsonFileStore.Load<T>(string)`
 - 产出：
   - `public class LintRule`，属性：`string Id`、`string Group`、`string Title`、`string Kind`、`List<string> Patterns`、`string Scope`、`int? TailChars`、`int MinCount`、`string Severity`、`string Detail`、`List<string>? Hints`、`string? SuggestScheme`
-  - `public static class LintRuleStore`：`const string EmbeddedResourceName`、`List<LintRule> Load()`（外部规则先校验、再合并、再整体校验）、`List<LintRule> GetDefaultRules()`、`internal static List<LintRule> Merge(List<LintRule> builtIn, List<LintRule> external)`、`internal static void Validate(List<LintRule> rules)`
+  - `public static class LintRuleStore`：`internal const string EmbeddedResourceName`（与 `ReplaceSchemeStore.ResourceName` 的可见性一致）、`List<LintRule> Load()`（内置与外部各自先校验、再合并、再整体校验）、`List<LintRule> GetDefaultRules()`、`internal static List<LintRule> Merge(List<LintRule> builtIn, List<LintRule> external)`、`internal static void Validate(List<LintRule> rules)`
 
 - [ ] **步骤 1：编写失败的测试**
 
@@ -194,6 +194,24 @@ public class LintRuleStoreTests
 
         Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
     }
+
+    [Fact]
+    public void Validate_Patterns为null即抛而非NRE()
+    {
+        var rule = Rule("L1");
+        rule.Patterns = null!;   // JSON 里的 "Patterns": null 会走到这里
+
+        var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
+        Assert.Contains("Patterns", ex.Message);
+    }
+
+    [Fact]
+    public void Validate_Patterns含空串即抛()
+    {
+        var rule = Rule("L1", "");   // 空串模式会匹配任意位置，是配置错误
+
+        Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
+    }
 }
 ```
 
@@ -251,9 +269,11 @@ public static class LintRuleStore
     {
         var builtIn = GetDefaultRules();
         var external = JsonFileStore.Load<LintRule>("lint_rules.json");
-        // 外部先校验：重复 Id 必须在这里得到清晰报错。
-        // 若留到 Merge 之后再校验，重复 Id 会在 Merge 内部因索引指向已被替换的对象
-        // 而先抛 ArgumentOutOfRangeException，Validate 的报错永远轮不到。
+        // 两侧各自先校验，再合并，再校验合并结果。三个边界各有理由：
+        // 内置侧——Merge 会 Clone，Patterns 为 null 时 Clone 先 NRE；
+        // 外部侧——重复 Id 必须在这里得到清晰报错，否则 Merge 内部索引指向已被替换的
+        //   对象、IndexOf 返回 -1，先抛 ArgumentOutOfRangeException，Validate 轮不到。
+        Validate(builtIn);
         Validate(external);
         var merged = Merge(builtIn, external);
         Validate(merged);
@@ -302,8 +322,12 @@ public static class LintRuleStore
                 throw new ArgumentException($"规则 {rule.Id} 的 Scope 非法：{rule.Scope}");
             if (rule.Severity is not ("info" or "warn"))
                 throw new ArgumentException($"规则 {rule.Id} 的 Severity 非法：{rule.Severity}");
-            if (rule.Patterns.Count == 0)
+            // 显式 null 会被 System.Text.Json 写回属性，模型上的 = new() 默认值挡不住，
+            // 不在这里拦就会变成 NullReferenceException 而非清晰的校验报错
+            if (rule.Patterns is null || rule.Patterns.Count == 0)
                 throw new ArgumentException($"规则 {rule.Id} 的 Patterns 为空");
+            if (rule.Patterns.Any(string.IsNullOrEmpty))
+                throw new ArgumentException($"规则 {rule.Id} 的 Patterns 含空串");
             if (rule.MinCount < 1)
                 throw new ArgumentException($"规则 {rule.Id} 的 MinCount 必须 >= 1");
             if (rule.TailChars is <= 0)
@@ -336,7 +360,7 @@ public static class LintRuleStore
 - [ ] **步骤 4：运行测试以确认通过**
 
 运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "LintRuleStoreTests"`
-预期：PASS（5 个）
+预期：PASS（7 个）
 
 > 注意：断言"内置规则集合法"的测试放在任务 3——本任务提交时 pre-commit 会跑**全量测试**，任何失败都会挡住提交，所以本任务不得留下未通过的测试。
 
@@ -519,7 +543,7 @@ JSON 里写 `\\uXXXX`（JSON 转义后成为正则的 `\uXXXX`）；含 CJK 的�
 - [ ] **步骤 4：运行测试以确认通过**
 
 运行：`dotnet test TextTool.Tests/TextTool.Tests.csproj -c Release --filter "LintRuleStoreTests"`
-预期：PASS（7 个：任务 2 的 5 个 + 本任务的 2 个）
+预期：PASS（9 个：任务 2 的 7 个 + 本任务的 2 个）
 
 - [ ] **步骤 5：提交**
 

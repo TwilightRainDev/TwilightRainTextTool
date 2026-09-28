@@ -16,7 +16,7 @@ public class PublishScriptTests
     {
         var (code, stderr) = Invoke("-Version", "abc");
         Assert.Equal(2, code);
-        Assert.Contains("版本", stderr, StringComparison.Ordinal);
+        Assert.Contains("x.y.z", stderr, StringComparison.Ordinal);
     }
 
     [Fact]

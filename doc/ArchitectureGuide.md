@@ -214,7 +214,9 @@ TextTool/
 │   └── specs/                   # In-flight design specs
 │
 └── scripts/
-    └── publish.ps1              # Release publish (download, sign, upload)
+    ├── github-release.ps1       # GitHub REST helpers (curl; no gh)
+    ├── publish.ps1              # Sign an existing Release and upload .sig
+    └── release.ps1              # Tag, wait for CI, then publish.ps1
 ```
 
 **Split rule:** UI-adjacent code lives in `Services/` (or `Controls/`); anything

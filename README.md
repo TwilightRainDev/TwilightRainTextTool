@@ -275,7 +275,9 @@ TextTool/
 │   └── specs/                    # In-flight design specs
 │
 ├── scripts/
-│   └── publish.ps1               # Release publish (download, sign, upload)
+│   ├── github-release.ps1        # GitHub REST helpers (curl; no gh)
+│   ├── publish.ps1               # Sign an existing Release and upload .sig
+│   └── release.ps1               # Tag, wait for CI, then publish.ps1
 │
 ├── .github/workflows/
 │   └── build-test.yml            # CI: build + test + format + publish on release
@@ -302,7 +304,7 @@ TextTool/
 Per-version changelog is carried by git tags and GitHub Releases — see
 [Tags](https://github.com/TwilightRainDev/TwilightRainTextTool/tags) and
 [Releases](https://github.com/TwilightRainDev/TwilightRainTextTool/releases)
-(10 tags, latest `v2.4.4`). This file does not duplicate it.
+(12 tags, latest `v2.6.1`). This file does not duplicate it.
 
 ---
 
@@ -561,7 +563,9 @@ TextTool/
 │   └── specs/                    # 在途设计稿
 │
 ├── scripts/
-│   └── publish.ps1               # 发布脚本（下载、签名、上传）
+│   ├── github-release.ps1        # GitHub REST 辅助（curl，不用 gh）
+│   ├── publish.ps1               # 给已有 Release 签名并上传 .sig
+│   └── release.ps1               # 打 tag、等 CI、再调 publish.ps1
 │
 ├── .github/workflows/
 │   └── build-test.yml            # CI：构建 + 测试 + 格式 + 发布
@@ -588,7 +592,7 @@ TextTool/
 逐版本变更由 git tag 与 GitHub Releases 承载，见
 [Tags](https://github.com/TwilightRainDev/TwilightRainTextTool/tags) 与
 [Releases](https://github.com/TwilightRainDev/TwilightRainTextTool/releases)
-（共 10 个 tag，最新 `v2.4.4`）。本文件不再重复维护。
+（共 12 个 tag，最新 `v2.6.1`）。本文件不再重复维护。
 
 ### 风格约定
 

@@ -32,24 +32,23 @@
 
 ## 发布流程（每次发版）
 
-推荐 `.\scripts\publish.ps1 -Version <x.y.z> [-SkipUpload] [-Force]`。先 `-SkipUpload` 演练签名与自检，确认后再去掉该开关上传 `.sig`。release 上已有 `.sig` 时须加 `-Force` 才会覆盖。可选 `-KeyPath <priv.pem>`、`-Repo owner/name`。
+推荐一条命令：`.\scripts\release.ps1 [-Version <x.y.z>]`。它会核对 `Directory.Build.props`、打 annotated tag、推 tag、等 CI 建好 Release，再调 `publish.ps1` 离线签名并上传 `.sig`。本机没有 `gh`，下载/上传走 GitHub REST + `curl.exe`。令牌来自 `TEXTTOOL_GITHUB_TOKEN` 或凭据目录既有 PAT；**不要**写进 remote URL。
+
+只签已有 Release 时用 `.\scripts\publish.ps1 -Version <x.y.z> [-SkipUpload] [-Force]`。先 `-SkipUpload` 演练签名与自检，确认后再去掉该开关上传 `.sig`。release 上已有 `.sig` 时须加 `-Force` 才会覆盖。可选 `-KeyPath <priv.pem>`、`-Repo owner/name`。CI 已跑完、只补签名：`.\scripts\release.ps1 -SkipTag`。
 
 以下手工步骤仅作对照：
 
-1. CI 构建 + 打包 zip + 生成 `.sha256`（现有 build-test.yml 流程不变）
-2. 下载 CI 产物 zip 到本地（例如 `gh run download`）
+1. CI 构建 + 打包 zip + 生成 `.sha256`（`build-test.yml` 在 `v*` tag 上跑；tag 必须与 `<Version>` 一致）
+2. 下载 CI 产物 zip 到本地（`publish.ps1` 经 REST 拉取；对照可用浏览器从 Release 页下载）
 3. 离线签名：
    ```
-   dotnet run --project tools/ReleaseSigner -- sign TextTool-CLI-2.4.4-win-x64.zip -k E:\work_zone\ApiKey\TextTool-signing.priv.pem
+   dotnet run --project tools/ReleaseSigner -- sign TextTool-CLI-2.6.1-win-x64.zip -k E:\work_zone\ApiKey\TextTool-signing.priv.pem
    ```
    （或先 `cd tools/ReleaseSigner && dotnet build -c Release`，再直接运行 exe）
-4. 上传 `.sig` 到 release：
-   ```
-   gh release upload v2.4.4 TextTool-CLI-2.4.4-win-x64.zip.sig TextTool-GUI-2.4.4-win-x64.zip.sig
-   ```
+4. 上传 `.sig` 到 release：由 `publish.ps1` 调 `uploads.github.com`，不要装 `gh`
 5. 自检：
    ```
-   dotnet run --project tools/ReleaseSigner -- verify TextTool-CLI-2.4.4-win-x64.zip TextTool-CLI-2.4.4-win-x64.zip.sig -k E:\work_zone\ApiKey\TextTool-signing.pub.pem
+   dotnet run --project tools/ReleaseSigner -- verify TextTool-CLI-2.6.1-win-x64.zip TextTool-CLI-2.6.1-win-x64.zip.sig -k E:\work_zone\ApiKey\TextTool-signing.pub.pem
    texttool update --check   # 或在新版本上跑一次真实 update
    ```
 

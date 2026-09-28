@@ -75,14 +75,16 @@ git push
 
 ### 发布方式（以 CI 为准）
 
-**发源码到 GitHub 并打 tag，CI 会自动构建、测试并发布 GitHub Release，无需本地构建后再手动发布。**
+**发源码到 GitHub 并打 tag，CI 会自动构建、测试并发布 GitHub Release（zip + sha256）。`.sig` 必须在开发机离线签，私钥不进 CI。一条命令：**
 
-```bash
-git push origin main          # 每次推送触发 build + test
-git push origin vX.Y.Z        # 打 tag 触发完整发布（构建 → 测试 → 签名 → 打包 zip → Release）
+```powershell
+git push origin main
+.\scripts\release.ps1 -Version X.Y.Z
 ```
 
-发布产物（`TextTool-GUI-*-win-x64.zip` 与 `TextTool-CLI-*-win-x64.zip`）由 CI 自动上传到 GitHub Release，**不要本地构建后再手动上传**。
+`release.ps1`：对账版本 → annotated tag → 推 tag → 等 CI → 调 `publish.ps1` 签名上传。本机没有 `gh`，GitHub 走 REST + PAT。对照手工：`git tag -a vX.Y.Z` 后推 `refs/tags/vX.Y.Z`。
+
+发布产物（`TextTool-GUI-*-win-x64.zip` 与 `TextTool-CLI-*-win-x64.zip`）由 CI 自动上传到 GitHub Release，**不要本地构建后再手动上传 zip**。`.sig` 例外，只由 `publish.ps1` 上传。
 
 ### 本地验证 / 需要本地 exe 时
 
@@ -176,10 +178,9 @@ git commit -m "vX.Y.Z: 更新说明"
 # 4. 推送到 GitHub（自动触发 CI 构建 + 测试）
 git push
 
-# 5. 打 tag 触发自动发布（无需本地构建/发布）
-git tag vX.Y.Z
-git push origin vX.Y.Z
-# CI 自动构建 → 测试 → 签名 → 打包 zip → 发布 GitHub Release
+# 5. 打 tag 并完成签名发布（无需本地构建 zip）
+.\scripts\release.ps1 -Version X.Y.Z
+# 对账 Version → tag → CI 打包 zip → 本地签 .sig → 上传
 
 # 6. 需要本地 exe 时（可选，以 CI 产物为准）
 dotnet publish TextTool.csproj -c Release -r win-x64 -o publish/TextTool

@@ -8,11 +8,15 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "github-release.ps1")
+# 下载与上传走 GitHub REST（api.github.com / uploads.github.com），不调用 gh。
+
 if ($Version -notmatch '^v?\d+\.\d+\.\d+$') {
     [Console]::Error.WriteLine("版本号格式应为 x.y.z 或 vx.y.z")
     exit 2
 }
 
+$work = $null
 try {
     $raw = $Version -replace '^v', ''
     $tag = "v$raw"
@@ -26,9 +30,10 @@ try {
     New-Item -ItemType Directory -Path $work | Out-Null
 
     Write-Host "下载 $tag 产物到 $work"
-    & gh release download $tag --repo $Repo --pattern "TextTool-*-$raw-win-x64.zip*" --dir $work
-    if ($LASTEXITCODE -ne 0) {
-        [Console]::Error.WriteLine("gh release download 失败")
+    $release = Get-GithubReleaseByTag -Repo $Repo -Tag $tag
+    $saved = @(Save-GithubReleaseAssets -Release $release -Raw $raw -DestDir $work)
+    if ($saved.Count -eq 0) {
+        [Console]::Error.WriteLine("未找到 zip")
         exit 1
     }
 
@@ -91,20 +96,15 @@ try {
     $sigFiles = @($zips | ForEach-Object { $_.FullName + ".sig" })
 
     if ($SkipUpload) {
-        Write-Host "已 -SkipUpload，不调用 gh release upload"
+        Write-Host "已 -SkipUpload，不调用 GitHub 上传"
         Write-Host "检查清单：zip 存在 / .sha256 存在 / .sig 存在且 verify 通过 / 待执行：本地真实 update 冒烟"
         exit 0
     }
 
-    $viewJson = & gh release view $tag --repo $Repo --json assets
-    if ($LASTEXITCODE -ne 0) {
-        [Console]::Error.WriteLine("无法读取 release 资产列表")
-        exit 1
-    }
-    $view = $viewJson | ConvertFrom-Json
+    $release = Get-GithubReleaseByTag -Repo $Repo -Tag $tag
     $remoteNames = @()
-    if ($null -ne $view.assets) {
-        $remoteNames = @($view.assets | ForEach-Object { $_.name })
+    if ($null -ne $release.assets) {
+        $remoteNames = @($release.assets | ForEach-Object { $_.name })
     }
 
     if (-not $Force) {
@@ -117,18 +117,13 @@ try {
         }
     }
 
-    $uploadArgs = @("release", "upload", $tag, "--repo", $Repo)
-    if ($Force) {
-        $uploadArgs += "--clobber"
-    }
-    foreach ($sig in $sigFiles) {
-        $uploadArgs += $sig
-    }
     Write-Host "上传 .sig 到 $tag"
-    & gh @uploadArgs
-    if ($LASTEXITCODE -ne 0) {
-        [Console]::Error.WriteLine("gh release upload 失败")
-        exit 1
+    foreach ($sig in $sigFiles) {
+        $sigName = Split-Path -Leaf $sig
+        if ($Force -and ($remoteNames -contains $sigName)) {
+            Remove-GithubReleaseAssetByName -Repo $Repo -Release $release -Name $sigName
+        }
+        Add-GithubReleaseAsset -Repo $Repo -ReleaseId ([long]$release.id) -FilePath $sig
     }
 
     Write-Host "检查清单：zip 存在 / .sha256 存在 / .sig 存在且 verify 通过 / 待执行：本地真实 update 冒烟"
@@ -137,4 +132,9 @@ try {
 catch {
     [Console]::Error.WriteLine($_.Exception.Message)
     exit 1
+}
+finally {
+    if ($work -and (Test-Path -LiteralPath $work)) {
+        Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }

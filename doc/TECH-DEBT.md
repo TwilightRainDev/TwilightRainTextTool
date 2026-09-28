@@ -86,8 +86,9 @@ wc -l MainForm.cs                                            # 期望 214
 # Services/ 文件数（UI 相邻基础设施）
 ls Services/ | wc -l                                         # 期望 4
 
-# 发布脚本（D-3）
+# 发布脚本（D-3 / 2026-09-28 REST）
 test -f scripts/publish.ps1                                  # 期望存在
+test -f scripts/release.ps1                                  # 期望存在
 
 # 构建 + 测试
 dotnet build TextTool.sln -c Release

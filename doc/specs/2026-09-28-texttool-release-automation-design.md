@@ -62,7 +62,7 @@ CI 在推 `v*` tag 时已经会构建、打包 zip、写 `.sha256`、创建 GitH
 
 参数与 D-3 兼容：`-Version` / `-SkipUpload` / `-Force` / `-KeyPath` / `-Repo`。
 
-下载改为 `GET /repos/{repo}/releases/tags/{tag}`，按资产名拉取 `TextTool-*-{raw}-win-x64.zip` 与对应 `.sha256`。上传 `.sig` 走 `uploads.github.com`。已有同名资产且未 `-Force` 则 exit 1；`-Force` 先删再传。HTTP 502/503 重试最多 3 次。
+下载改为 `GET /repos/{repo}/releases/tags/{tag}`，按资产名拉取 `TextTool-*-{raw}-win-x64.zip` 与对应 `.sha256`（`curl -L`，资产 API 会 302 到 CDN）。上传 `.sig` 走 `uploads.github.com`。已有同名资产且未 `-Force` 则 exit 1；`-Force` 先删再传。HTTP 502/503 重试最多 3 次。
 
 签名 / verify / 私钥路径与 D-3 相同。临时目录在 `finally` 删除。
 

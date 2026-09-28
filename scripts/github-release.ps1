@@ -40,7 +40,8 @@ function Invoke-GithubHttp {
     while ($attempt -lt $Retries) {
         $attempt++
         $args = @(
-            "-sS", "-X", $Method,
+            "-sS", "-L", "--max-redirs", "5",
+            "-X", $Method,
             "-H", "Authorization: Bearer $token",
             "-H", "Accept: $Accept",
             "-H", "User-Agent: TextTool-release",

@@ -272,7 +272,8 @@ TextTool/
 │   ├── ReplaceSchemesDesign.md   # Replace-scheme design note
 │   ├── TECH-DEBT.md              # Open optimizations and known debt
 │   ├── adr/                      # Architecture Decision Records (9 ADRs)
-│   └── specs/                    # In-flight design specs
+│   ├── specs/                    # Living / in-flight specs (lint JSON contract; 2.4.5 remainder)
+│   └── archive/                  # Closed specs, plans, landed debt
 │
 ├── scripts/
 │   ├── github-release.ps1        # GitHub REST helpers (curl; no gh)
@@ -560,7 +561,8 @@ TextTool/
 │   ├── ReplaceSchemesDesign.md   # 替换方案设计说明
 │   ├── TECH-DEBT.md              # 未落地优化项与技术债
 │   ├── adr/                      # 架构决策记录（9 份 ADR）
-│   └── specs/                    # 在途设计稿
+│   ├── specs/                    # 现行/在途规格（lint JSON 契约；2.4.5 剩余）
+│   └── archive/                  # 已收口规格、计划、已落地债条
 │
 ├── scripts/
 │   ├── github-release.ps1        # GitHub REST 辅助（curl，不用 gh）

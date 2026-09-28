@@ -211,7 +211,8 @@ TextTool/
 │   ├── ReplaceSchemesDesign.md  # Replace-scheme design note
 │   ├── TECH-DEBT.md             # Open optimizations and known debt
 │   ├── adr/                     # Architecture Decision Records
-│   └── specs/                   # In-flight design specs
+│   ├── specs/                   # Living / in-flight specs
+│   └── archive/                 # Closed specs, plans, landed debt
 │
 └── scripts/
     ├── github-release.ps1       # GitHub REST helpers (curl; no gh)

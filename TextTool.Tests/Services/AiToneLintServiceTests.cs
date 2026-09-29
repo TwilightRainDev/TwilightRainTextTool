@@ -295,7 +295,32 @@ public class AiToneLintServiceTests
 
         var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "C6"));
 
-        Assert.Contains("3 处", note.Text);
+        // 整串断言：只写 "3 处" 的话 "13 处"、"23 处" 也会通过
+        Assert.Contains("显式序号标记 3 处", note.Text);
+    }
+
+    [Theory]
+    [InlineData("1、甲\n2、乙\n3、丙\n")]
+    [InlineData("(1) 甲\n(2) 乙\n(3) 丙\n")]
+    [InlineData("一. 甲\n二. 乙\n三. 丙\n")]
+    public void Scan_显式序号标记其他形态也计入C6(string text)
+    {
+        // 三种替代分支：数字顿号、半角括号、中文数字点号
+        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "C6"));
+
+        Assert.Contains("显式序号标记 3 处", note.Text);
+    }
+
+    [Fact]
+    public void Scan_序号标记只在行首计数()
+    {
+        // 序号不在行首（前有正文）：不计数
+        var 行中 = Service().Scan("甲 1. 乙\n甲 2. 乙\n甲 3. 乙\n", "t.txt");
+        Assert.DoesNotContain(行中.Notes, n => n.Id == "C6");
+
+        // 前导空白不破行首：计数
+        var 缩进 = Service().Scan("  1. 甲\n  2. 乙\n  3. 丙\n", "t.txt");
+        Assert.Contains(缩进.Notes, n => n.Id == "C6");
     }
 
     [Fact]
@@ -368,6 +393,23 @@ public class AiToneLintServiceTests
         Assert.Empty(Service(rule).Scan(text, "t.txt").Hits);   // 并成一段会误报，列表项必须断开
     }
 
+    [Theory]
+    [InlineData("* ")]
+    [InlineData("+ ")]
+    [InlineData("> ")]
+    [InlineData("1. ")]
+    [InlineData("1、")]
+    public void Scan_Markdown块行各形态各自成段(string marker)
+    {
+        // IsBlockLine 的 * / + / > 与数字编号分支：漏掉任一条，两行会并成一段而误报
+        var text = $"{marker}首先看这件事。\n{marker}其次看那件事。\n\n尾段。";
+        var rule = Rule("S2", "regex", "首先|其次|最后");
+        rule.Scope = "paragraph";
+        rule.MinCount = 2;
+
+        Assert.Empty(Service(rule).Scan(text, "t.txt").Hits);
+    }
+
     [Fact]
     public void Scan_Markdown段末窗口按整段计算()
     {
@@ -379,6 +421,20 @@ public class AiToneLintServiceTests
         var hit = Assert.Single(Service(rule).Scan(text, "t.txt").Hits);
 
         Assert.Equal(2, hit.Line);   // 命中在第二行，属第一段（整段 30 字窗口内）
+    }
+
+    [Fact]
+    public void Scan_Markdown段长超窗口时命中落在窗口外不报()
+    {
+        // 上面那条的段落只有 18 字 < TailChars 30，窗口起点恒为 0，没验到「整段」。
+        // 这条的段长 45 字 > 30：窗口起点在段内第 15 字，命中在段首故不报。
+        // 窗口若按行算，首行只有 4 字、起点为 0，这条就会误报——「整段」由此可验。
+        var text = "未来可期\n" + new string('字', 40) + "\n\n尾段。\n";
+        var rule = Rule("S3", "regex", "未来可期");
+        rule.Scope = "paragraph";
+        rule.TailChars = 30;
+
+        Assert.Empty(Service(rule).Scan(text, "t.txt").Hits);
     }
 
     [Fact]
@@ -402,9 +458,30 @@ public class AiToneLintServiceTests
     }
 
     [Fact]
+    public void DetectParagraphMode_末尾换行不计入行数()
+    {
+        // 10 个内容行后跟两个换行：剥掉尾换行后 1/11 = 9.1% 判 line；
+        // 不剥则是 2/12 = 16.7% 判 markdown——这条钉住「末尾换行不算行」
+        var text = string.Join("\n", Enumerable.Repeat("行", 10)) + "\n\n";
+
+        Assert.Equal("line", AiToneLintService.DetectParagraphMode(text));
+    }
+
+    [Fact]
     public void DetectParagraphMode_空与纯空白判为行式()
     {
         Assert.Equal("line", AiToneLintService.DetectParagraphMode(""));
         Assert.Equal("line", AiToneLintService.DetectParagraphMode("\n \n\t\n"));
+    }
+
+    [Fact]
+    public void Scan_行首索引与逐字符扫描结果一致()
+    {
+        var text = "第一行\n第二行有 赋能 二字\n第三行有 赋能 二字";
+        var report = Service(Rule("L1", "literal", "赋能")).Scan(text, "t.txt");
+
+        Assert.Equal(2, report.Hits.Count);
+        Assert.Equal((2, 6), (report.Hits[0].Line, report.Hits[0].Col));
+        Assert.Equal((3, 6), (report.Hits[1].Line, report.Hits[1].Col));
     }
 }

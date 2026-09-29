@@ -18,15 +18,16 @@ public static class LintRunner
             throw new ArgumentException("--min-severity 只接受 info 或 warn");
         if (onlyIds is not null && onlyIds.Count == 0)
             throw new ArgumentException("--only 需要至少一个规则 Id");
+        var rules = LintRuleStore.Load();
         if (onlyIds is not null)
         {
-            var known = AiToneLintService.AllRuleIds();
+            var known = AiToneLintService.AllRuleIds(rules);
             var unknown = onlyIds.Where(id => !known.Contains(id, StringComparer.OrdinalIgnoreCase)).ToList();
             if (unknown.Count > 0)
                 throw new ArgumentException($"未知规则 Id：{string.Join(", ", unknown)}");
         }
 
-        var service = new AiToneLintService(LintRuleStore.Load());
+        var service = new AiToneLintService(rules);
         var reportSet = new LintReportSet();
         foreach (var (file, text) in inputs)
             reportSet.Reports.Add(service.Scan(text, file).Filter(onlyIds, minSeverity));

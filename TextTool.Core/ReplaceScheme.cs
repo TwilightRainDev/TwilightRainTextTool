@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace TextTool.Services;
 
 /// <summary>
@@ -30,12 +32,19 @@ public static class ReplaceSchemeStore
 
     public static void Save(List<ReplaceScheme> schemes) => JsonFileStore.Save("replace_schemes.json", schemes);
 
+    /// <summary>资源文本只读一次；反序列化仍每次重做，见 GetDefaultSchemes。</summary>
+    private static readonly Lazy<string> DefaultSchemesJson =
+        new(() => EmbeddedResource.LoadText(ResourceName));
+
     /// <summary>
     /// 获取内置默认方案。资源必须可解析；缺失即抛，对齐 PinnedRoots。
-    /// 每次调用返回新实例，保证调用方修改不影响内部定义。
+    /// 每次调用返回新实例，保证调用方修改不影响内部定义——因此缓存的是资源文本，不是反序列化结果。
     /// </summary>
-    public static List<ReplaceScheme> GetDefaultSchemes()
-    {
-        return EmbeddedResource.LoadJsonList<ReplaceScheme>(ResourceName);
-    }
+    public static List<ReplaceScheme> GetDefaultSchemes() => Deserialize(DefaultSchemesJson.Value);
+
+    /// <summary>解析失败或结果为空即抛，与 <see cref="EmbeddedResource.LoadJsonList{T}"/> 同口径。</summary>
+    private static List<ReplaceScheme> Deserialize(string json)
+        => JsonSerializer.Deserialize<List<ReplaceScheme>>(json) is { Count: > 0 } schemes
+            ? schemes
+            : throw new InvalidOperationException($"嵌入式资源 {ResourceName} 为空或无法解析");
 }

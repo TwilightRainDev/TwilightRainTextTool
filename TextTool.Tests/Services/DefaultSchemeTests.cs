@@ -53,4 +53,17 @@ public class DefaultSchemeTests
 
         Assert.NotNull(stream);
     }
+
+    [Fact]
+    public void GetDefaultSchemes_每次调用返回新实例()
+    {
+        var first = ReplaceSchemeStore.GetDefaultSchemes();
+        var second = ReplaceSchemeStore.GetDefaultSchemes();
+
+        Assert.NotSame(first, second);
+        Assert.NotSame(first[0], second[0]);
+
+        first[0].Name = "改过的名字";
+        Assert.NotEqual("改过的名字", ReplaceSchemeStore.GetDefaultSchemes()[0].Name);
+    }
 }

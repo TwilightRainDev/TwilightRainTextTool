@@ -7,7 +7,7 @@ public class LintTextFormatterTests
     {
         var report = new LintReport
         {
-            File = "a.md", Chars = 100,
+            File = "a.md", Chars = 100, ParagraphMode = "markdown",
             Hits = new List<LintHit>
             {
                 // 故意倒序给：引擎的命中顺序是 规则→Pattern→位置，同一规则的多条
@@ -27,6 +27,7 @@ public class LintTextFormatterTests
         Assert.Contains("<- 现在", text);            // Hint 随命中给出
         Assert.Contains("<- 不是A而是B", text);      // Detail 走的是同一渲染分支
         Assert.Contains("[统计]", text);
+        Assert.Contains("段落口径 markdown", text);  // 口径随报告带出，人读侧此前只钉了「只报位置」
         Assert.Contains("只报位置", text);
     }
 

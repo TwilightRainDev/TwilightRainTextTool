@@ -6,6 +6,17 @@ namespace TextTool.Services;
 
 internal static class EmbeddedResource
 {
+    /// <summary>读资源的原始文本。调用方要缓存资源文本（而非反序列化结果）时用它。</summary>
+    internal static string LoadText(string resourceName)
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        using var stream = assembly.GetManifestResourceStream(resourceName)
+            ?? throw new InvalidOperationException(
+                $"缺少嵌入式资源 {resourceName}，请检查 csproj 的 EmbeddedResource 配置");
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        return reader.ReadToEnd();
+    }
+
     public static List<T> LoadJsonList<T>(string resourceName)
     {
         var assembly = Assembly.GetExecutingAssembly();

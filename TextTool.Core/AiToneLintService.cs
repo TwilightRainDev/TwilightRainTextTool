@@ -17,16 +17,18 @@ public sealed class AiToneLintService
     {
         string mode = DetectParagraphMode(text);
         var report = new LintReport { File = fileName, Chars = text.Length, ParagraphMode = mode };
+        // 行首下标表建一次就够：逐命中从头重扫是 O(长度×命中数)
+        var lineStarts = new LineStarts(text);
 
         foreach (var rule in _rules)
         {
             if (rule.Rule.Scope == "paragraph")
-                ScanParagraphScope(rule, text, report, mode);
+                ScanParagraphScope(rule, text, report, mode, lineStarts);
             else
-                ScanDocumentScope(rule, text, report);
+                ScanDocumentScope(rule, text, report, lineStarts);
         }
 
-        ScanAlgorithmRules(text, mode, report);
+        ScanAlgorithmRules(text, mode, report, lineStarts);
         // 命中按 (行, 列) 排一次：同一规则的多条 Pattern 各扫一遍会让行号来回跳。
         // 同一位置的多条命中保序（OrderBy 稳定），P1/P2 这类同跨度双报的次序不动。
         // 人读渲染只做组内排序（LintTextFormatter.Format），整表排序在这里——
@@ -68,43 +70,48 @@ public sealed class AiToneLintService
     public static readonly IReadOnlyList<string> AlgorithmRuleIds =
         new[] { "P4", "P5", "C1", "C2", "C3", "C4", "C5", "C6" };
 
-    /// <summary>算法规则与数据规则的 Id 并集，即引擎实际可能产出的 Id 全集（--only 的校验集）。</summary>
-    public static IReadOnlyCollection<string> AllRuleIds()
+    /// <summary>算法规则与给定数据规则的 Id 并集（--only 的校验集）。</summary>
+    public static IReadOnlyCollection<string> AllRuleIds(IEnumerable<LintRule> rules)
     {
         var ids = new List<string>(AlgorithmRuleIds);
-        foreach (var rule in LintRuleStore.Load())
+        foreach (var rule in rules)
             if (!ids.Contains(rule.Id)) ids.Add(rule.Id);
         return ids;
     }
 
-    private static void ScanDocumentScope(CompiledRule rule, string text, LintReport report)
+    /// <summary>算法规则与内置数据规则的 Id 并集，即引擎实际可能产出的 Id 全集。</summary>
+    public static IReadOnlyCollection<string> AllRuleIds() => AllRuleIds(LintRuleStore.Load());
+
+    private static void ScanDocumentScope(CompiledRule rule, string text, LintReport report,
+        LineStarts lineStarts)
     {
         foreach (var (regex, hint) in rule.Patterns)
         {
             var matches = regex.Matches(text);
             if (matches.Count < rule.Rule.MinCount) continue;
             foreach (Match m in matches)
-                report.Hits.Add(Hit(rule.Rule, text, m.Index, m.Length, m.Value, hint));
+                report.Hits.Add(Hit(rule.Rule, lineStarts, text, m.Index, m.Length, m.Value, hint));
         }
     }
 
-    private static void ScanParagraphScope(CompiledRule rule, string text, LintReport report, string mode)
+    private static void ScanParagraphScope(CompiledRule rule, string text, LintReport report, string mode,
+        LineStarts lineStarts)
     {
         var paragraphs = Paragraphs(text, mode);
-        foreach (var (regex, hint) in rule.Patterns)
+        // MinCount 按段判定：段内序数词必须是同一段里凑够次数才算骨架，
+        // 分散在多段的单次出现合计到达阈值不算（规则名与用例的「段内」口径）。
+        foreach (var p in paragraphs)
         {
-            // MinCount 按段判定：段内序数词必须是同一段里凑够次数才算骨架，
-            // 分散在多段的单次出现合计到达阈值不算（规则名与用例的「段内」口径）。
-            foreach (var p in paragraphs)
+            // 窗口只与段有关，与 Pattern 无关：提到 Pattern 循环外
+            int windowStart = rule.Rule.TailChars is int tail && p.Text.Length > tail
+                ? p.Text.Length - tail
+                : 0;
+            foreach (var (regex, hint) in rule.Patterns)
             {
-                // 窗口只与段有关，与 Pattern 无关：提到 Pattern 循环外
-                int windowStart = rule.Rule.TailChars is int tail && p.Text.Length > tail
-                    ? p.Text.Length - tail
-                    : 0;
                 var matches = regex.Matches(p.Text, windowStart);
                 if (matches.Count < rule.Rule.MinCount) continue;
                 foreach (Match m in matches)
-                    report.Hits.Add(Hit(rule.Rule, text, p.Offset + m.Index, m.Length, m.Value, hint));
+                    report.Hits.Add(Hit(rule.Rule, lineStarts, text, p.Offset + m.Index, m.Length, m.Value, hint));
             }
         }
     }
@@ -121,11 +128,18 @@ public sealed class AiToneLintService
 
     private static readonly Regex OrdinalSkeleton = RegexGuard.Create("首先|其次|再次|最后|其一|其二|其三");
 
+    // RegexGuard.Create 每次调用都新建实例，P5/C2 的正则原先是每次扫描各造一遍
+    private static readonly Regex HalfWidthBracket = RegexGuard.Create("[()]");
+    private static readonly Regex FullWidthBracket = RegexGuard.Create("[（）]");
+    private static readonly Regex AnyBracket = RegexGuard.Create("[()（）]");
+    private static readonly Regex SentenceEnd = RegexGuard.Create("(?<=[。！？…])");
+
     /// <summary>显式序号标记：行首的 1. / 1、/ 1) / （1）/ 一、 之类硬编号。</summary>
     private static readonly Regex ExplicitOrdinalMarker = RegexGuard.Create(
         @"(?m)^[ \t]*(?:[0-9]{1,2}[.、)]|[（(][0-9]{1,2}[)）]|[一二三四五六七八九十]+[.、])");
 
-    private static void ScanAlgorithmRules(string text, string mode, LintReport report)
+    private static void ScanAlgorithmRules(string text, string mode, LintReport report,
+        LineStarts lineStarts)
     {
         // P4 引号风格混用：命中定位到全文最早出现的引号字符，规模写进 Detail
         var used = QuoteStyles
@@ -135,26 +149,28 @@ public sealed class AiToneLintService
         if (used.Count > 1)
         {
             int first = used.Min(s => s.Index);
+            var (line, col) = lineStarts.Locate(first);
             string detail = string.Join(" / ", used.Select(s => $"{s.Name} {s.Count} 个"));
             report.Hits.Add(new LintHit
             {
                 Id = "P4", Group = "P", Title = "引号风格混用", Severity = "info",
-                Line = Position(text, first).Line, Col = Position(text, first).Col, Length = 1,
+                Line = line, Col = col, Length = 1,
                 Match = text[first].ToString(), Snippet = Snippet(text, first, 1),
                 Detail = detail, SuggestScheme = "引号括号统一",
             });
         }
 
         // P5 括号全半角混用
-        int half = RegexGuard.Create("[()]").Matches(text).Count;
-        int full = RegexGuard.Create("[（）]").Matches(text).Count;
+        int half = HalfWidthBracket.Matches(text).Count;
+        int full = FullWidthBracket.Matches(text).Count;
         if (half > 0 && full > 0)
         {
-            var m = RegexGuard.Create("[()（）]").Match(text);
+            var m = AnyBracket.Match(text);
+            var (line, col) = lineStarts.Locate(m.Index);
             report.Hits.Add(new LintHit
             {
                 Id = "P5", Group = "P", Title = "括号全半角混用", Severity = "info",
-                Line = Position(text, m.Index).Line, Col = Position(text, m.Index).Col, Length = 1,
+                Line = line, Col = col, Length = 1,
                 Match = m.Value, Snippet = Snippet(text, m.Index, 1),
                 Detail = $"半角 {half} 个 / 全角 {full} 个", SuggestScheme = "引号括号统一",
             });
@@ -176,7 +192,7 @@ public sealed class AiToneLintService
         }
 
         // C2 句长分布过于整齐
-        var sentences = RegexGuard.Create("(?<=[。！？…])").Split(text)
+        var sentences = SentenceEnd.Split(text)
             .Select(s => s.Trim()).Where(s => s.Length >= 6).ToList();
         if (sentences.Count >= 10)
         {
@@ -310,9 +326,10 @@ public sealed class AiToneLintService
             result.Add((start + (slice.Length - slice.TrimStart().Length), trimmed));
     }
 
-    internal static LintHit Hit(LintRule rule, string text, int index, int length, string match, string? hint)
+    internal static LintHit Hit(LintRule rule, LineStarts lineStarts, string text, int index, int length,
+        string match, string? hint)
     {
-        var (line, col) = Position(text, index);
+        var (line, col) = lineStarts.Locate(index);
         return new LintHit
         {
             Id = rule.Id, Group = rule.Group, Title = rule.Title, Severity = rule.Severity,
@@ -322,13 +339,31 @@ public sealed class AiToneLintService
         };
     }
 
-    /// <summary>全文偏移量换算行列；逐字符累计而非查找首次出现（重复段落会定位错）。</summary>
-    internal static (int Line, int Col) Position(string text, int index)
+    /// <summary>
+    /// 行首下标表。Position 每次命中都从头重扫是 O(长度×命中数)；
+    /// Scan 建一次、所有命中复用。
+    /// </summary>
+    internal sealed class LineStarts
     {
-        int line = 1, lineStart = 0;
-        for (int i = 0; i < index && i < text.Length; i++)
-            if (text[i] == '\n') { line++; lineStart = i + 1; }
-        return (line, index - lineStart + 1);
+        private readonly List<int> _starts = new() { 0 };
+
+        public LineStarts(string text)
+        {
+            for (int i = 0; i < text.Length; i++)
+                if (text[i] == '\n') _starts.Add(i + 1);
+        }
+
+        public (int Line, int Col) Locate(int index)
+        {
+            int lo = 0, hi = _starts.Count - 1;
+            while (lo < hi)
+            {
+                int mid = (lo + hi + 1) / 2;
+                if (_starts[mid] <= index) lo = mid;
+                else hi = mid - 1;
+            }
+            return (lo + 1, index - _starts[lo] + 1);
+        }
     }
 
     /// <summary>

@@ -18,6 +18,12 @@ public sealed class LintHit
     public string Detail { get; set; } = "";
     public string? Hint { get; set; }
     public string? SuggestScheme { get; set; }
+
+    /// <summary>
+    /// 逐字段复制，供 Filter 切断结果报告与源报告的元素引用。
+    /// 成员全是 string/int，按字段整体复制即完整复制，新增属性也不会漏拷。
+    /// </summary>
+    internal LintHit Copy() => (LintHit)MemberwiseClone();
 }
 
 /// <summary>统计观察，不计入退出码。</summary>
@@ -25,6 +31,9 @@ public sealed class LintNote
 {
     public string Id { get; set; } = "";
     public string Text { get; set; } = "";
+
+    /// <summary>逐字段复制，理由同 <see cref="LintHit.Copy"/>。</summary>
+    internal LintNote Copy() => (LintNote)MemberwiseClone();
 }
 
 public sealed class LintReport
@@ -45,14 +54,21 @@ public sealed class LintReport
             : new HashSet<string>(onlyIds, StringComparer.OrdinalIgnoreCase);
         bool wantWarnOnly = string.Equals(minSeverity, "warn", StringComparison.OrdinalIgnoreCase);
 
+        // 结果报告与接收者不共享可变状态：两个集合都是新实例，元素逐个复制。
+        // 共享集合则 filtered.Notes.Add(...) 写回源报告，共享元素则改 filtered.Hits[0] 的
+        // 任一属性都写回源报告——Filter 是纯函数，结果不能反向影响输入。
         return new LintReport
         {
             File = File,
             Chars = Chars,
-            Notes = only is null ? Notes : Notes.Where(n => only.Contains(n.Id)).ToList(),
+            Notes = Notes
+                .Where(n => only is null || only.Contains(n.Id))
+                .Select(n => n.Copy())
+                .ToList(),
             Hits = Hits
                 .Where(h => only is null || only.Contains(h.Id))
                 .Where(h => !wantWarnOnly || h.Severity == "warn")
+                .Select(h => h.Copy())
                 .ToList(),
         };
     }

@@ -53,3 +53,22 @@
 | D-3 scripts/publish.ps1 | `scripts/publish.ps1` 存在；2026-09-28 改为 REST，`scripts/release.ps1` 编排 tag |
 | D-4 主题遍历器测试 | `ControlsHelperThemeTests` 三例；`InternalsVisibleTo` |
 | D-5 内联硬编码兜底 | `EmbeddedResource.cs`；`GetHardcodedSchemes` 已删 |
+
+## 已消解：`texttool lint` 评审的「可留」条目（2026-09-29）
+
+原 `doc/TECH-DEBT.md` §2 里「测试强度」5 条 +「文档措辞」1 条 +「契约边缘」1 条，逐条对照代码处理：
+
+| 条目 | 落地证据 |
+|---|---|
+| `LintRule` 四个非默认字段无绑定断言 | `LintRuleStoreTests.GetDefaultRules_非默认字段真的绑定` 钉 L2/S2/S3/L7 的实际取值 |
+| literal 规则归零时断言空过 | 该用例先 `Assert.NotEmpty(literal)` |
+| `Load` 的 19 条计数依赖程序目录 | 改判「内置 19 条 id 全部出现在合并结果里」；精确清单由 `GetDefaultRules_数据规则19条且顺序完整` 在资源层钉住 |
+| `Filter` 未断言不改接收者与 File/Chars 透传 | `LintReportTests.Filter_不改接收者且透传File与Chars` |
+| `Format` 未断言 Detail 分支；补覆盖只钉文案 | 补 Detail 断言；C2–C5 改钉数值 |
+| `Scan_统计项不进Hits` 近似不可失败 | 先证明该文本确实产出 C 组统计项，再断言不进 `Hits` |
+| 两个测试的 stream 未 dispose | 改为 `using var` |
+| 实现注释「任务名 vs 规则名」漂移 | `AiToneLintService.cs` 注释改为「规则名」 |
+| `Filter` 结果与源报告共享元素引用 | `internal Copy()`（`MemberwiseClone`）；`Filter` 两个集合无条件新建并逐元素复制 |
+
+§2 其余条目为评审判定「不可做」（改动会触及输出字节、退出码、JSON 契约或生产结构）或位于
+HumanizerZh 技能仓者，仍列在活债表。

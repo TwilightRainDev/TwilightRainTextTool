@@ -67,6 +67,59 @@ public class LintReportTests
     }
 
     [Fact]
+    public void Filter_结果集合不与源报告共享()
+    {
+        var original = Sample();
+
+        var filtered = original.Filter(null, null);
+        filtered.Notes.Add(new LintNote { Id = "C9", Text = "外部追加" });
+        filtered.Hits.Clear();
+
+        Assert.NotSame(original.Notes, filtered.Notes);
+        Assert.Equal("C1", Assert.Single(original.Notes).Id);
+        Assert.Equal(new[] { "S1", "L1" }, original.Hits.Select(h => h.Id));
+    }
+
+    [Fact]
+    public void Filter_结果元素不与源报告共享()
+    {
+        var original = Sample();
+
+        var filtered = original.Filter(null, null);
+        var hit = filtered.Hits.Single(h => h.Id == "S1");
+        hit.Title = "改过的标题";
+        hit.Severity = "info";
+        filtered.Notes.Single(n => n.Id == "C1").Text = "改过的统计文本";
+
+        Assert.Equal("", original.Hits[0].Title);
+        Assert.Equal("warn", original.Hits[0].Severity);
+        Assert.Equal("段落过于均一", Assert.Single(original.Notes).Text);
+    }
+
+    [Fact]
+    public void Filter_完整复制元素字段()
+    {
+        var hit = new LintHit
+        {
+            Id = "S1", Group = "S", Title = "不是A而是B", Severity = "warn",
+            Line = 3, Col = 5, Length = 6, Match = "不是A而是B", Snippet = "…不是A而是B…",
+            Detail = "对举句式", Hint = "改成直陈", SuggestScheme = "去AI味",
+        };
+        var original = new LintReport
+        {
+            File = "a.md", Chars = 42,
+            Hits = new List<LintHit> { hit },
+            Notes = new List<LintNote> { new() { Id = "C1", Text = "段落过于均一" } },
+        };
+
+        var before = new LintReportSet { Reports = { original } }.ToJson();
+        var after = new LintReportSet { Reports = { original.Filter(null, null) } }.ToJson();
+
+        // 全字段经复制后序列化结果一致：复制不丢字段，也不动 JSON 契约
+        Assert.Equal(before, after);
+    }
+
+    [Fact]
     public void ToJson_键为PascalCase且中文不转义()
     {
         var json = new LintReportSet { Reports = new List<LintReport> { Sample() } }.ToJson();

@@ -8,7 +8,7 @@
 
 ## 1. 未落地项（核实确认）
 
-暂无。不要为 §2 的「可留」再开一轮。
+暂无。§2 现存的条目均为评审判定「不可做」或位于技能仓者。
 
 ---
 
@@ -18,14 +18,6 @@
 > `doc/archive/plans/2026-09-26-texttool-lint-reviews/`。
 > 均为评审判定「可留作已知遗留」的项：不阻塞交付，收口成本低但非必须。
 
-**测试强度**
-
-- `LintRule` 的四个非默认字段（`L2.MinCount`、`S2.Scope+MinCount`、`S3.Scope+TailChars`、`L7.Hints`）无绑定断言——手改 JSON 拼错键名会被静默回落（`Validate` 不拦未知键），4 行断言即可。
-- 不变量测试在 literal 规则归零时空过；`LintRuleStore.Load` 的 19 条计数依赖 exe 目录没有 `lint_rules.json`。
-- `Filter` 未断言「不改接收者」与 File/Chars 传递；`Filter` 结果与原报告共享元素引用（无调用方就地改写）。
-- `Format` 未断言 Detail 渲染分支；5 条补覆盖只钉文案不钉数值；`Scan_统计项不进Hits` 近似不可失败。
-- 两个新增测试取到的 stream 未 dispose（测试进程短命，不影响结果）。
-
 **性能**
 
 - `Position` 每次命中从头重扫；正则构造位置不一致（`P5` 每次 3 个、`C2` 每次 1 个）——`Scan` 级缓存即可。
@@ -34,7 +26,7 @@
 **文档措辞**
 
 - `P3` 的 Detail 措辞比字符类窄（也会命中 `,。`、`,Ａ`）；报告精度小疵（ledger 未细化）。
-- 实现注释「任务名 vs 规则名」与 brief 漂移；计划 internal/public 不一致已随 53034f0 消解，仅存记录。
+- 计划 internal/public 不一致随 53034f0 消解，仅存记录（无待改对象）。
 - `Format` 输出末尾无换行（由 `Program.cs` 追加 `Environment.NewLine`）；单文件输出尾部多一个空行。
 - `Visible` 的转义集不含 emoji 等 GBK 编不出的可见符号（已由 `Console.OutputEncoding = UTF8` 处理）。
 - 历史提交 `d3f0352` 的 `refactor:` 前缀、`adf9270` 提交信息言过其实（提交历史不改，仅登记）。
@@ -82,7 +74,7 @@
 grep -oP '(?<=<Version>)[0-9.]+(?=<)' Directory.Build.props  # 期望 2.6.2
 
 # 测试用例数（[Fact] + [Theory] 属性条数，非运行条数）
-grep -roE '\[(Fact|Theory)' TextTool.Tests --include=*.cs | wc -l   # 期望 207
+grep -roE '\[(Fact|Theory)' TextTool.Tests --include=*.cs | wc -l   # 期望 210
 
 # ADR 份数
 ls doc/adr/ | wc -l                                          # 期望 9

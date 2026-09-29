@@ -291,7 +291,7 @@ TextTool/
 │   ├── icon.ico                  # App icon
 │   └── TwilightRain.jpg          # Avatar in About page
 │
-├── TextTool.Tests/               # Unit tests (xUnit, 207 [Fact]/[Theory])
+├── TextTool.Tests/               # Unit tests (xUnit, 210 [Fact]/[Theory])
 │   ├── TextTool.Tests.csproj
 │   ├── TestHelpers.cs
 │   └── Services/                 # One test file per service
@@ -608,7 +608,7 @@ TextTool/
 │   ├── icon.ico                  # 程序图标
 │   └── TwilightRain.jpg          # 关于页头像
 │
-├── TextTool.Tests/               # 单元测试（xUnit，207 个 [Fact]/[Theory]）
+├── TextTool.Tests/               # 单元测试（xUnit，210 个 [Fact]/[Theory]）
 │   ├── TextTool.Tests.csproj
 │   ├── TestHelpers.cs
 │   └── Services/                 # 每个服务对应一个测试文件

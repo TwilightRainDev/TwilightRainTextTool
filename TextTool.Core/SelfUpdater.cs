@@ -19,6 +19,12 @@ public static class SelfUpdater
     private const long MaxExtractBytes = 500L * 1024 * 1024;
     private const int MaxEntryCount = 20_000;
 
+    /// <summary>
+    /// 下载阶段的超时，比查询阶段宽松得多：release 元数据很小、无网时应当秒级失败，
+    /// 而 zip 安装包要大得多（S302 类代理下实测接近 30s，正好撞上查询用的 30s 超时）。
+    /// </summary>
+    internal static readonly TimeSpan DownloadTimeout = TimeSpan.FromSeconds(90);
+
     public sealed record UpdateResult(bool HasUpdate, string? LatestVersion = null, string? Error = null);
 
     /// <summary>CLI 安装包资产名，如 TextTool-CLI-2.4.0-win-x64.zip。</summary>
@@ -51,25 +57,31 @@ public static class SelfUpdater
         return true;
     }
 
+    /// <summary>等待父进程退出的循环上限（次，约合秒）；父 PID 被复用时不至于永久空转。</summary>
+    internal const int MaxWaitTries = 30;
+
+    /// <summary>内置命令一律走绝对路径：PATH 上有同名程序时裸命令会被遮蔽（本机 Git 的 GNU timeout 即在列）。</summary>
+    private const string System32 = @"%SystemRoot%\System32";
+
     /// <summary>
     /// 构建延迟替换批处理脚本：等本进程退出 → 覆盖安装目录 → 启动新 exe → 清理。
     /// 所有内插路径经 cmd 转义（%→%%，cmd 中 % 在引号内仍会展开，是唯一可注入字符）；
     /// robocopy 失败（exit code ≥8）时保留 staging 并明确报错，不静默删掉唯一一致版本。
     /// </summary>
-    public static string BuildUpdateScript(string installDir, string stagingDir, string exePath, int parentPid)
+    public static string BuildUpdateScript(string installDir, string stagingDir, string exePath, int parentPid) =>
+        BuildUpdateScript(installDir, stagingDir, exePath, parentPid, MaxWaitTries);
+
+    /// <summary>同上，但显式指定等待上限——便于用极小上限验证循环行为。</summary>
+    internal static string BuildUpdateScript(
+        string installDir, string stagingDir, string exePath, int parentPid, int maxWaitTries)
     {
         string target = EscapeCmd(installDir.TrimEnd('\\'));
         string staging = EscapeCmd(stagingDir);
         string exe = EscapeCmd(exePath);
-        return $$"""
+        return ToCrlf($$"""
             @echo off
             setlocal DisableDelayedExpansion
-            :waitloop
-            tasklist /fi "PID eq {{parentPid}}" >nul 2>&1
-            if %errorlevel%==0 (
-                timeout /t 1 /nobreak >nul
-                goto waitloop
-            )
+            {{BuildWaitLoop(parentPid, maxWaitTries)}}
             robocopy "{{staging}}" "{{target}}" /e /is /it /r:1 /w:1 /nfl /ndl /njh /njs /nc /ns /np
             if %errorlevel% GEQ 8 (
                 echo [TextTool] robocopy 复制失败（exit code %errorlevel%），已保留暂存目录 "{{staging}}"。 >&2
@@ -79,8 +91,36 @@ public static class SelfUpdater
             start "" /d "{{target}}" "{{exe}}"
             rd /s /q "{{staging}}"
             del "%~f0"
-            """;
+            """);
     }
+
+    /// <summary>
+    /// 生成"等父进程退出"的循环片段（由 BuildUpdateScript 内嵌）。三处加固，每一处都对应一个实测缺陷：
+    /// 一是存活判据不取 tasklist 的退出码——实测它对不存在的 PID 也返回 0，条件恒真；改为用 find 看
+    /// 输出里有没有该 PID；二是循环有次数上限——Windows 复用 PID，父进程退出后该 PID 若被别的进程
+    /// 占用，无上限的循环会永久空转、替换永不发生；三是 timeout/tasklist/find 走绝对路径——PATH 上有
+    /// 同名程序时裸命令会被遮蔽（GNU timeout 收到 /t 立刻报错返回，循环退化成忙等）。
+    /// 结构上用 goto 标签而非括号块：脚本已 DisableDelayedExpansion，块内 %tries% 不会重估。
+    /// </summary>
+    internal static string BuildWaitLoop(int parentPid, int maxWaitTries) => $$"""
+        set /a tries=0
+        :waitloop
+        {{System32}}\tasklist.exe /fi "PID eq {{parentPid}}" /nh | {{System32}}\find.exe "{{parentPid}}" >nul
+        if errorlevel 1 goto proceed
+        set /a tries+=1
+        if %tries% GEQ {{maxWaitTries}} goto proceed
+        {{System32}}\timeout.exe /t 1 /nobreak >nul
+        goto waitloop
+        :proceed
+        """;
+
+    /// <summary>
+    /// 批处理必须以 CRLF 落盘：cmd 按字节偏移推进解析，LF 行尾叠加多字节字符时会错位，
+    /// 把行从中间劈开（实测 `setlocal DisableDelayedExpansion` 被拆成 `'xpansion'`），
+    /// 脚本会跳过加固语句甚至中途跌出循环。
+    /// </summary>
+    private static string ToCrlf(string script) =>
+        script.Replace("\r\n", "\n").Replace("\n", "\r\n");
 
     private static string EscapeCmd(string value) => value.Replace("%", "%%");
 
@@ -101,7 +141,12 @@ public static class SelfUpdater
     }
 
     /// <summary>执行更新：下载 → 校验（SHA256 + 签名）→ 解压 → 排定替换脚本。返回后本进程应立即退出。</summary>
-    public static async Task<UpdateResult> UpdateAsync(HttpClient client, string currentVersion)
+    public static Task<UpdateResult> UpdateAsync(HttpClient client, string currentVersion) =>
+        UpdateAsync(client, currentVersion, UpdateClient.Create);
+
+    /// <summary>同上，但由调用方给定下载 client 的工厂（按超时构造）——测试据此注入假 handler，不打真实网络。</summary>
+    internal static async Task<UpdateResult> UpdateAsync(
+        HttpClient client, string currentVersion, Func<TimeSpan, HttpClient> downloadClientFactory)
     {
         // 单次抓取 release（tag_name 与 assets 同源，消除双重请求 TOCTOU）
         using var release = await GetReleaseAsync(client);
@@ -122,14 +167,17 @@ public static class SelfUpdater
             return new UpdateResult(false, Error: $"未找到 CLI 安装包资产（{GetCliAssetName(version)}）");
 
         // —— 下载：TLS 公共根固定 + 主机白名单，失败即中止 ——
+        // 查询沿用调用方传入的短超时 client（无网时快速失败），下载另起长超时 client：
+        // 同一工厂产出，TLS 固定/主机白名单/禁重定向策略天然一致，只有超时放宽。
+        using var downloadClient = downloadClientFactory(DownloadTimeout);
         byte[] zipBytes;
         string shaContent;
         byte[] sigBytes;
         try
         {
-            zipBytes = await UpdateClient.FetchBytesAsync(client, assetUrl);
-            shaContent = Encoding.UTF8.GetString(await UpdateClient.FetchBytesAsync(client, assetUrl + ".sha256"));
-            sigBytes = await UpdateClient.FetchBytesAsync(client, assetUrl + ".sig");
+            zipBytes = await UpdateClient.FetchBytesAsync(downloadClient, assetUrl);
+            shaContent = Encoding.UTF8.GetString(await UpdateClient.FetchBytesAsync(downloadClient, assetUrl + ".sha256"));
+            sigBytes = await UpdateClient.FetchBytesAsync(downloadClient, assetUrl + ".sig");
         }
         catch (Exception ex)
         {

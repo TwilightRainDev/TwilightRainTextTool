@@ -166,7 +166,7 @@ public class LintReportTests
         var report = new LintReport
         {
             File = "a.md", Chars = 3,
-            Hits = new List<LintHit> { new() { Id = "L1", Match = "a<b&c'd" } },
+            Hits = new List<LintHit> { new() { Id = "L1", Match = "a<b&c'd+e>f" } },
         };
 
         var json = new LintReportSet { Reports = new List<LintReport> { report } }.ToJson();
@@ -174,6 +174,8 @@ public class LintReportTests
         Assert.Contains("\\u003C", json);   // <
         Assert.Contains("\\u0026", json);   // &
         Assert.Contains("\\u0027", json);   // '
+        Assert.Contains("\\u002B", json);   // +
+        Assert.Contains("\\u003E", json);   // >
         Assert.DoesNotContain("\\u8D4B", json);   // 中文仍不转义
     }
 

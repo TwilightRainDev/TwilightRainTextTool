@@ -8,45 +8,17 @@
 
 ## 1. 未落地项（核实确认）
 
-§2 的 16 条列入 v3.0 范围，逐条处置见 `doc/plans/2026-09-29-texttool-v3.md`；
-条目落地后移入 `doc/archive/tech-debt-landed.md`。
+暂无。
 
 ---
 
 ## 2. 已知遗留（`texttool lint` 特性）
 
-> 来源：`texttool lint` 特性的最终整分支评审。明细在
-> `doc/archive/plans/2026-09-26-texttool-lint-reviews/`。
-> 全部列入 v3.0 范围（`doc/plans/2026-09-29-texttool-v3.md`）：会改可观察输出
-> （输出字节、退出码、JSON 契约）的按破坏性变更处理，README 契约节与发布说明同步写明。
+暂无。
 
-**性能**
-
-- `Position` 每次命中从头重扫；正则构造位置不一致（`P5` 每次 3 个、`C2` 每次 1 个）——`Scan` 级缓存即可。
-- `GetDefaultSchemes()` 每次重读资源、无缓存；`--only` 路径重复 `Load` 一次；`windowStart` 可提到 Pattern 循环外。
-
-**文档措辞**
-
-- `P3` 的 Detail 措辞比字符类窄（也会命中 `,。`、`,Ａ`）；报告精度小疵（ledger 未细化）。
-- 计划 internal/public 不一致随 53034f0 消解，仅存记录（无待改对象）。
-- `Format` 输出末尾无换行（由 `Program.cs` 追加 `Environment.NewLine`）；单文件输出尾部多一个空行。
-- `Visible` 的转义集不含 emoji 等 GBK 编不出的可见符号（已由 `Console.OutputEncoding = UTF8` 处理）。
-- 历史提交 `d3f0352` 的 `refactor:` 前缀、`adf9270` 提交信息言过其实（提交历史不改，仅登记）。
-
-**契约边缘**
-
-- `Merge` 就地替换后不更新索引（external 同 Id 两次会 `ArgumentOutOfRangeException`），生产路径先被 `Validate(external)` 挡住；`Validate` 仍信任列表元素非 null（`[null]` 走 NRE，CLI 仍退 2）。
-- `Merge` 拷贝不对称（内置克隆、外部按引用插入）——无调用方就地改外部对象。
-- 跨规则同跨度双报（`。。。。` → P1+P2，`您说得完全正确` → L5+L6）：报告层去重会丢建议且破坏 `--only` 契约；若要收敛只在数据层删 `P2` 的 `。{3,}`。
-- `UnsafeRelaxedJsonEscaping` 连带不转义 `< > & ' +`；`--json` 到 stdout 的行尾是 CRLF；`Hits` 在 raw JSON 里不保证有序（人读渲染已排序）。
-- `--min-severity` 大小写敏感（与 `--only` 不对称，但是响亮退 2）；`OutputEncoding` 的 guard 只捕 `IOException`。
-- `SuggestScheme` 不进人读输出（只在 JSON 里）；外部 `lint_rules.json` 可撞算法 Id（无出货文件触发）。
-- `Paragraphs` 把 Markdown 软换行拆开（S2/S3 少报，计划自陈的简化）；跨行命中时 Snippet 不含 Match 原文。
-
-**外部数据**
-
-- 技能侧 `去AI味标点归一` 的 Description 与实测不符（重复标点折叠先行，单遍跑不出 `……`）；`引号括号统一` 把全角括号转半角后 `P3` 命中反升（实测 2→6），技能侧已写明操作纪律。
-- 旧脚本的弱序号统计项未迁移（技能映射表如实标注「未迁移」，补它属新增 `C6` 能力）；技能 `SKILL.md:97` 的 info 示例漏 L1。
+本节原有 16 条随 v3.0.0 全部处置：逐条去向与证据见 `doc/archive/tech-debt-landed.md`；
+原特性评审明细在 `doc/archive/plans/2026-09-26-texttool-lint-reviews/`。会改可观察输出
+（输出字节、退出码、JSON 契约）的按破坏性变更处理，README 契约节与发布说明已同步写明。
 
 ---
 
@@ -72,11 +44,11 @@
 ## 4. 验证锚点
 
 ```bash
-# 当前版本号（唯一权威）
-grep -oP '(?<=<Version>)[0-9.]+(?=<)' Directory.Build.props  # 期望 2.6.2
+# 当前版本号（唯一权威）——v3.0.0 交付时由发版流程升到 3.0.0，在那之前为 2.6.2
+grep -oP '(?<=<Version>)[0-9.]+(?=<)' Directory.Build.props  # 现为 2.6.2
 
 # 测试用例数（[Fact] + [Theory] 属性条数，非运行条数）
-grep -roE '\[(Fact|Theory)' TextTool.Tests --include=*.cs | wc -l   # 期望 210
+grep -roE '\[(Fact|Theory)' TextTool.Tests --include=*.cs | wc -l   # 期望 245
 
 # ADR 份数
 ls doc/adr/ | wc -l                                          # 期望 9

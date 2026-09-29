@@ -39,7 +39,7 @@ public class DefaultSchemeTests
     {
         // 引用 store 自己的常量而非字面串；资源必须可解析
         // 用常量才能让查询串写错时测试真正失败
-        var stream = typeof(ReplaceSchemeStore).Assembly
+        using var stream = typeof(ReplaceSchemeStore).Assembly
             .GetManifestResourceStream(ReplaceSchemeStore.ResourceName);
 
         Assert.NotNull(stream);
@@ -48,7 +48,7 @@ public class DefaultSchemeTests
     [Fact]
     public void VNCharacterSchemeStore_ResourceName_ResolvesToEmbeddedResource()
     {
-        var stream = typeof(VNCharacterSchemeStore).Assembly
+        using var stream = typeof(VNCharacterSchemeStore).Assembly
             .GetManifestResourceStream(VNCharacterSchemeStore.ResourceName);
 
         Assert.NotNull(stream);

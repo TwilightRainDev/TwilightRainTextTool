@@ -200,8 +200,12 @@ public class AiToneLintServiceTests
     public void Scan_统计项不进Hits()
     {
         var text = string.Join("\n", Enumerable.Repeat(new string('字', 20), 5));
+        var report = Service().Scan(text, "t.txt");
 
-        Assert.DoesNotContain(Service().Scan(text, "t.txt").Hits, h => h.Group == "C");
+        // 先证明这条文本确实产出了 C 组统计项：没有它，下面的 DoesNotContain 是空转
+        Assert.Contains(report.Notes, n => n.Id.StartsWith('C'));
+        Assert.DoesNotContain(report.Hits, h => h.Group == "C");
+        Assert.DoesNotContain(report.Hits, h => h.Id.StartsWith('C'));
     }
 
     [Fact]
@@ -233,7 +237,7 @@ public class AiToneLintServiceTests
 
         var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "C2"));
 
-        Assert.Contains("变异系数", note.Text);
+        Assert.Contains("变异系数 0.00，10 句", note.Text);   // 长度全等 → 变异系数 0，句数 10
     }
 
     [Fact]
@@ -243,7 +247,7 @@ public class AiToneLintServiceTests
 
         var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "C3"));
 
-        Assert.Contains("我们", note.Text);
+        Assert.Contains("「我们」×4", note.Text);   // 4 段全部以「我们」起头
     }
 
     [Fact]
@@ -253,7 +257,7 @@ public class AiToneLintServiceTests
 
         var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "C4"));
 
-        Assert.Contains("叹号密度偏高", note.Text);
+        Assert.Contains("叹号密度偏高：3 个 / 403 字", note.Text);   // 密度 7.4‰，门槛 3‰
     }
 
     [Fact]
@@ -263,7 +267,7 @@ public class AiToneLintServiceTests
 
         var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "C5"));
 
-        Assert.Contains("序数词骨架", note.Text);
+        Assert.Contains("「首先/其次/最后」出现 2 次", note.Text);   // 门槛 2 次
     }
 
     [Fact]

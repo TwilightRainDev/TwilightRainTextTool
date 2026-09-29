@@ -51,6 +51,22 @@ public class LintReportTests
     }
 
     [Fact]
+    public void Filter_不改接收者且透传File与Chars()
+    {
+        var original = Sample();
+
+        var filtered = original.Filter(new[] { "S1" }, "warn");
+
+        Assert.Equal("a.md", filtered.File);
+        Assert.Equal(10, filtered.Chars);
+        Assert.Equal("S1", Assert.Single(filtered.Hits).Id);
+
+        // 过滤走纯函数路径：接收者的两个集合与元素顺序都保持原样
+        Assert.Equal(new[] { "S1", "L1" }, original.Hits.Select(h => h.Id));
+        Assert.Equal("C1", Assert.Single(original.Notes).Id);
+    }
+
+    [Fact]
     public void ToJson_键为PascalCase且中文不转义()
     {
         var json = new LintReportSet { Reports = new List<LintReport> { Sample() } }.ToJson();

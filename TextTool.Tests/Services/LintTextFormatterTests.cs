@@ -25,6 +25,7 @@ public class LintTextFormatterTests
         Assert.Contains("第 12 行 第 5 列", text);
         Assert.True(text.IndexOf("第 12 行") < text.IndexOf("第 20 行"), "组内应按行号升序");
         Assert.Contains("<- 现在", text);            // Hint 随命中给出
+        Assert.Contains("<- 不是A而是B", text);      // Detail 走的是同一渲染分支
         Assert.Contains("[统计]", text);
         Assert.Contains("只报位置", text);
     }

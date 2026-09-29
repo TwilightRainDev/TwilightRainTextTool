@@ -89,11 +89,37 @@ public class LintRuleStoreTests
     }
 
     [Fact]
+    public void GetDefaultRules_非默认字段真的绑定()
+    {
+        // Validate 不拦未知键：JSON 里把 MinCount 拼成 Mincount，值会静默回落到模型默认
+        // （MinCount=1、TailChars=null、Hints=null），规则行为随数据变而无人报错。
+        // 这里把四个非默认字段的实际取值钉在数据上。
+        var rules = LintRuleStore.GetDefaultRules().ToDictionary(r => r.Id);
+
+        Assert.Equal(3, rules["L2"].MinCount);
+
+        Assert.Equal("paragraph", rules["S2"].Scope);
+        Assert.Equal(2, rules["S2"].MinCount);
+
+        Assert.Equal("paragraph", rules["S3"].Scope);
+        Assert.Equal(30, rules["S3"].TailChars);
+
+        Assert.Equal(
+            new[] { "为了实现这一点", "因为下雨", "现在", "如果您需要帮助", "系统可以处理", "数据显示" },
+            rules["L7"].Hints!.ToArray());
+    }
+
+    [Fact]
     public void Load_内置规则集可加载且通过校验()
     {
+        var builtIn = LintRuleStore.GetDefaultRules();
         var rules = LintRuleStore.Load();
 
-        Assert.Equal(19, rules.Count);
+        // 计数不钉 19：Load 读的是程序目录的 lint_rules.json（装过方案的机器上可能有它），
+        // 钉死计数就把这条用例变成环境耦合。内置 19 条的精确清单由
+        // GetDefaultRules_数据规则19条且顺序完整 在资源层钉住，与目录内容无关。
+        Assert.NotEmpty(builtIn);
+        Assert.All(builtIn, b => Assert.Contains(rules, r => r.Id == b.Id));
         Assert.All(rules, r =>
         {
             Assert.False(string.IsNullOrWhiteSpace(r.Title));
@@ -106,8 +132,12 @@ public class LintRuleStoreTests
     {
         // literal 走 Regex.Escape：JSON 里写的 \uXXXX 解码后是六个普通字符，
         // 被 Escape 再转义一次后永远匹配不到真实字符——这类规则必须写成 regex
-        var offenders = LintRuleStore.GetDefaultRules()
-            .Where(r => r.Kind == "literal")
+        var literal = LintRuleStore.GetDefaultRules().Where(r => r.Kind == "literal").ToList();
+
+        // literal 规则集为空时下面的 Assert.Empty 必然空过，先把「有可查对象」钉住
+        Assert.NotEmpty(literal);
+
+        var offenders = literal
             .SelectMany(r => r.Patterns.Select(p => (r.Id, Pattern: p)))
             .Where(x => x.Pattern.Contains('\\'))
             .Select(x => x.Id)

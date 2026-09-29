@@ -59,7 +59,7 @@ public sealed class AiToneLintService
         foreach (var (regex, hint) in rule.Patterns)
         {
             // MinCount 按段判定：段内序数词必须是同一段里凑够次数才算骨架，
-            // 分散在多段的单次出现合计到达阈值不算（任务名与用例的「段内」口径）。
+            // 分散在多段的单次出现合计到达阈值不算（规则名与用例的「段内」口径）。
             foreach (var p in paragraphs)
             {
                 int windowStart = rule.Rule.TailChars is int tail && p.Text.Length > tail

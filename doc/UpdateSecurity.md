@@ -27,7 +27,9 @@
   ```
   dotnet run --project tools/ReleaseSigner -- keygen E:\WorkZone\ApiKey [--passphrase <p>]
   ```
-- 私钥当前未加密存储（与 ApiKey 目录内其他明文 token 同一保护水平）。若需要加密：`--passphrase` 重建，签名时用 `--passphrase` 或环境变量 `TEXTTOOL_SIGN_PASSPHRASE`
+- 私钥**明文存储**（与 ApiKey 目录内其他明文 token 同一保护水平）。2026-09-29 用户决定维持明文、
+  不做加密，不再作为待办跟踪；`ReleaseSigner` 支持加密 PEM 与 `TEXTTOOL_SIGN_PASSPHRASE` 的能力保留，
+  若日后改变决定可直接使用，无需改代码
 - **绝不**把私钥放进 GitHub/CI（仓库被攻破时 secret 会一起被偷）
 
 ## 发布流程（每次发版）
@@ -42,13 +44,13 @@
 2. 下载 CI 产物 zip 到本地（`publish.ps1` 经 REST 拉取；对照可用浏览器从 Release 页下载）
 3. 离线签名：
    ```
-   dotnet run --project tools/ReleaseSigner -- sign TextTool-CLI-2.6.1-win-x64.zip -k E:\WorkZone\ApiKey\TextTool-signing.priv.pem
+   dotnet run --project tools/ReleaseSigner -- sign TextTool-CLI-2.6.2-win-x64.zip -k E:\WorkZone\ApiKey\TextTool-signing.priv.pem
    ```
    （或先 `cd tools/ReleaseSigner && dotnet build -c Release`，再直接运行 exe）
 4. 上传 `.sig` 到 release：由 `publish.ps1` 调 `uploads.github.com`，不要装 `gh`
 5. 自检：
    ```
-   dotnet run --project tools/ReleaseSigner -- verify TextTool-CLI-2.6.1-win-x64.zip TextTool-CLI-2.6.1-win-x64.zip.sig -k E:\WorkZone\ApiKey\TextTool-signing.pub.pem
+   dotnet run --project tools/ReleaseSigner -- verify TextTool-CLI-2.6.2-win-x64.zip TextTool-CLI-2.6.2-win-x64.zip.sig -k E:\WorkZone\ApiKey\TextTool-signing.pub.pem
    texttool update --check   # 或在新版本上跑一次真实 update
    ```
 
@@ -91,7 +93,10 @@
 
 2.4.4 发布实测暴露的 3 条收口问题（旧客户端 404、S302 代理下下载超时、替换脚本 wait-loop 脆弱）
 及其修复设计见 [`specs/2026-08-03-texttool-2.4.5-design.md`](specs/2026-08-03-texttool-2.4.5-design.md)
-（在途计划，单一权威，此处不重复）。
+（已收口，单一权威，此处不重复）。
+
+其中"替换脚本脆弱"一项，落地时实测出的根因比原设计假设更多（LF 行尾叠加中文致 cmd 解析错位、
+`tasklist` 退出码不可作存活判据、裸 `timeout` 被遮蔽），三者均已修复，实测结论见该规格 §7。
 
 ## 相关文件
 

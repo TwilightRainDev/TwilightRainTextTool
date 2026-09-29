@@ -58,7 +58,18 @@
 
 ## 3. 在途规格（不排队）
 
-`doc/specs/2026-08-03-texttool-2.4.5-design.md` 仍标「在途」。其中 B1 发布脚本已由 `v2.6.1` 的 `scripts/release.ps1` 落地。剩下 A1（下载超时分级）、A2（替换脚本 wait-loop）、D7（私钥加密）**用户点名才开**。
+`doc/specs/2026-08-03-texttool-2.4.5-design.md` 的四项 2026-09-29 全部处置完毕：
+
+| 项 | 处置 |
+|---|---|
+| B1 `scripts/publish.ps1` 发布自动化 | 已落地（v2.6.1 的 `scripts/release.ps1`） |
+| A1 下载超时分级 | 已落地（本次） |
+| A2 替换脚本 wait-loop 健壮化 | 已落地（本次，实际根因与规格假设不同，见规格「实施记录」） |
+| D7 私钥加密 | **明确不做**：用户 2026-09-29 决定维持明文私钥，条目删除，不再跟踪 |
+
+**规格漂移（登记）**：该规格标题写的是「2.4.5 发版收口设计」，A1/A2 本被定为 2.4.5 的客户端变更，
+实际跨过 2.4.5 / 2.5.0 / 2.6.0 / 2.6.1 四个版本都没搭上车，直到 v2.6.1 之后才补上。
+规格标题里的版本号与现状脱节，只作历史记录保留、不再重命名。A1/A2 随 **v2.6.2** 发版到用户端。
 
 ---
 
@@ -66,10 +77,10 @@
 
 ```bash
 # 当前版本号（唯一权威）
-grep -oP '(?<=<Version>)[0-9.]+(?=<)' Directory.Build.props  # 期望 2.6.1
+grep -oP '(?<=<Version>)[0-9.]+(?=<)' Directory.Build.props  # 期望 2.6.2
 
 # 测试用例数（[Fact] + [Theory] 属性条数，非运行条数）
-grep -roE '\[(Fact|Theory)' TextTool.Tests --include=*.cs | wc -l   # 期望 201
+grep -roE '\[(Fact|Theory)' TextTool.Tests --include=*.cs | wc -l   # 期望 205
 
 # ADR 份数
 ls doc/adr/ | wc -l                                          # 期望 9

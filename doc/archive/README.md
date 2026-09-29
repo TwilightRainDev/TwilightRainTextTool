@@ -7,7 +7,6 @@
 | 文件 | 为什么不进归档 |
 |---|---|
 | doc/specs/2026-09-26-texttool-lint-design.md | CLI --json 契约仍指向这里 |
-| doc/specs/2026-08-03-texttool-2.4.5-design.md | 在途：A1 下载超时、A2 wait-loop、D7 私钥加密未做。B1 发布脚本已由 2.6.1 的 
-elease.ps1 覆盖 |
+| doc/specs/2026-08-03-texttool-2.4.5-design.md | 已收口（2026-09-29）：B1/A1/A2 均落地，D7 废弃；留在现行目录只为不打断 TECH-DEBT 与 UpdateSecurity 的现有链接 |
 
-已落地债条登记：	ech-debt-landed.md。活债表：../TECH-DEBT.md。
+已落地债条登记：tech-debt-landed.md。活债表：../TECH-DEBT.md。

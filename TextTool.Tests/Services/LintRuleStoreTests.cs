@@ -145,4 +145,59 @@ public class LintRuleStoreTests
 
         Assert.Empty(offenders);
     }
+
+    [Fact]
+    public void Merge_同Id外部规则出现两次不抛且以最后一次为准()
+    {
+        var builtIn = new List<LintRule> { Rule("L1") };
+        var external = new List<LintRule> { Rule("L1", "第一次"), Rule("L1", "第二次") };
+
+        // Load() 会先被 Validate(external) 挡住，但 Merge 自身也不能把索引留在被替换掉的对象上
+        var merged = LintRuleStore.Merge(builtIn, external);
+
+        Assert.Single(merged);
+        Assert.Equal("第二次", merged[0].Patterns[0]);
+    }
+
+    [Fact]
+    public void Merge_结果不与任一侧入参共享引用()
+    {
+        var builtIn = new List<LintRule> { Rule("L1") };
+        var overwritten = Rule("L1", "覆盖");
+        var appended = Rule("L9");
+        var external = new List<LintRule> { overwritten, appended };
+
+        var merged = LintRuleStore.Merge(builtIn, external);
+
+        Assert.NotSame(builtIn[0], merged[0]);
+        Assert.NotSame(overwritten, merged[0]);
+        Assert.NotSame(appended, merged[1]);
+    }
+
+    [Fact]
+    public void Validate_列表含null元素即抛而非NRE()
+    {
+        var rules = new List<LintRule> { Rule("L1"), null! };
+
+        var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(rules));
+
+        Assert.Contains("null", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ValidateNoAlgorithmIdCollision_外部Id撞算法Id即抛()
+    {
+        var external = new List<LintRule> { Rule("P4") };
+
+        // 直接测守卫本身，不往程序目录写 lint_rules.json：那个文件会被并行跑的其它测试类读到
+        var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.ValidateNoAlgorithmIdCollision(external));
+
+        Assert.Contains("P4", ex.Message);
+    }
+
+    [Fact]
+    public void ValidateNoAlgorithmIdCollision_数据规则Id放行()
+    {
+        LintRuleStore.ValidateNoAlgorithmIdCollision(new List<LintRule> { Rule("L1"), Rule("X9") });
+    }
 }

@@ -42,10 +42,12 @@ public static class LintRuleStore
     {
         var builtIn = GetDefaultRules();
         var external = JsonFileStore.Load<LintRule>("lint_rules.json");
-        // 两侧各自先校验，再合并，再校验合并结果。三个边界各有理由：
+        // 两侧各自先校验，再合并，再校验合并结果。四个边界各有理由：
+        // 算法撞码——external 的 Id 撞上代码产出的算法 Id 时先挡下来；
         // 内置侧——Merge 会 Clone，Patterns 为 null 时 Clone 先 NRE；
-        // 外部侧——重复 Id 必须在这里得到清晰报错，否则 Merge 内部索引指向已被替换的
-        //   对象、IndexOf 返回 -1，先抛 ArgumentOutOfRangeException，Validate 轮不到。
+        // 外部侧——重复 Id 必须在这里得到清晰报错，否则 Merge 按「后者覆盖前者」
+        //   静默取最后一条，用户无从知道自己的配置里写了两个同 Id 规则。
+        ValidateNoAlgorithmIdCollision(external);
         Validate(builtIn);
         Validate(external);
         var merged = Merge(builtIn, external);
@@ -70,14 +72,32 @@ public static class LintRuleStore
         foreach (var rule in external)
         {
             if (index.TryGetValue(rule.Id, out var existing))
-                result[result.IndexOf(existing)] = rule;
+            {
+                // 索引必须跟着替换走：否则同 Id 第二次进来时 existing 已不在列表里，
+                // IndexOf 返回 -1，result[-1] 抛 ArgumentOutOfRangeException
+                int at = result.IndexOf(existing);
+                result[at] = Clone(rule);
+                index[rule.Id] = result[at];
+            }
             else
             {
-                result.Add(rule);
-                index[rule.Id] = rule;
+                // 外部侧同样 Clone：合并结果与调用方的对象脱钩，两侧对称
+                result.Add(Clone(rule));
+                index[rule.Id] = result[^1];
             }
         }
         return result;
+    }
+
+    /// <summary>
+    /// 算法规则的 Id 由代码产出（见 AiToneLintService.AlgorithmRuleIds）。外部文件撞码会让同一个 Id 既有算法命中又有数据命中，
+    /// 报告出现重复 Id 且 --only 无法区分来源——加载即校验，不留到运行期。
+    /// </summary>
+    internal static void ValidateNoAlgorithmIdCollision(List<LintRule> external)
+    {
+        foreach (var rule in external)
+            if (rule is not null && AiToneLintService.AlgorithmRuleIds.Contains(rule.Id, StringComparer.OrdinalIgnoreCase))
+                throw new ArgumentException($"外部规则的 Id 与算法规则冲突：{rule.Id}");
     }
 
     internal static void Validate(List<LintRule> rules)
@@ -85,6 +105,8 @@ public static class LintRuleStore
         var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var rule in rules)
         {
+            if (rule is null)
+                throw new ArgumentException("规则列表含 null 元素");
             if (string.IsNullOrWhiteSpace(rule.Id))
                 throw new ArgumentException("规则 Id 不能为空");
             if (!seen.Add(rule.Id))

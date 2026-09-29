@@ -371,4 +371,11 @@ public class AiToneLintServiceTests
         // 11 行里 1 空行 = 9.1%：未达阈值
         Assert.Equal("line", AiToneLintService.DetectParagraphMode("行\n行\n行\n行\n行\n行\n\n行\n行\n行\n行"));
     }
+
+    [Fact]
+    public void DetectParagraphMode_空与纯空白判为行式()
+    {
+        Assert.Equal("line", AiToneLintService.DetectParagraphMode(""));
+        Assert.Equal("line", AiToneLintService.DetectParagraphMode("\n \n\t\n"));
+    }
 }

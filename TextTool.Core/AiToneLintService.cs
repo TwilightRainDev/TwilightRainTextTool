@@ -58,7 +58,10 @@ public sealed class AiToneLintService
             lines++;
             if (raw.Trim().Length == 0) blanks++;
         }
-        return lines > 0 && (double)blanks / lines >= MarkdownBlankLineRatio ? "markdown" : "line";
+        // blanks < lines 兜住空串与纯空白文件："" 拆出 1 行 1 空行，否则会被判成 markdown
+        return lines > 0 && blanks < lines && (double)blanks / lines >= MarkdownBlankLineRatio
+            ? "markdown"
+            : "line";
     }
 
     /// <summary>代码内算法规则的 Id 全集（数据规则之外的 P4/P5 与 C1-C5）。</summary>

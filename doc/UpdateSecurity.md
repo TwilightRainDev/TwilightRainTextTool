@@ -92,7 +92,7 @@
 ## 已知问题
 
 2.4.4 发布实测暴露的 3 条收口问题（旧客户端 404、S302 代理下下载超时、替换脚本 wait-loop 脆弱）
-及其修复设计见 [`specs/2026-08-03-texttool-2.4.5-design.md`](specs/2026-08-03-texttool-2.4.5-design.md)
+及其修复设计见 [`archive/specs/2026-08-03-texttool-2.4.5-design.md`](archive/specs/2026-08-03-texttool-2.4.5-design.md)
 （已收口，单一权威，此处不重复）。
 
 其中"替换脚本脆弱"一项，落地时实测出的根因比原设计假设更多（LF 行尾叠加中文致 cmd 解析错位、

@@ -379,7 +379,7 @@ public static class Program
     private static void PrintLintHelp() =>
         Console.WriteLine("""
             lint 选项：
-              --json                以 JSON 输出（契约见 doc/specs/2026-09-26-texttool-lint-design.md）
+              --json                以 JSON 输出（契约见 README.md 的「命令行（CLI）」节）
               --only <Id,...>       只跑指定规则，如 --only S1,L1
               --min-severity <info|warn>  只输出 warn 及以上（统计项不受影响）
 

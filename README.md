@@ -175,6 +175,37 @@ keeps the output to `warn` hits.
 `2` = usage or read error. The hit test runs after filtering, so `--min-severity warn`
 means "exit 1 only when a `warn` hit exists".
 
+**`--json` contract.** One wrapper regardless of how many files are passed, so consumers
+never branch on file count:
+
+```json
+{
+  "Version": 1,
+  "Reports": [
+    {
+      "File": "chapter1.md",
+      "Chars": 12345,
+      "Hits": [
+        {
+          "Id": "S1", "Group": "S", "Title": "对举句式", "Severity": "warn",
+          "Line": 12, "Col": 5, "Length": 7,
+          "Match": "不是数据不够，而是口径不同",
+          "Snippet": "…不是数据不够，而是口径不同…",
+          "Detail": "不是A而是B", "Hint": null, "SuggestScheme": null
+        }
+      ],
+      "Notes": [{ "Id": "C1", "Text": "段落长度过于均一（变异系数 0.18，12 段）" }]
+    }
+  ]
+}
+```
+
+Fields are PascalCase. `Match` is the matched source text — word-list rules use it to name
+the word that fired; `Snippet` is the surrounding context; `Hint` is the index-aligned
+suggested rewrite, `null` when there is none. `Notes` carries statistical observations and
+never affects the exit code. Invisible characters are escaped as `\u200b` in both the
+human-readable and the JSON output.
+
 **Heuristic limits.** `P4` (quote style) and `P5` (bracket width) match characters without
 context: the `'` in an English word such as `don't` counts as a quote style, so a Chinese
 quote elsewhere in the same text is reported as mixed, and ASCII brackets written inside a
@@ -260,7 +291,7 @@ TextTool/
 │   ├── icon.ico                  # App icon
 │   └── TwilightRain.jpg          # Avatar in About page
 │
-├── TextTool.Tests/               # Unit tests (xUnit, 183 [Fact]/[Theory])
+├── TextTool.Tests/               # Unit tests (xUnit, 207 [Fact]/[Theory])
 │   ├── TextTool.Tests.csproj
 │   ├── TestHelpers.cs
 │   └── Services/                 # One test file per service
@@ -272,7 +303,7 @@ TextTool/
 │   ├── ReplaceSchemesDesign.md   # Replace-scheme design note
 │   ├── TECH-DEBT.md              # Open optimizations and known debt
 │   ├── adr/                      # Architecture Decision Records (9 ADRs)
-│   ├── specs/                    # Living / in-flight specs (lint JSON contract; 2.4.5 remainder)
+│   ├── specs/                    # Living / in-flight specs
 │   └── archive/                  # Closed specs, plans, landed debt
 │
 ├── scripts/
@@ -466,6 +497,34 @@ texttool update [--check]           自更新（--check 仅检查）
 `0` 成功 / `1` 失败；`lint` 是 `0` 无命中 / `1` 有命中 / `2` 用法或读取错误。
 命中判定在过滤之后进行，因此 `--min-severity warn` 的语义是「只在有 `warn` 命中时退 1」。
 
+**`--json` 契约。** 无论传几个文件都是同一个包装，消费者不必按文件数分支：
+
+```json
+{
+  "Version": 1,
+  "Reports": [
+    {
+      "File": "chapter1.md",
+      "Chars": 12345,
+      "Hits": [
+        {
+          "Id": "S1", "Group": "S", "Title": "对举句式", "Severity": "warn",
+          "Line": 12, "Col": 5, "Length": 7,
+          "Match": "不是数据不够，而是口径不同",
+          "Snippet": "…不是数据不够，而是口径不同…",
+          "Detail": "不是A而是B", "Hint": null, "SuggestScheme": null
+        }
+      ],
+      "Notes": [{ "Id": "C1", "Text": "段落长度过于均一（变异系数 0.18，12 段）" }]
+    }
+  ]
+}
+```
+
+字段为 PascalCase。`Match` 是被命中的原文——词表类规则靠它告诉消费者命中了哪个词；
+`Snippet` 是带上下文的展示片段；`Hint` 是下标对齐出来的建议改法，无则 `null`。
+`Notes` 是统计观察，不计入退出码。隐形字符在人读与 JSON 两种输出里都转义为 `\u200b`。
+
 **启发式规则的边界。** `P4`（引号风格）、`P5`（括号全半角）只看字符不看上下文：
 英文词里的 `'`（如 `don't`）会被当作一种引号风格，与文中别处的中文引号并列为「混用」；
 代码片段里写的 ASCII 括号同样计入括号混用。`C` 组（`C1`–`C5`）是统计观察，不进退出码。
@@ -549,7 +608,7 @@ TextTool/
 │   ├── icon.ico                  # 程序图标
 │   └── TwilightRain.jpg          # 关于页头像
 │
-├── TextTool.Tests/               # 单元测试（xUnit，183 个 [Fact]/[Theory]）
+├── TextTool.Tests/               # 单元测试（xUnit，207 个 [Fact]/[Theory]）
 │   ├── TextTool.Tests.csproj
 │   ├── TestHelpers.cs
 │   └── Services/                 # 每个服务对应一个测试文件
@@ -561,7 +620,7 @@ TextTool/
 │   ├── ReplaceSchemesDesign.md   # 替换方案设计说明
 │   ├── TECH-DEBT.md              # 未落地优化项与技术债
 │   ├── adr/                      # 架构决策记录（9 份 ADR）
-│   ├── specs/                    # 现行/在途规格（lint JSON 契约；2.4.5 剩余）
+│   ├── specs/                    # 现行/在途规格
 │   └── archive/                  # 已收口规格、计划、已落地债条
 │
 ├── scripts/

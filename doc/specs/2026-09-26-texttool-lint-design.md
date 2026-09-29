@@ -249,7 +249,7 @@ texttool lint <文件...> [--json] [--only S1,L1] [--min-severity warn]
 
 ### R4 技能侧收编（仓外）
 
-路径：`E:\work_zone\ClaudeCode\home\.claude\skills\HumanizerZh\`
+路径：`E:\WorkZone\ClaudeCode\home\.claude\skills\HumanizerZh\`
 
 - `SKILL.md` 重写为三步：跑 `texttool lint --json` 拿清单 → 按 `suggestScheme` 跑机械层方案 → 读 hits 逐条判断改写。新旧码映射表（见 R1）写进去
 - 删除 `scripts/tone_lint.py` 与空目录 `scripts/__pycache__`

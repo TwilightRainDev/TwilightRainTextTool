@@ -5,7 +5,7 @@ function Get-TextToolGithubToken {
     if (-not [string]::IsNullOrWhiteSpace($env:TEXTTOOL_GITHUB_TOKEN)) {
         return $env:TEXTTOOL_GITHUB_TOKEN.Trim()
     }
-    $token_path = Join-Path "E:\work_zone\ApiKey" "GithubApiToken.txt"
+    $token_path = Join-Path "E:\WorkZone\ApiKey" "GithubApiToken.txt"
     if (Test-Path -LiteralPath $token_path) {
         return ([IO.File]::ReadAllText($token_path)).Trim()
     }

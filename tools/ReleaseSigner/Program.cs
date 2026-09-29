@@ -12,7 +12,7 @@ namespace ReleaseSigner;
 ///   ReleaseSigner verify &lt;zip&gt; &lt;sig&gt; -k &lt;pub.pem&gt;        验签
 ///   ReleaseSigner fingerprint &lt;pub.pem&gt;                   打印 SPKI base64（用于嵌入客户端源码）
 ///
-/// 安全约定：私钥只留在开发机（建议 E:\work_zone\ApiKey），绝不进入 GitHub/CI。
+/// 安全约定：私钥只留在开发机（建议 E:\WorkZone\ApiKey），绝不进入 GitHub/CI。
 /// </summary>
 public static class Program
 {

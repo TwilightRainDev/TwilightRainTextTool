@@ -73,7 +73,7 @@
 §2 其余条目为评审判定「不可做」（改动会触及输出字节、退出码、JSON 契约或生产结构）或位于
 HumanizerZh 技能仓者，当时仍列在活债表；这批共 16 条已随 v3.0.0 全部处置，见下节。
 
-## 已落地：`texttool lint` 评审遗留 16 条（v3.0.0 范围，2026-09-29）
+## 已处置：`texttool lint` 评审遗留 16 条（v3.0.0 范围，2026-09-29）
 
 原 `doc/TECH-DEBT.md` §2 的 16 条逐条对照 v3.0.0 实施计划的提交处置；两条「无待改对象」
 如实登记，未做任何改动。提交号可用 `git log --oneline` 复核，测试名对应 `TextTool.Tests/`。
@@ -84,8 +84,8 @@ HumanizerZh 技能仓者，当时仍列在活债表；这批共 16 条已随 v3.
 | `GetDefaultSchemes()` 无缓存；`--only` 路径重复 `Load`；`windowStart` 可外提 | 提交 `51201d5`：`EmbeddedResource.LoadText` 缓存资源文本；`LintRunner` 只 `Load` 一次并复用 `AiToneLintService.AllRuleIds(IEnumerable<LintRule>)`；`windowStart` 提到 Pattern 循环外。测试 `DefaultSchemeTests.GetDefaultSchemes_每次调用返回新实例`、`AiToneLintServiceTests.AllRuleIds_含数据规则与算法规则` |
 | `P3` 的 Detail 措辞比字符类窄 | 提交 `3d9c1b9`：`default_lint_rules.json` 里 `P3` 的 `Detail` 改为「半角标点与中文或全角字符相邻」 |
 | 计划 internal/public 不一致 | **无待改对象**：已随 `53034f0` 消解，仅登记，未改动 |
-| `Format` 输出末尾无换行；单文件输出尾部多一个空行 | 提交 `3d9c1b9` + `069a660`：`Program.cs` 人读分支与 JSON 分支收口为 LF、尾部只留一个换行；多文件时报告之间保留一个空行。测试 `LintTextFormatterTests.Format_末尾不带换行`；多文件空行由 CLI 冒烟（`grep -c '^$'`）钉住 |
-| `Visible` 的转义集不含 emoji 等 GBK 编不出的可见符号 | **已消解**：输出编码设为 UTF-8（`Program.cs`），设不上时退化为按宿主编码输出、真编不出的字符由外层 catch 响亮退 2；不扩转义集（扩了会让输出随宿主编码变化）。提交 `185de6e` 把 guard 放宽到捕获所有异常 |
+| `Format` 输出末尾无换行；单文件输出尾部多一个空行 | 提交 `3d9c1b9` + `069a660`：`TextTool.Cli/Program.cs` 人读分支与 JSON 分支收口为 LF、尾部只留一个换行；多文件时报告之间保留一个空行。测试 `LintTextFormatterTests.Format_末尾不带换行`；多文件空行由 CLI 冒烟（`grep -c '^$'`）钉住 |
+| `Visible` 的转义集不含 emoji 等 GBK 编不出的可见符号 | **已消解**：输出编码设为 UTF-8（`TextTool.Cli/Program.cs`），设不上时退化为按宿主编码输出、真编不出的字符由外层 catch 响亮退 2；不扩转义集（扩了会让输出随宿主编码变化）。提交 `185de6e` 把 guard 放宽到捕获所有异常 |
 | 历史提交 `d3f0352` 的 `refactor:` 前缀、`adf9270` 提交信息言过其实 | **无待改对象**：本仓不改历史，仅登记 |
 | `Merge` 就地替换后不更新索引；`Validate` 信任元素非 null | 提交 `e7efdeb`：`LintRule.Merge` 索引随替换同步、两侧 `Clone`；`Validate` 拦 `null` 元素；新增 `ValidateNoAlgorithmIdCollision`。测试 `LintRuleStoreTests.Merge_同Id外部规则出现两次不抛且以最后一次为准`、`Validate_列表含null元素即抛而非NRE`、`ValidateNoAlgorithmIdCollision_外部Id撞算法Id即抛` |
 | `Merge` 拷贝不对称（内置克隆、外部按引用插入） | 提交 `e7efdeb`：外部侧同样 `Clone`。测试 `LintRuleStoreTests.Merge_结果不与任一侧入参共享引用` |
@@ -94,5 +94,5 @@ HumanizerZh 技能仓者，当时仍列在活债表；这批共 16 条已随 v3.
 | `--min-severity` 大小写敏感；`OutputEncoding` 的 guard 只捕 `IOException` | 提交 `185de6e`：校验改 `OrdinalIgnoreCase`；guard 放宽到捕获所有异常。测试 `LintRunnerTests.Run_最小严重度大小写不敏感` |
 | `SuggestScheme` 不进人读输出；外部 `lint_rules.json` 可撞算法 Id | 提交 `3d9c1b9`：人读渲染 `<- 方案：<名>`（测试 `LintTextFormatterTests.Format_渲染建议方案`）；提交 `e7efdeb`：撞码守卫加载即抛（测试 `LintRuleStoreTests.ValidateNoAlgorithmIdCollision_外部Id撞算法Id即抛`） |
 | `Paragraphs` 把 Markdown 软换行拆开；跨行命中时 Snippet 不含 Match 原文 | 提交 `6a8ca15` + `3c25243`：首 4KB 空行密度探测 + Markdown 空行分段；`Snippet` 改为原文的连续切片。测试 `AiToneLintServiceTests.Scan_空行密度达标判为Markdown口径且软换行同段`、`Scan_跨行命中的Snippet保留原文` |
-| 技能侧 `去AI味标点归一` Description 与实测不符；`引号括号统一` 的副作用 | 前者在 HumanizerZh 技能仓，本仓无待改对象；后者技能侧已写明操作纪律，本轮不改方案数据，其副作用写进 README 启发式边界节 |
+| 技能侧 `去AI味标点归一` Description 与实测不符；`引号括号统一` 的副作用 | 前者在 HumanizerZh 技能仓，本仓无待改对象，该项随任务 11 在 HumanizerZh 技能仓处置；后者技能侧已写明操作纪律，本轮不改方案数据，其副作用写进 README 启发式边界节 |
 | 旧脚本弱序号统计项未迁移；技能 `SKILL.md:97` 的 info 示例漏 L1 | 提交 `0ff4128`：新增 `C6` 显式序号标记统计（测试 `AiToneLintServiceTests.Scan_显式序号标记产出C6统计项`）；技能侧示例在 HumanizerZh 技能仓，本仓无待改对象 |

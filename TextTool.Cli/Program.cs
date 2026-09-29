@@ -346,11 +346,13 @@ public static class Program
 
             if (!json)
             {
+                // 人读输出常被重定向成文件：行尾统一 LF（本工作区约定），尾部只保留一个换行
                 foreach (var report in reportSet.Reports)
-                    Console.WriteLine(LintTextFormatter.Format(report) + Environment.NewLine);
+                    Console.Write(LintTextFormatter.Format(report).Replace("\r\n", "\n") + "\n");
             }
             else
-                Console.WriteLine(reportSet.ToJson());
+                // ToJson() 的正文已是 LF；Console.WriteLine 会补 CRLF 结尾，这里只补一个 \n
+                Console.Write(reportSet.ToJson() + "\n");
 
             bool anyHit = reportSet.Reports.Any(r => r.Hits.Count > 0);
             return anyHit ? 1 : 0;

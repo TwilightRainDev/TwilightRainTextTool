@@ -14,7 +14,7 @@
       "[,;:?!()\"'][\\u3400-\\u4DBF\\u4E00-\\u9FFF\\uF900-\\uFAFF\\u3000-\\u303F\\uFF00-\\uFFEF]",
       "[\\u3400-\\u4DBF\\u4E00-\\u9FFF\\uF900-\\uFAFF\\u3000-\\u303F\\uFF00-\\uFFEF][,;:?!()\"']"
     ],
-    "Severity": "warn", "Detail": "半角标点与中文相邻",
+    "Severity": "warn", "Detail": "半角标点与中文或全角字符相邻",
     "SuggestScheme": "去AI味标点归一" },
 
   { "Id": "P6", "Group": "P", "Title": "破折号与波浪号", "Kind": "regex",

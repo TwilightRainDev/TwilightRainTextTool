@@ -39,6 +39,31 @@ public class LintTextFormatterTests
     }
 
     [Fact]
+    public void Format_渲染建议方案()
+    {
+        var report = new LintReport
+        {
+            File = "a.md", Chars = 10,
+            Hits = new List<LintHit>
+            {
+                new() { Id = "P2", Title = "省略号风格", Line = 1, Col = 3, Snippet = "…", SuggestScheme = "去AI味标点归一" },
+            },
+        };
+
+        var text = LintTextFormatter.Format(report);
+
+        Assert.Contains("<- 方案：去AI味标点归一", text);
+    }
+
+    [Fact]
+    public void Format_末尾不带换行()
+    {
+        var text = LintTextFormatter.Format(new LintReport { File = "a.md", Chars = 5 });
+
+        Assert.False(text.EndsWith('\n'), "尾换行由调用方决定：CLI 追加一个，GUI 用 AppendLine");
+    }
+
+    [Fact]
     public void Visible_不可见字符转义为uXXXX()
     {
         var text = LintTextFormatter.Visible("前\u200b后\u00a0终");

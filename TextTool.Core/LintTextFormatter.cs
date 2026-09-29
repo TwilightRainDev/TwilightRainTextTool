@@ -40,7 +40,8 @@ public static class LintTextFormatter
                 {
                     string hint = string.IsNullOrEmpty(hit.Hint) ? "" : $"  <- {hit.Hint}";
                     string detail = string.IsNullOrEmpty(hit.Detail) ? "" : $"  <- {hit.Detail}";
-                    sb.AppendLine($"       第 {hit.Line} 行 第 {hit.Col} 列  {Visible(hit.Snippet)}{hint}{detail}");
+                    string scheme = string.IsNullOrEmpty(hit.SuggestScheme) ? "" : $"  <- 方案：{hit.SuggestScheme}";
+                    sb.AppendLine($"       第 {hit.Line} 行 第 {hit.Col} 列  {Visible(hit.Snippet)}{hint}{detail}{scheme}");
                 }
             }
         }

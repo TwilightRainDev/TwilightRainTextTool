@@ -187,8 +187,8 @@ default, and excluded from a gate by `--min-severity warn`.
 ```text
 TextTool/
 ├── TextTool.sln                  # Solution file
-├── TextTool.csproj               # .NET 8 WinForms, v2.6.1
-├── Directory.Build.props         # Centralized version (2.6.1)
+├── TextTool.csproj               # .NET 8 WinForms, v2.6.2
+├── Directory.Build.props         # Centralized version (2.6.2)
 ├── Program.cs                    # Entry point, registers GBK encoding
 ├── MainForm.cs                   # Main window (214 lines, hosts 6 tabs)
 │
@@ -305,7 +305,7 @@ TextTool/
 Per-version changelog is carried by git tags and GitHub Releases — see
 [Tags](https://github.com/TwilightRainDev/TwilightRainTextTool/tags) and
 [Releases](https://github.com/TwilightRainDev/TwilightRainTextTool/releases)
-(12 tags, latest `v2.6.1`). This file does not duplicate it.
+(13 tags, latest `v2.6.2`). This file does not duplicate it.
 
 ---
 
@@ -476,8 +476,8 @@ texttool update [--check]           自更新（--check 仅检查）
 ```text
 TextTool/
 ├── TextTool.sln                  # 解决方案文件
-├── TextTool.csproj               # .NET 8 WinForms, v2.6.1
-├── Directory.Build.props         # 统一版本号 (2.6.1)
+├── TextTool.csproj               # .NET 8 WinForms, v2.6.2
+├── Directory.Build.props         # 统一版本号 (2.6.2)
 ├── Program.cs                    # 入口，注册 GBK 编码支持
 ├── MainForm.cs                   # 主窗口 (214 行，承载 6 个页签)
 │
@@ -594,7 +594,7 @@ TextTool/
 逐版本变更由 git tag 与 GitHub Releases 承载，见
 [Tags](https://github.com/TwilightRainDev/TwilightRainTextTool/tags) 与
 [Releases](https://github.com/TwilightRainDev/TwilightRainTextTool/releases)
-（共 12 个 tag，最新 `v2.6.1`）。本文件不再重复维护。
+（共 13 个 tag，最新 `v2.6.2`）。本文件不再重复维护。
 
 ### 风格约定
 

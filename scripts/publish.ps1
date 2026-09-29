@@ -97,7 +97,7 @@ try {
 
     if ($SkipUpload) {
         Write-Host "已 -SkipUpload，不调用 GitHub 上传"
-        Write-Host "检查清单：zip 存在 / .sha256 存在 / .sig 存在且 verify 通过 / release 说明已含升级提示 / 待执行：本地真实 update 冒烟"
+        Write-Host "检查清单：zip 存在 / .sha256 存在 / .sig 存在且 verify 通过 / 待执行：release 说明并入升级提示 / 本地真实 update 冒烟"
         exit 0
     }
 

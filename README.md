@@ -242,10 +242,10 @@ observation and never affects the exit code. `P4`/`P5` are all `info` level — 
 default, and excluded from a gate by `--min-severity warn`.
 
 **Paragraph model.** The model is detected per file, from the first 4096 characters only: when blank
-lines make up at least 10% of the lines counted there (a trailing newline does not count as
-a line), the file is read as Markdown — paragraphs split on blank lines, soft-wrapped lines
-join into one paragraph, and list items, block quotes and numbered lines each form their own
-paragraph. Otherwise every non-blank line is one paragraph. Measured samples: real Markdown
+lines make up at least 10% of the lines counted there and not all of those lines are blank (a trailing
+newline does not count as a line), the file is read as Markdown — paragraphs split on blank lines,
+soft-wrapped lines join into one paragraph, and list items, block quotes and numbered lines each form
+their own paragraph. Otherwise every non-blank line is one paragraph. Measured samples: real Markdown
 files land at 7.7%–53% blank lines, line-oriented text at 0%. The threshold is deliberately
 conservative, so a miss degrades to the line model rather than misfiring on line-oriented
 text. The model used is reported as `ParagraphMode`, and in the `[NOTE]` line of the
@@ -603,8 +603,8 @@ texttool update [--check]           自更新（--check 仅检查）
 代码片段里写的 ASCII 括号同样计入括号混用。`C` 组（`C1`–`C6`）是统计观察，不进退出码。
 `P4`/`P5` 一律 `info` 级：默认只报，用 `--min-severity warn` 即可把它们排除在关卡之外。
 
-**段落口径。** 口径按文件探测，只取首 4096 字符：其中空行占行数比例达到 10%（末尾单个换行不算
-一行）即判为 Markdown——按空行分段，软换行并入同一段，列表项、引用行与编号行各自成段；
+**段落口径。** 口径按文件探测，只取首 4096 字符：其中空行占行数比例达到 10% 且非全空（末尾单个
+换行不算一行）即判为 Markdown——按空行分段，软换行并入同一段，列表项、引用行与编号行各自成段；
 否则每个非空行各成一段。实测样本：真实 Markdown 文件空行占比 7.7%–53%，行式文本为 0%；
 阈值取保守方向，漏判只退化成行式口径，不会误判行式文本。当次采用的口径随报告输出
 （`ParagraphMode` 字段与人读报告的 `[NOTE]` 行）。行式口径下软换行的段落被拆成多行，

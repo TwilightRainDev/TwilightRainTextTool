@@ -26,6 +26,9 @@ public sealed class AiToneLintService
         }
 
         ScanAlgorithmRules(text, report);
+        // 命中按 (行, 列) 排一次：同一规则的多条 Pattern 各扫一遍会让行号来回跳。
+        // 人读渲染本来就再排一次，JSON 侧此前不保证有序——两处口径统一到这里
+        report.Hits = report.Hits.OrderBy(h => h.Line).ThenBy(h => h.Col).ToList();
         return report;
     }
 

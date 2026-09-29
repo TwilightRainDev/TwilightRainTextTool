@@ -124,7 +124,7 @@ public class LintReportTests
     {
         var json = new LintReportSet { Reports = new List<LintReport> { Sample() } }.ToJson();
 
-        Assert.Contains("\"Version\": 1", json);
+        Assert.Contains("\"Version\": 2", json);
         Assert.Contains("\"Reports\"", json);
         Assert.Contains("\"Match\": \"赋能\"", json);
         Assert.DoesNotContain("\\u8D4B", json);   // 中文未被转义成 \uXXXX
@@ -143,5 +143,37 @@ public class LintReportTests
 
         Assert.Contains("P7", json);
         Assert.Contains("\\u200b", json);   // JSON 文本里是可读的 \uXXXX 字面量
+    }
+
+    [Fact]
+    public void ToJson_契约版本为2()
+    {
+        Assert.Contains("\"Version\": 2", new LintReportSet().ToJson());
+    }
+
+    [Fact]
+    public void ToJson_行尾为LF()
+    {
+        var json = new LintReportSet { Reports = new List<LintReport> { Sample() } }.ToJson();
+
+        Assert.DoesNotContain("\r", json);
+        Assert.Contains("\n", json);
+    }
+
+    [Fact]
+    public void ToJson_HTML敏感字符转义()
+    {
+        var report = new LintReport
+        {
+            File = "a.md", Chars = 3,
+            Hits = new List<LintHit> { new() { Id = "L1", Match = "a<b&c'd" } },
+        };
+
+        var json = new LintReportSet { Reports = new List<LintReport> { report } }.ToJson();
+
+        Assert.Contains("\\u003C", json);   // <
+        Assert.Contains("\\u0026", json);   // &
+        Assert.Contains("\\u0027", json);   // '
+        Assert.DoesNotContain("\\u8D4B", json);   // 中文仍不转义
     }
 }

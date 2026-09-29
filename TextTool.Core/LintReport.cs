@@ -1,5 +1,6 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Unicode;
 
 namespace TextTool.Services;
 
@@ -77,15 +78,23 @@ public sealed class LintReport
 /// <summary>多文件输出的统一包装，消费者不必按文件数分支。</summary>
 public sealed class LintReportSet
 {
-    public int Version { get; set; } = 1;
+    /// <summary>契约版本。2：行尾为 LF、HTML 敏感字符转义、Hits 保证按 (Line, Col) 有序。</summary>
+    public int Version { get; set; } = 2;
     public List<LintReport> Reports { get; set; } = new();
 
     private static readonly JsonSerializerOptions Options = new()
     {
         WriteIndented = true,
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,   // 中文照原样输出，不转 \uXXXX
+        // 中文照原样输出，不转 \uXXXX；HTML 敏感字符（< > & '）与 UTF-7 的 + 仍按默认编码器转义——
+        // UnsafeRelaxedJsonEscaping 会把它们一起放开，是另一个方向的过头
+        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
     };
 
-    /// <summary>序列化后整体转义隐形字符：JSON 文本里显示为 \uXXXX 字面量，解析方会解回原字符，语义不变。</summary>
-    public string ToJson() => LintTextFormatter.EscapeInvisible(JsonSerializer.Serialize(this, Options));
+    /// <summary>
+    /// 序列化后统一收口两处：隐形字符转义为 \uXXXX 字面量、行尾归一为 LF
+    /// （输出常被重定向成文件，本工作区文件一律 LF）。
+    /// </summary>
+    public string ToJson() => LintTextFormatter
+        .EscapeInvisible(JsonSerializer.Serialize(this, Options))
+        .Replace("\r\n", "\n");
 }

@@ -279,4 +279,24 @@ public class AiToneLintServiceTests
         Assert.Contains("P4", ids);
         Assert.Contains("C5", ids);
     }
+
+    [Fact]
+    public void Scan_命中按行列升序()
+    {
+        var rule = Rule("L1", "literal", "乙", "甲");   // Pattern 顺序与文本位置相反
+
+        var report = Service(rule).Scan("甲乙", "t.txt");
+
+        Assert.Equal(new[] { "甲", "乙" }, report.Hits.Select(h => h.Match));
+    }
+
+    [Fact]
+    public void Scan_同位置多规则命中保持引擎顺序()
+    {
+        var text = "反复。。。。";
+        var ids = new AiToneLintService(LintRuleStore.Load()).Scan(text, "t.txt")
+            .Hits.Where(h => h.Line == 1 && h.Col == 3).Select(h => h.Id).ToList();
+
+        Assert.Equal(new[] { "P1", "P2" }, ids);   // P1 在前：同跨度双报是既定行为，排序不得打乱
+    }
 }

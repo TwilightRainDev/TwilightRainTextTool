@@ -346,9 +346,13 @@ public static class Program
 
             if (!json)
             {
-                // 人读输出常被重定向成文件：行尾统一 LF（本工作区约定），尾部只保留一个换行
-                foreach (var report in reportSet.Reports)
-                    Console.Write(LintTextFormatter.Format(report).Replace("\r\n", "\n") + "\n");
+                // 人读输出常被重定向成文件：行尾统一 LF（本工作区约定）；
+                // 报告之间空一行（多文件可读性），尾部只保留一个换行
+                for (int i = 0; i < reportSet.Reports.Count; i++)
+                {
+                    if (i > 0) Console.Write("\n");
+                    Console.Write(LintTextFormatter.Format(reportSet.Reports[i]).Replace("\r\n", "\n") + "\n");
+                }
             }
             else
                 // ToJson() 的正文已是 LF；Console.WriteLine 会补 CRLF 结尾，这里只补一个 \n

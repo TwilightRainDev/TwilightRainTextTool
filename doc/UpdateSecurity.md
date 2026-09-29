@@ -44,13 +44,13 @@
 2. 下载 CI 产物 zip 到本地（`publish.ps1` 经 REST 拉取；对照可用浏览器从 Release 页下载）
 3. 离线签名：
    ```
-   dotnet run --project tools/ReleaseSigner -- sign TextTool-CLI-2.6.2-win-x64.zip -k E:\WorkZone\ApiKey\TextTool\TextTool-signing.priv.pem
+   dotnet run --project tools/ReleaseSigner -- sign TextTool-CLI-3.0.0-win-x64.zip -k E:\WorkZone\ApiKey\TextTool\TextTool-signing.priv.pem
    ```
    （或先 `cd tools/ReleaseSigner && dotnet build -c Release`，再直接运行 exe）
 4. 上传 `.sig` 到 release：由 `publish.ps1` 调 `uploads.github.com`，不要装 `gh`
 5. 自检：
    ```
-   dotnet run --project tools/ReleaseSigner -- verify TextTool-CLI-2.6.2-win-x64.zip TextTool-CLI-2.6.2-win-x64.zip.sig -k E:\WorkZone\ApiKey\TextTool\TextTool-signing.pub.pem
+   dotnet run --project tools/ReleaseSigner -- verify TextTool-CLI-3.0.0-win-x64.zip TextTool-CLI-3.0.0-win-x64.zip.sig -k E:\WorkZone\ApiKey\TextTool\TextTool-signing.pub.pem
    texttool update --check   # 或在新版本上跑一次真实 update
    ```
 

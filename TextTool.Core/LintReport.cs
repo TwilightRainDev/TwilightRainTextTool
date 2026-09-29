@@ -83,14 +83,15 @@ public sealed class LintReport
 /// <summary>多文件输出的统一包装，消费者不必按文件数分支。</summary>
 public sealed class LintReportSet
 {
-    /// <summary>契约版本。2：行尾为 LF、HTML 敏感字符转义、Hits 保证按 (Line, Col) 有序。</summary>
+    /// <summary>契约版本。2：行尾为 LF、HTML 敏感字符转义、Hits 保证按 (Line, Col) 有序、新增 ParagraphMode 字段。</summary>
     public int Version { get; set; } = 2;
     public List<LintReport> Reports { get; set; } = new();
 
     private static readonly JsonSerializerOptions Options = new()
     {
         WriteIndented = true,
-        // 中文照原样输出，不转 \uXXXX；HTML 敏感字符（< > & '）与 UTF-7 的 + 仍按默认编码器转义——
+        // 中文照原样输出，不转 \uXXXX；HTML 敏感字符与 UTF-7 的 + 仍按默认编码器转义——
+        // 完整转义面以 README 的 CLI 契约节为准，本处不复述成第三份副本。
         // UnsafeRelaxedJsonEscaping 会把它们一起放开，是另一个方向的过头
         Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
     };

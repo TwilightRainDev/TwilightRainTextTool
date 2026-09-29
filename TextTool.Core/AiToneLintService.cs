@@ -41,13 +41,13 @@ public sealed class AiToneLintService
     internal const int ParagraphProbeChars = 4096;
 
     /// <summary>
-    /// Markdown 判据：首 4KB 的空行占行数比例。实测真实 .md 样本落在 7.7%–53%，
+    /// Markdown 判据：首 4096 字符的空行占行数比例。实测真实 .md 样本落在 7.7%–53%，
     /// 行式文本（无空行）为 0%——取 10% 偏向保守：漏判退化成行式口径，不误判行式文本。
     /// </summary>
     internal const double MarkdownBlankLineRatio = 0.10;
 
     /// <summary>
-    /// 段落口径探测：行式文本（每行一段，与旧 tone_lint 一致）或 Markdown（空行分段，软换行并入同段）。
+    /// 段落口径探测：行式文本（每行一段，本引擎的行式口径）或 Markdown（空行分段，软换行并入同段）。
     /// </summary>
     internal static string DetectParagraphMode(string text)
     {

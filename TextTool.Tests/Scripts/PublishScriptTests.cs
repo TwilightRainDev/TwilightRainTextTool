@@ -41,6 +41,24 @@ public class PublishScriptTests
         Assert.DoesNotContain("BEGIN", text, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void ScriptText_发布说明并入升级提示()
+    {
+        var text = File.ReadAllText(ScriptPath);
+
+        Assert.Contains("UpgradeNotes.md", text, StringComparison.Ordinal);
+        Assert.Contains("Set-GithubReleaseBody", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void UpgradeNotes_存在且写明受阻版本()
+    {
+        var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "doc", "UpgradeNotes.md"));
+
+        Assert.True(File.Exists(path), path);
+        Assert.Contains("2.6.1", File.ReadAllText(path), StringComparison.Ordinal);
+    }
+
     private static (int Code, string Stderr) Invoke(params string[] args)
     {
         var shell = File.Exists(@"C:\Program Files\PowerShell\7\pwsh.exe")

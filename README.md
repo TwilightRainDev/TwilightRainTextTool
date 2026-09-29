@@ -116,6 +116,10 @@ Download the latest `TextTool-GUI-*-win-x64.zip` from the
 extract it, and double-click `TextTool.exe`. Requires .NET 8 Desktop Runtime
 (see Requirements above); a missing runtime shows a guided download dialog.
 
+Coming from `v2.6.1` or earlier, the in-app updater cannot take you here —
+download the zip and unzip over the old folder by hand
+(see [`doc/UpgradeNotes.md`](doc/UpgradeNotes.md)).
+
 ### Running
 
 #### Option A — Build then run
@@ -163,7 +167,7 @@ texttool lint <file...> [options]      AI-tone check, report only
 texttool update [--check]              Self-update (--check = check only)
 ```
 
-Run `texttool <command> --help` for each command's options. `update` downloads the new CLI zip from the GitHub Release, verifies its SHA-256, and swaps itself in (with `--check` you can check for a new version without updating).
+Run `texttool <command> --help` for each command's options. `update` downloads the new CLI zip from the GitHub Release, verifies its SHA-256, and swaps itself in (with `--check` you can check for a new version without updating). It cannot upgrade a client on `v2.6.1` or earlier — those installs have to be replaced by hand (see [`doc/UpgradeNotes.md`](doc/UpgradeNotes.md)).
 
 `lint` takes one or more files (`-` reads stdin) and changes nothing: it reports where
 Chinese AI-flavored wording appears, with rule id, line and column. `--json` emits the
@@ -443,6 +447,9 @@ Per-version changelog is carried by git tags and GitHub Releases — see
 下载最新的 `TextTool-GUI-*-win-x64.zip`，解压后双击 `TextTool.exe` 即可运行。
 需先安装 .NET 8 Desktop Runtime（见上方系统要求）；缺少运行时会弹出引导对话框。
 
+若你手上是 `v2.6.1` 及更早的版本，程序内自动更新到不了这里——请手动下载 zip 解压覆盖原目录
+（见 [`doc/UpgradeNotes.md`](doc/UpgradeNotes.md)）。
+
 ### 运行方式
 
 #### 方式一 · 构建后运行
@@ -487,7 +494,7 @@ texttool lint <文件...> [选项]      AI 味检查（只报不改）
 texttool update [--check]           自更新（--check 仅检查）
 ```
 
-运行 `texttool <命令> --help` 查看各命令选项。`update` 从 GitHub Release 下载新 CLI zip，校验 SHA-256 后自动替换自身（`--check` 可只检查不更新）。
+运行 `texttool <命令> --help` 查看各命令选项。`update` 从 GitHub Release 下载新 CLI zip，校验 SHA-256 后自动替换自身（`--check` 可只检查不更新）。`v2.6.1` 及更早的客户端用不了 `update`，需手动下载替换（见 [`doc/UpgradeNotes.md`](doc/UpgradeNotes.md)）。
 
 `lint` 接受一个或多个文件（`-` 表示从 stdin 读），不改动任何内容：只报告中文 AI 味出现的位置，
 给出规则 Id、行号与列号。`--json` 输出机器可读契约，`--only S1,L1` 只跑指定规则 Id，

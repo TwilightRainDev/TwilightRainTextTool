@@ -54,7 +54,10 @@
    texttool update --check   # 或在新版本上跑一次真实 update
    ```
 
-**检查清单**：□ zip 存在 □ `.sha256` 存在 □ `.sig` 存在且 verify 通过 □ 本地真实 update 成功
+**检查清单**：□ zip 存在 □ `.sha256` 存在 □ `.sig` 存在且 verify 通过 □ release 说明已含升级提示 □ 本地真实 update 成功
+
+其中「release 说明已含升级提示」由 `publish.ps1` 在 `.sig` 上传后自动并入（说明里已有该文本时跳过），
+提示正文见 [`UpgradeNotes.md`](UpgradeNotes.md)，面向 `v2.6.1` 及更早客户端的手动升级指引。
 
 ## 公钥轮换（两步发布）
 

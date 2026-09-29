@@ -179,3 +179,25 @@ function Push-GitTagWithToken {
         throw "推 tag $Tag 失败"
     }
 }
+
+function Set-GithubReleaseBody {
+    param(
+        [Parameter(Mandatory = $true)][string]$Repo,
+        [Parameter(Mandatory = $true)][long]$ReleaseId,
+        [Parameter(Mandatory = $true)][string]$Body
+    )
+    $tmp = Join-Path $env:TEMP ("texttool-body-" + [guid]::NewGuid().ToString() + ".json")
+    # 本机 Windows PowerShell 5.1 的 ConvertTo-Json 不转义非 ASCII（中文原字符落盘，实测），
+    # 因此必须用无 BOM UTF-8 写入——换成默认编码或 ASCII 会损坏中文；curl 按字节上传。
+    [IO.File]::WriteAllText($tmp, (@{ body = $Body } | ConvertTo-Json -Compress), (New-Object Text.UTF8Encoding($false)))
+    try {
+        $url = "https://api.github.com/repos/$Repo/releases/$ReleaseId"
+        $res = Invoke-GithubHttp -Method "PATCH" -Url $url -UploadFile $tmp -ContentType "application/json"
+        if ($res.Status -ne 200) {
+            throw "更新 release 说明失败 HTTP $($res.Status)"
+        }
+    }
+    finally {
+        Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+    }
+}

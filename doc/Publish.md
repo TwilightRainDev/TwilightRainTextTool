@@ -86,6 +86,8 @@ git push origin main
 
 发布产物（`TextTool-GUI-*-win-x64.zip` 与 `TextTool-CLI-*-win-x64.zip`）由 CI 自动上传到 GitHub Release，**不要本地构建后再手动上传 zip**。`.sig` 例外，只由 `publish.ps1` 上传。
 
+`.sig` 上传成功后，`publish.ps1` 会把 [`UpgradeNotes.md`](UpgradeNotes.md) 并入 release 说明（说明里已含该文本时跳过，可重复执行）。这份提示面向 `v2.6.1` 及更早的客户端，随 Release 页一并对外可见。
+
 ### 本地验证 / 需要本地 exe 时
 
 当前采用 **依赖框架部署（Framework-dependent）**，用户需安装 .NET 8 Desktop Runtime。

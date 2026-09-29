@@ -126,6 +126,19 @@ try {
         Add-GithubReleaseAsset -Repo $Repo -ReleaseId ([long]$release.id) -FilePath $sig
     }
 
+    $notePath = Join-Path $repoRoot "doc\UpgradeNotes.md"
+    if (Test-Path -LiteralPath $notePath) {
+        $note = ([IO.File]::ReadAllText($notePath, [Text.Encoding]::UTF8)).Trim()
+        $current = [string]$release.body
+        if ($current.StartsWith(($note -split "`n")[0])) {
+            Write-Host "release 说明已含升级提示，跳过"
+        }
+        else {
+            Set-GithubReleaseBody -Repo $Repo -ReleaseId ([long]$release.id) -Body ($note + "`n`n---`n`n" + $current)
+            Write-Host "已把升级提示并入 release 说明"
+        }
+    }
+
     Write-Host "检查清单：zip 存在 / .sha256 存在 / .sig 存在且 verify 通过 / 待执行：本地真实 update 冒烟"
     exit 0
 }

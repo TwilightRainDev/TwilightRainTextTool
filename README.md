@@ -269,8 +269,8 @@ remedy.
 ```text
 TextTool/
 ├── TextTool.sln                  # Solution file
-├── TextTool.csproj               # .NET 8 WinForms, v2.6.2
-├── Directory.Build.props         # Centralized version (2.6.2)
+├── TextTool.csproj               # .NET 8 WinForms, v3.0.0
+├── Directory.Build.props         # Centralized version (3.0.0)
 ├── Program.cs                    # Entry point, registers GBK encoding
 ├── MainForm.cs                   # Main window (214 lines, hosts 6 tabs)
 │
@@ -622,8 +622,8 @@ texttool update [--check]           自更新（--check 仅检查）
 ```text
 TextTool/
 ├── TextTool.sln                  # 解决方案文件
-├── TextTool.csproj               # .NET 8 WinForms, v2.6.2
-├── Directory.Build.props         # 统一版本号 (2.6.2)
+├── TextTool.csproj               # .NET 8 WinForms, v3.0.0
+├── Directory.Build.props         # 统一版本号 (3.0.0)
 ├── Program.cs                    # 入口，注册 GBK 编码支持
 ├── MainForm.cs                   # 主窗口 (214 行，承载 6 个页签)
 │

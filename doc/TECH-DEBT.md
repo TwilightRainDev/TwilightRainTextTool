@@ -44,8 +44,8 @@
 ## 4. 验证锚点
 
 ```bash
-# 当前版本号（唯一权威）——v3.0.0 交付时由发版流程升到 3.0.0，在那之前为 2.6.2
-grep -oP '(?<=<Version>)[0-9.]+(?=<)' Directory.Build.props  # 现为 2.6.2
+# 当前版本号（唯一权威）
+grep -oP '(?<=<Version>)[0-9.]+(?=<)' Directory.Build.props  # 期望 3.0.0
 
 # 测试用例数（[Fact] + [Theory] 属性条数，非运行条数）
 grep -roE '\[(Fact|Theory)' TextTool.Tests --include=*.cs | wc -l   # 期望 245

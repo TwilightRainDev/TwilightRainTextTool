@@ -12,7 +12,9 @@ public static class LintRunner
     {
         if (inputs is null || inputs.Count == 0)
             throw new ArgumentException("lint 需要至少一个输入");
-        if (minSeverity is not (null or "info" or "warn"))
+        if (minSeverity is not null
+            && !minSeverity.Equals("info", StringComparison.OrdinalIgnoreCase)
+            && !minSeverity.Equals("warn", StringComparison.OrdinalIgnoreCase))
             throw new ArgumentException("--min-severity 只接受 info 或 warn");
         if (onlyIds is not null && onlyIds.Count == 0)
             throw new ArgumentException("--only 需要至少一个规则 Id");

@@ -307,8 +307,10 @@ public static class Program
     {
         try
         {
-            // Windows 控制台默认 GBK 码页：报隐形字符/中文时可能编码失败，强制 UTF-8 输出
-            try { Console.OutputEncoding = new UTF8Encoding(false); } catch (IOException) { }
+            // Windows 控制台默认 GBK 码页：报隐形字符/中文时可能编码失败，强制 UTF-8 输出。
+            // 宿主拒绝设置（无控制台、编码不受支持、权限受限）一律吞掉：此时按既有编码输出，
+            // 遇到编不出的字符仍由外层 catch 响亮退 2，不静默
+            try { Console.OutputEncoding = new UTF8Encoding(false); } catch (Exception) { }
 
             var files = new List<string>();
             bool json = false;

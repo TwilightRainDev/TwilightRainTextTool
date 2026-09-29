@@ -5,7 +5,7 @@ param(
     [switch]$SkipTag,
     [switch]$DryRun,
     [switch]$Force,
-    [string]$KeyPath = "E:\WorkZone\ApiKey\TextTool-signing.priv.pem",
+    [string]$KeyPath = "E:\WorkZone\ApiKey\TextTool\TextTool-signing.priv.pem",
     [string]$Repo = "TwilightRainDev/TwilightRainTextTool",
     [string]$Message
 )

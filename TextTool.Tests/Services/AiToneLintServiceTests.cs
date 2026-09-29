@@ -271,6 +271,34 @@ public class AiToneLintServiceTests
     }
 
     [Fact]
+    public void Scan_显式序号标记产出C6统计项()
+    {
+        var text = "1. 甲\n2. 乙\n3. 丙\n";
+
+        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "C6"));
+
+        Assert.Contains("显式序号标记 3 处", note.Text);
+    }
+
+    [Fact]
+    public void Scan_显式序号标记不足三处不报C6()
+    {
+        var report = Service().Scan("1. 甲\n正文一段。\n", "t.txt");
+
+        Assert.DoesNotContain(report.Notes, n => n.Id == "C6");
+    }
+
+    [Fact]
+    public void Scan_中文序号与括号序号也计入C6()
+    {
+        var text = "一、甲\n（2）乙\n3) 丙\n";
+
+        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "C6"));
+
+        Assert.Contains("3 处", note.Text);
+    }
+
+    [Fact]
     public void AllRuleIds_含数据规则与算法规则()
     {
         var ids = AiToneLintService.AllRuleIds();
@@ -278,6 +306,7 @@ public class AiToneLintServiceTests
         Assert.Contains("P1", ids);
         Assert.Contains("P4", ids);
         Assert.Contains("C5", ids);
+        Assert.Contains("C6", ids);
     }
 
     [Fact]

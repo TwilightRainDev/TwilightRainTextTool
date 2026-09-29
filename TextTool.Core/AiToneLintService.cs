@@ -64,9 +64,9 @@ public sealed class AiToneLintService
             : "line";
     }
 
-    /// <summary>代码内算法规则的 Id 全集（数据规则之外的 P4/P5 与 C1-C5）。</summary>
+    /// <summary>代码内算法规则的 Id 全集（数据规则之外的 P4/P5 与 C1-C6）。</summary>
     public static readonly IReadOnlyList<string> AlgorithmRuleIds =
-        new[] { "P4", "P5", "C1", "C2", "C3", "C4", "C5" };
+        new[] { "P4", "P5", "C1", "C2", "C3", "C4", "C5", "C6" };
 
     /// <summary>算法规则与数据规则的 Id 并集，即引擎实际可能产出的 Id 全集（--only 的校验集）。</summary>
     public static IReadOnlyCollection<string> AllRuleIds()
@@ -120,6 +120,10 @@ public sealed class AiToneLintService
     };
 
     private static readonly Regex OrdinalSkeleton = RegexGuard.Create("首先|其次|再次|最后|其一|其二|其三");
+
+    /// <summary>显式序号标记：行首的 1. / 1、/ 1) / （1）/ 一、 之类硬编号。</summary>
+    private static readonly Regex ExplicitOrdinalMarker = RegexGuard.Create(
+        @"(?m)^[ \t]*(?:[0-9]{1,2}[.、)]|[（(][0-9]{1,2}[)）]|[一二三四五六七八九十]+[.、])");
 
     private static void ScanAlgorithmRules(string text, string mode, LintReport report)
     {
@@ -211,6 +215,15 @@ public sealed class AiToneLintService
             {
                 Id = "C5",
                 Text = $"序数词骨架「首先/其次/最后」出现 {ordinals} 次——结构化排版的典型痕迹",
+            });
+
+        // C6 显式序号标记：手写文本很少通篇硬编号，密度高是排版痕迹
+        int markers = ExplicitOrdinalMarker.Matches(text).Count;
+        if (markers >= 3)
+            report.Notes.Add(new LintNote
+            {
+                Id = "C6",
+                Text = $"显式序号标记 {markers} 处——结构化排版的典型痕迹",
             });
     }
 

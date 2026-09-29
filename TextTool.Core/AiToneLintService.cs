@@ -15,21 +15,50 @@ public sealed class AiToneLintService
 
     public LintReport Scan(string text, string fileName)
     {
-        var report = new LintReport { File = fileName, Chars = text.Length };
+        string mode = DetectParagraphMode(text);
+        var report = new LintReport { File = fileName, Chars = text.Length, ParagraphMode = mode };
 
         foreach (var rule in _rules)
         {
             if (rule.Rule.Scope == "paragraph")
-                ScanParagraphScope(rule, text, report);
+                ScanParagraphScope(rule, text, report, mode);
             else
                 ScanDocumentScope(rule, text, report);
         }
 
-        ScanAlgorithmRules(text, report);
+        ScanAlgorithmRules(text, mode, report);
         // 命中按 (行, 列) 排一次：同一规则的多条 Pattern 各扫一遍会让行号来回跳。
-        // 人读渲染本来就再排一次，JSON 侧此前不保证有序——两处口径统一到这里
+        // 同一位置的多条命中保序（OrderBy 稳定），P1/P2 这类同跨度双报的次序不动。
+        // 人读渲染只做组内排序（LintTextFormatter.Format），整表排序在这里——
+        // 组间顺序因此是「各组首命中的位置顺序」，不再是规则表顺序。
         report.Hits = report.Hits.OrderBy(h => h.Line).ThenBy(h => h.Col).ToList();
         return report;
+    }
+
+    /// <summary>判定段落口径的取样长度：与编码探测同一量级（ADR-004 的 4KB）。</summary>
+    internal const int ParagraphProbeChars = 4096;
+
+    /// <summary>
+    /// Markdown 判据：首 4KB 的空行占行数比例。实测真实 .md 样本落在 7.7%–53%，
+    /// 行式文本（无空行）为 0%——取 10% 偏向保守：漏判退化成行式口径，不误判行式文本。
+    /// </summary>
+    internal const double MarkdownBlankLineRatio = 0.10;
+
+    /// <summary>
+    /// 段落口径探测：行式文本（每行一段，与旧 tone_lint 一致）或 Markdown（空行分段，软换行并入同段）。
+    /// </summary>
+    internal static string DetectParagraphMode(string text)
+    {
+        var probe = text.Length <= ParagraphProbeChars ? text : text[..ParagraphProbeChars];
+        if (probe.EndsWith('\n')) probe = probe[..^1];
+
+        int lines = 0, blanks = 0;
+        foreach (var raw in probe.Split('\n'))
+        {
+            lines++;
+            if (raw.Trim().Length == 0) blanks++;
+        }
+        return lines > 0 && (double)blanks / lines >= MarkdownBlankLineRatio ? "markdown" : "line";
     }
 
     /// <summary>代码内算法规则的 Id 全集（数据规则之外的 P4/P5 与 C1-C5）。</summary>
@@ -56,15 +85,16 @@ public sealed class AiToneLintService
         }
     }
 
-    private static void ScanParagraphScope(CompiledRule rule, string text, LintReport report)
+    private static void ScanParagraphScope(CompiledRule rule, string text, LintReport report, string mode)
     {
-        var paragraphs = Paragraphs(text);
+        var paragraphs = Paragraphs(text, mode);
         foreach (var (regex, hint) in rule.Patterns)
         {
             // MinCount 按段判定：段内序数词必须是同一段里凑够次数才算骨架，
             // 分散在多段的单次出现合计到达阈值不算（规则名与用例的「段内」口径）。
             foreach (var p in paragraphs)
             {
+                // 窗口只与段有关，与 Pattern 无关：提到 Pattern 循环外
                 int windowStart = rule.Rule.TailChars is int tail && p.Text.Length > tail
                     ? p.Text.Length - tail
                     : 0;
@@ -88,7 +118,7 @@ public sealed class AiToneLintService
 
     private static readonly Regex OrdinalSkeleton = RegexGuard.Create("首先|其次|再次|最后|其一|其二|其三");
 
-    private static void ScanAlgorithmRules(string text, LintReport report)
+    private static void ScanAlgorithmRules(string text, string mode, LintReport report)
     {
         // P4 引号风格混用：命中定位到全文最早出现的引号字符，规模写进 Detail
         var used = QuoteStyles
@@ -123,7 +153,7 @@ public sealed class AiToneLintService
             });
         }
 
-        var paragraphs = Paragraphs(text);
+        var paragraphs = Paragraphs(text, mode);
 
         // C1 段落长度过于均一
         if (paragraphs.Count >= 5)
@@ -188,10 +218,13 @@ public sealed class AiToneLintService
     }
 
     /// <summary>
-    /// 非空行即一段（与技能侧 tone_lint 的段落口径一致，Markdown 软换行会被拆开——已知简化）。
-    /// Offset 为去空白后段首在全文中的绝对下标。
+    /// 按口径切段。Offset 为去空白后段首在全文中的绝对下标；
+    /// Text 是原文的连续切片，保证 <c>Offset + Match.Index</c> 的定位换算成立。
     /// </summary>
-    internal static List<(int Offset, string Text)> Paragraphs(string text)
+    internal static List<(int Offset, string Text)> Paragraphs(string text, string mode)
+        => mode == "markdown" ? MarkdownParagraphs(text) : LineParagraphs(text);
+
+    private static List<(int Offset, string Text)> LineParagraphs(string text)
     {
         var result = new List<(int, string)>();
         int offset = 0;
@@ -204,6 +237,61 @@ public sealed class AiToneLintService
             offset += raw.Length + 1;
         }
         return result;
+    }
+
+    private static List<(int Offset, string Text)> MarkdownParagraphs(string text)
+    {
+        var lines = new List<(int Offset, string Raw)>();
+        int offset = 0;
+        foreach (var raw in text.Split('\n'))
+        {
+            lines.Add((offset, raw.TrimEnd('\r')));
+            offset += raw.Length + 1;
+        }
+
+        var result = new List<(int, string)>();
+        int i = 0;
+        while (i < lines.Count)
+        {
+            if (lines[i].Raw.Trim().Length == 0) { i++; continue; }
+            if (IsBlockLine(lines[i].Raw))
+            {
+                AddBlock(result, text, lines[i].Offset, lines[i].Offset + lines[i].Raw.Length);
+                i++;
+                continue;
+            }
+            int end = i;
+            while (end + 1 < lines.Count
+                   && lines[end + 1].Raw.Trim().Length > 0
+                   && !IsBlockLine(lines[end + 1].Raw))
+                end++;
+            AddBlock(result, text, lines[i].Offset, lines[end].Offset + lines[end].Raw.Length);
+            i = end + 1;
+        }
+        return result;
+    }
+
+    /// <summary>列表项、引用行与编号行各自成段：并进散文段会让 S2 的「段内序数词」跨条目误报。</summary>
+    private static bool IsBlockLine(string raw)
+    {
+        var t = raw.TrimStart();
+        if (t.StartsWith("- ", StringComparison.Ordinal)
+            || t.StartsWith("* ", StringComparison.Ordinal)
+            || t.StartsWith("+ ", StringComparison.Ordinal)
+            || t.StartsWith(">", StringComparison.Ordinal))
+            return true;
+
+        int digits = 0;
+        while (digits < t.Length && char.IsAsciiDigit(t[digits])) digits++;
+        return digits > 0 && digits + 1 < t.Length && (t[digits] == '.' || t[digits] == '、');
+    }
+
+    private static void AddBlock(List<(int Offset, string Text)> result, string text, int start, int end)
+    {
+        var slice = text[start..end];
+        var trimmed = slice.Trim();
+        if (trimmed.Length > 0)
+            result.Add((start + (slice.Length - slice.TrimStart().Length), trimmed));
     }
 
     internal static LintHit Hit(LintRule rule, string text, int index, int length, string match, string? hint)
@@ -228,16 +316,16 @@ public sealed class AiToneLintService
     }
 
     /// <summary>
-    /// 前后各 8 字的上下文，换行去除。窗口边界不劈开代理对——
-    /// P8 会命中 emoji，命中点附近的窗口若不外扩，切片会产出落单代理项。
+    /// 前后各 8 字的上下文，保留原文含换行：Snippet 是原文的连续切片，跨行命中时也含 Match 原文。
+    /// 窗口边界不劈开代理对——P8 会命中 emoji，命中点附近的窗口若不外扩，切片会产出落单代理项。
     /// </summary>
     internal static string Snippet(string text, int index, int length, int pad = 8)
     {
         int lo = Math.Max(0, index - pad);
         int hi = Math.Min(text.Length, index + length + pad);
-        if (lo > 0 && char.IsLowSurrogate(text[lo])) lo--;          // 左边界落在低代理上：回退一格
+        if (lo > 0 && char.IsLowSurrogate(text[lo])) lo--;                  // 左边界落在低代理上：回退一格
         if (hi < text.Length && char.IsHighSurrogate(text[hi - 1])) hi++;   // 右边界停在高代理后：前进一格
-        var s = text[lo..hi].Replace("\r", "").Replace("\n", "");
+        var s = text[lo..hi];
         if (lo > 0) s = "…" + s;
         if (hi < text.Length) s += "…";
         return s;

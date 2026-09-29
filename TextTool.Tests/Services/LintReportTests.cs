@@ -176,4 +176,24 @@ public class LintReportTests
         Assert.Contains("\\u0027", json);   // '
         Assert.DoesNotContain("\\u8D4B", json);   // 中文仍不转义
     }
+
+    [Fact]
+    public void ToJson_带段落口径字段()
+    {
+        var report = new LintReport { File = "a.md", Chars = 3, ParagraphMode = "markdown" };
+
+        var json = new LintReportSet { Reports = new List<LintReport> { report } }.ToJson();
+
+        Assert.Contains("\"ParagraphMode\": \"markdown\"", json);
+    }
+
+    [Fact]
+    public void Filter_透传段落口径()
+    {
+        // LintRunner 一律经 Filter 出报告：不在这里透传，--json 与 [NOTE] 行永远报 line，口径探测等于没做
+        var report = new LintReport { File = "a.md", Chars = 3, ParagraphMode = "markdown" };
+
+        Assert.Equal("markdown", report.Filter(null, null).ParagraphMode);
+        Assert.Equal("markdown", report.Filter(new[] { "S1" }, "warn").ParagraphMode);
+    }
 }

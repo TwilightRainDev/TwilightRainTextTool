@@ -41,6 +41,10 @@ public sealed class LintReport
 {
     public string File { get; set; } = "";
     public int Chars { get; set; }
+
+    /// <summary>本次扫描采用的段落口径：line（非空行即一段）或 markdown（空行分段）。</summary>
+    public string ParagraphMode { get; set; } = "line";
+
     public List<LintHit> Hits { get; set; } = new();
     public List<LintNote> Notes { get; set; } = new();
 
@@ -62,6 +66,7 @@ public sealed class LintReport
         {
             File = File,
             Chars = Chars,
+            ParagraphMode = ParagraphMode,
             Notes = Notes
                 .Where(n => only is null || only.Contains(n.Id))
                 .Select(n => n.Copy())

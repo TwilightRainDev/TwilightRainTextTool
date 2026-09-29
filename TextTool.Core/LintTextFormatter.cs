@@ -58,7 +58,8 @@ public static class LintTextFormatter
         }
 
         sb.Append($"[NOTE] 全文 {report.Chars} 字，命中 {report.Hits.Count} 处，" +
-                  $"统计项 {report.Notes.Count} 条；本命令只报位置，改写由判断层完成");
+                  $"统计项 {report.Notes.Count} 条，段落口径 {report.ParagraphMode}；" +
+                  "本命令只报位置，改写由判断层完成");
         return sb.ToString();
     }
 

@@ -299,4 +299,76 @@ public class AiToneLintServiceTests
 
         Assert.Equal(new[] { "P1", "P2" }, ids);   // P1 在前：同跨度双报是既定行为，排序不得打乱
     }
+
+    [Fact]
+    public void Scan_无空行文本判为行式口径()
+    {
+        var text = "首先看这件事。\n其次看那件事。";
+        var rule = Rule("S2", "regex", "首先|其次|最后");
+        rule.Scope = "paragraph";
+        rule.MinCount = 2;
+
+        var report = Service(rule).Scan(text, "t.txt");
+
+        Assert.Equal("line", report.ParagraphMode);
+        Assert.Empty(report.Hits);   // 两行各自成段，段内各 1 次
+    }
+
+    [Fact]
+    public void Scan_空行密度达标判为Markdown口径且软换行同段()
+    {
+        var text = "首先看这件事，\n其次看那件事。\n\n下一段。\n";
+        var rule = Rule("S2", "regex", "首先|其次|最后");
+        rule.Scope = "paragraph";
+        rule.MinCount = 2;
+
+        var report = Service(rule).Scan(text, "t.txt");
+
+        Assert.Equal("markdown", report.ParagraphMode);
+        Assert.Equal(2, report.Hits.Count);   // 软换行的两行属同一段，段内合计 2 次
+    }
+
+    [Fact]
+    public void Scan_Markdown列表项各自成段()
+    {
+        var text = "- 首先看这件事。\n- 其次看那件事。\n\n尾段。";
+        var rule = Rule("S2", "regex", "首先|其次|最后");
+        rule.Scope = "paragraph";
+        rule.MinCount = 2;
+
+        Assert.Empty(Service(rule).Scan(text, "t.txt").Hits);   // 并成一段会误报，列表项必须断开
+    }
+
+    [Fact]
+    public void Scan_Markdown段末窗口按整段计算()
+    {
+        var text = "前面的话。\n后缀行未来可期\n\n尾段。\n";
+        var rule = Rule("S3", "regex", "未来可期");
+        rule.Scope = "paragraph";
+        rule.TailChars = 30;
+
+        var hit = Assert.Single(Service(rule).Scan(text, "t.txt").Hits);
+
+        Assert.Equal(2, hit.Line);   // 命中在第二行，属第一段（整段 30 字窗口内）
+    }
+
+    [Fact]
+    public void Scan_跨行命中的Snippet保留原文()
+    {
+        var rule = Rule("L4", "regex", @"截至\s*\d{4}\s*年");
+
+        var hit = Assert.Single(Service(rule).Scan("前文。\n截至\n2024 年发布。", "t.txt").Hits);
+
+        Assert.Contains(hit.Match, hit.Snippet);   // Snippet 是原文切片：跨行命中不再丢掉 Match 原文
+        Assert.Contains("\n", hit.Snippet);
+    }
+
+    [Fact]
+    public void DetectParagraphMode_阈值边界()
+    {
+        // 10 行里 1 空行 = 10%：达到阈值（空行必须在中间，末尾的换行不计入行数）
+        Assert.Equal("markdown", AiToneLintService.DetectParagraphMode("行\n行\n行\n行\n行\n\n行\n行\n行\n行"));
+        // 11 行里 1 空行 = 9.1%：未达阈值
+        Assert.Equal("line", AiToneLintService.DetectParagraphMode("行\n行\n行\n行\n行\n行\n\n行\n行\n行\n行"));
+    }
 }

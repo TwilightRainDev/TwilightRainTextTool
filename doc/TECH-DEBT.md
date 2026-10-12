@@ -1,7 +1,7 @@
 # TECH-DEBT — TextTool
 
 > 未落地优化项与已知遗留的**单一权威清单**。
-> 已落地项见 `doc/archive/tech-debt-landed.md`，不再跟踪。
+> 已落地项见工作区 `Docs/UpgradeDocs/TextTool/archive/tech-debt-landed.md`（历史文档不随仓库分发），不再跟踪。
 > 每条均已对照当前代码核实；核对不实的标注「待核」。
 
 ---
@@ -16,8 +16,8 @@
 
 暂无。
 
-本节原有 16 条随 v3.0.0 全部处置：逐条去向与证据见 `doc/archive/tech-debt-landed.md`；
-原特性评审明细在 `doc/archive/plans/2026-09-26-texttool-lint-reviews/`。会改可观察输出
+本节原有 16 条随 v3.0.0 全部处置：逐条去向与证据见工作区
+`Docs/UpgradeDocs/TextTool/archive/tech-debt-landed.md`；原特性评审明细同在 `…/archive/plans/2026-09-26-texttool-lint-reviews/`。会改可观察输出
 （输出字节、退出码、JSON 契约）的按破坏性变更处理，README 契约节与发布说明已同步写明。
 
 ---
@@ -26,7 +26,7 @@
 
 暂无。
 
-`2026-08-03-texttool-2.4.5-design.md` 的四项全部处置完毕，设计文档收录在 `doc/archive/specs/`：
+`2026-08-03-texttool-2.4.5-design.md` 的四项全部处置完毕，设计文档收录在工作区 `Docs/UpgradeDocs/TextTool/archive/specs/`：
 
 | 项 | 处置 |
 |---|---|
@@ -99,7 +99,7 @@ v3.0.0 的终审与两轮修复波判为「留到下一轮」的条目，都不�
 **口径边界（重建口径的既定边界，不是缺陷）**
 
 - `explicit-numbering` 不覆盖全角数字 `１、`、`1）`、`[1]` 等变体；行首 `3.14` 会被计入（需连续 3 行才越阈值）。
-- `doc/archive/tech-debt-landed.md:96` 的「首 4KB」与实现的 4096 **字符**不符。
+- 历史债表（已移出仓库至工作区 `Docs/UpgradeDocs`）里「首 4KB」的记载与实现的 4096 **字符**不符。
 
 仓库外的工作区项（`Docs\` 里指向已删 `Docs\History\` 的悬空指针、`fact\projects\cc-switch.md` 的 `verify` 失败）不在本表，随工作区整理进度处理。
 

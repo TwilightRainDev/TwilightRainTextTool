@@ -83,7 +83,7 @@ public sealed class LintReport
 /// <summary>多文件输出的统一包装，消费者不必按文件数分支。</summary>
 public sealed class LintReportSet
 {
-    /// <summary>契约版本。3：规则 Id 由 `P1`/`S5` 之类改为语义化 slug（`repeated-punctuation`、`parallel-contrast` 等）。
+    /// <summary>契约版本。3：规则 Id 由短码改为语义化 slug（如 `parallel-contrast`）。
     /// 2：行尾为 LF、HTML 敏感字符转义、Hits 保证按 (Line, Col) 有序、新增 ParagraphMode 字段。</summary>
     public int Version { get; set; } = 3;
     public List<LintReport> Reports { get; set; } = new();

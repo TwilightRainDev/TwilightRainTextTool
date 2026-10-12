@@ -14,7 +14,7 @@ public class LintRule
     public string Title { get; set; } = "";
     /// <summary>literal 或 regex。</summary>
     public string Kind { get; set; } = "regex";
-    /// <summary>多条模式——P1 有 2 条正则、L1 有 26 条词，单串装不下。</summary>
+    /// <summary>多条模式——repeated-punctuation 有 2 条正则、cliche-words 有 26 条词，单串装不下。</summary>
     public List<string> Patterns { get; set; } = new();
     /// <summary>document 或 paragraph。</summary>
     public string Scope { get; set; } = "document";

@@ -47,13 +47,13 @@ public class LintRunnerTests
         Assert.Equal(2, all.Reports.Count);
         Assert.Equal("hot.txt", all.Reports[0].File);
         Assert.Equal("clean.txt", all.Reports[1].File);
-        Assert.Contains(all.Reports[0].Hits, h => h.Id == "L2");
+        Assert.Contains(all.Reports[0].Hits, h => h.Id == "ai-frequent-words");
 
         var warnOnly = LintRunner.Run(inputs, null, "warn");
-        Assert.DoesNotContain(warnOnly.Reports[0].Hits, h => h.Id == "L2");
+        Assert.DoesNotContain(warnOnly.Reports[0].Hits, h => h.Id == "ai-frequent-words");
 
-        var onlyL2 = LintRunner.Run(inputs, new[] { "l2" }, null);
-        Assert.All(onlyL2.Reports[0].Hits, h => Assert.Equal("L2", h.Id));
+        var onlyL2 = LintRunner.Run(inputs, new[] { "AI-FREQUENT-WORDS" }, null);
+        Assert.All(onlyL2.Reports[0].Hits, h => Assert.Equal("ai-frequent-words", h.Id));
         Assert.Empty(onlyL2.Reports[0].Notes);
     }
 

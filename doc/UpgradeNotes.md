@@ -27,3 +27,15 @@
 `lint_rules.json` 里若定义了 `P4` / `P5` / `C1`–`C6` 这些算法规则 Id，加载时会直接报错（此前静默接受，
 会让同一个 Id 既有算法命中又有数据命中，报告出现重复 Id）。这批 Id 由程序内产出，数据文件不应用它们；
 删掉冲突条目即可。
+
+## 规则 Id 改为语义化标识（`--json` 契约 Version 2 → 3）
+
+- `Hits[].Id` 与 `Notes[].Id` 由 `P1`/`S5`/`C1` 这类短码换成语义化 slug
+  （`repeated-punctuation`、`parallel-contrast`、`paragraph-length-uniform` …），
+  `Group` 由 `P`/`L`/`S` 换成 `punctuation` / `lexis` / `syntax`（统计项为 `statistics`）。
+  人读报告同时打出中文标题，消费者不必自带码表。
+- **旧报告、旧脚本、旧笔记里的码全部作废**，对照表见技能侧的
+  `WriteText/subskills/HumanizerZh/references/rule-map.md`。
+- **外部 `lint_rules.json` 按 Id 合并**：里面若仍按旧码写条目，升级后不会再覆盖内置规则，
+  而会当成新规则追加。把条目的 `Id` 换成现行标识即可。
+- `--only` 的取值同样改为现行标识，例如 `--only parallel-contrast,cliche-words`。

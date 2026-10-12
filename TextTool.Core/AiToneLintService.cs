@@ -30,7 +30,7 @@ public sealed class AiToneLintService
 
         ScanAlgorithmRules(text, mode, report, lineStarts);
         // 命中按 (行, 列) 排一次：同一规则的多条 Pattern 各扫一遍会让行号来回跳。
-        // 同一位置的多条命中保序（OrderBy 稳定），P1/P2 这类同跨度双报的次序不动。
+        // 同一位置的多条命中保序（OrderBy 稳定），repeated-punctuation/ellipsis-style 这类同跨度双报的次序不动。
         // 人读渲染只做组内排序（LintTextFormatter.Format），整表排序在这里——
         // 组间顺序因此是「各组首命中的位置顺序」，不再是规则表顺序。
         report.Hits = report.Hits.OrderBy(h => h.Line).ThenBy(h => h.Col).ToList();
@@ -66,9 +66,9 @@ public sealed class AiToneLintService
             : "line";
     }
 
-    /// <summary>代码内算法规则的 Id 全集（数据规则之外的 P4/P5 与 C1-C6）。</summary>
+    /// <summary>代码内算法规则的 Id 全集（数据规则之外的 mixed-quote-style/mixed-bracket-width 与 paragraph-length-uniform-explicit-numbering）。</summary>
     public static readonly IReadOnlyList<string> AlgorithmRuleIds =
-        new[] { "P4", "P5", "C1", "C2", "C3", "C4", "C5", "C6" };
+        new[] { "mixed-quote-style", "mixed-bracket-width", "paragraph-length-uniform", "sentence-length-uniform", "repeated-paragraph-opening", "exclamation-density", "ordinal-skeleton", "explicit-numbering" };
 
     /// <summary>算法规则与给定数据规则的 Id 并集（--only 的校验集）。</summary>
     public static IReadOnlyCollection<string> AllRuleIds(IEnumerable<LintRule> rules)
@@ -128,7 +128,7 @@ public sealed class AiToneLintService
 
     private static readonly Regex OrdinalSkeleton = RegexGuard.Create("首先|其次|再次|最后|其一|其二|其三");
 
-    // RegexGuard.Create 每次调用都新建实例，P5/C2 的正则原先是每次扫描各造一遍
+    // RegexGuard.Create 每次调用都新建实例，mixed-bracket-width/sentence-length-uniform 的正则原先是每次扫描各造一遍
     private static readonly Regex HalfWidthBracket = RegexGuard.Create("[()]");
     private static readonly Regex FullWidthBracket = RegexGuard.Create("[（）]");
     private static readonly Regex AnyBracket = RegexGuard.Create("[()（）]");
@@ -141,7 +141,7 @@ public sealed class AiToneLintService
     private static void ScanAlgorithmRules(string text, string mode, LintReport report,
         LineStarts lineStarts)
     {
-        // P4 引号风格混用：命中定位到全文最早出现的引号字符，规模写进 Detail
+        // mixed-quote-style 引号风格混用：命中定位到全文最早出现的引号字符，规模写进 Detail
         var used = QuoteStyles
             .Select(s => (s.Name, Count: s.Pattern.Matches(text).Count, Index: s.Pattern.Match(text).Index))
             .Where(s => s.Count > 0)
@@ -153,14 +153,14 @@ public sealed class AiToneLintService
             string detail = string.Join(" / ", used.Select(s => $"{s.Name} {s.Count} 个"));
             report.Hits.Add(new LintHit
             {
-                Id = "P4", Group = "P", Title = "引号风格混用", Severity = "info",
+                Id = "mixed-quote-style", Group = "punctuation", Title = "引号风格混用", Severity = "info",
                 Line = line, Col = col, Length = 1,
                 Match = text[first].ToString(), Snippet = Snippet(text, first, 1),
                 Detail = detail, SuggestScheme = "引号括号统一",
             });
         }
 
-        // P5 括号全半角混用
+        // mixed-bracket-width 括号全半角混用
         int half = HalfWidthBracket.Matches(text).Count;
         int full = FullWidthBracket.Matches(text).Count;
         if (half > 0 && full > 0)
@@ -169,7 +169,7 @@ public sealed class AiToneLintService
             var (line, col) = lineStarts.Locate(m.Index);
             report.Hits.Add(new LintHit
             {
-                Id = "P5", Group = "P", Title = "括号全半角混用", Severity = "info",
+                Id = "mixed-bracket-width", Group = "punctuation", Title = "括号全半角混用", Severity = "info",
                 Line = line, Col = col, Length = 1,
                 Match = m.Value, Snippet = Snippet(text, m.Index, 1),
                 Detail = $"半角 {half} 个 / 全角 {full} 个", SuggestScheme = "引号括号统一",
@@ -178,7 +178,7 @@ public sealed class AiToneLintService
 
         var paragraphs = Paragraphs(text, mode);
 
-        // C1 段落长度过于均一
+        // paragraph-length-uniform 段落长度过于均一
         if (paragraphs.Count >= 5)
         {
             var lens = paragraphs.Select(p => (double)p.Text.Length).ToList();
@@ -186,12 +186,12 @@ public sealed class AiToneLintService
             if (cv < 0.25)
                 report.Notes.Add(new LintNote
                 {
-                    Id = "C1",
+                    Id = "paragraph-length-uniform",
                     Text = $"段落长度过于均一（变异系数 {cv:0.00}，{paragraphs.Count} 段）——人写文本段落长短通常更参差",
                 });
         }
 
-        // C2 句长分布过于整齐
+        // sentence-length-uniform 句长分布过于整齐
         var sentences = SentenceEnd.Split(text)
             .Select(s => s.Trim()).Where(s => s.Length >= 6).ToList();
         if (sentences.Count >= 10)
@@ -201,12 +201,12 @@ public sealed class AiToneLintService
             if (cv < 0.35)
                 report.Notes.Add(new LintNote
                 {
-                    Id = "C2",
+                    Id = "sentence-length-uniform",
                     Text = $"句长分布过于整齐（变异系数 {cv:0.00}，{sentences.Count} 句）",
                 });
         }
 
-        // C3 段首两字高度重复
+        // repeated-paragraph-opening 段首两字高度重复
         if (paragraphs.Count >= 4)
         {
             var dup = paragraphs.Select(p => p.Text[..Math.Min(2, p.Text.Length)])
@@ -214,31 +214,31 @@ public sealed class AiToneLintService
             if (dup.Count > 0)
                 report.Notes.Add(new LintNote
                 {
-                    Id = "C3",
+                    Id = "repeated-paragraph-opening",
                     Text = "段首两字高度重复：" + string.Join("、", dup.Select(g => $"「{g.Key}」×{g.Count()}")),
                 });
         }
 
-        // C4 叹号密度偏高
+        // exclamation-density 叹号密度偏高
         int exclam = text.Count(c => c == '！');
         if (text.Length >= 400 && exclam * 1000.0 / text.Length > 3)
-            report.Notes.Add(new LintNote { Id = "C4", Text = $"叹号密度偏高：{exclam} 个 / {text.Length} 字" });
+            report.Notes.Add(new LintNote { Id = "exclamation-density", Text = $"叹号密度偏高：{exclam} 个 / {text.Length} 字" });
 
-        // C5 序数词骨架密度
+        // ordinal-skeleton 序数词骨架密度
         int ordinals = OrdinalSkeleton.Matches(text).Count;
         if (ordinals >= 2)
             report.Notes.Add(new LintNote
             {
-                Id = "C5",
+                Id = "ordinal-skeleton",
                 Text = $"序数词骨架「首先/其次/最后」出现 {ordinals} 次——结构化排版的典型痕迹",
             });
 
-        // C6 显式序号标记：手写文本很少通篇硬编号，密度高是排版痕迹
+        // explicit-numbering 显式序号标记：手写文本很少通篇硬编号，密度高是排版痕迹
         int markers = ExplicitOrdinalMarker.Matches(text).Count;
         if (markers >= 3)
             report.Notes.Add(new LintNote
             {
-                Id = "C6",
+                Id = "explicit-numbering",
                 Text = $"显式序号标记 {markers} 处——结构化排版的典型痕迹",
             });
     }
@@ -303,7 +303,7 @@ public sealed class AiToneLintService
         return result;
     }
 
-    /// <summary>列表项、引用行与编号行各自成段：并进散文段会让 S2 的「段内序数词」跨条目误报。</summary>
+    /// <summary>列表项、引用行与编号行各自成段：并进散文段会让 paragraph-ordinals 的「段内序数词」跨条目误报。</summary>
     private static bool IsBlockLine(string raw)
     {
         var t = raw.TrimStart();
@@ -368,7 +368,7 @@ public sealed class AiToneLintService
 
     /// <summary>
     /// 前后各 8 字的上下文，保留原文含换行：Snippet 是原文的连续切片，跨行命中时也含 Match 原文。
-    /// 窗口边界不劈开代理对——P8 会命中 emoji，命中点附近的窗口若不外扩，切片会产出落单代理项。
+    /// 窗口边界不劈开代理对——emoji-and-symbols 会命中 emoji，命中点附近的窗口若不外扩，切片会产出落单代理项。
     /// </summary>
     internal static string Snippet(string text, int index, int length, int pad = 8)
     {

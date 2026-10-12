@@ -12,16 +12,16 @@ public class LintTextFormatterTests
             {
                 // 故意倒序给：引擎的命中顺序是 规则→Pattern→位置，同一规则的多条
                 // Pattern 会让行号来回跳，渲染层负责排序
-                new() { Id = "S1", Title = "对举句式", Line = 20, Col = 1, Snippet = "…", Detail = "不是A而是B" },
-                new() { Id = "S1", Title = "对举句式", Line = 12, Col = 5, Snippet = "…不是A而是B…", Detail = "不是A而是B" },
-                new() { Id = "L7", Title = "填充短语", Line = 3, Col = 2, Snippet = "…在这个时间点…", Hint = "现在" },
+                new() { Id = "parallel-contrast", Title = "对举句式", Line = 20, Col = 1, Snippet = "…", Detail = "不是A而是B" },
+                new() { Id = "parallel-contrast", Title = "对举句式", Line = 12, Col = 5, Snippet = "…不是A而是B…", Detail = "不是A而是B" },
+                new() { Id = "filler-phrases", Title = "填充短语", Line = 3, Col = 2, Snippet = "…在这个时间点…", Hint = "现在" },
             },
-            Notes = new List<LintNote> { new() { Id = "C1", Text = "段落长度过于均一" } },
+            Notes = new List<LintNote> { new() { Id = "paragraph-length-uniform", Text = "段落长度过于均一" } },
         };
 
         var text = LintTextFormatter.Format(report);
 
-        Assert.Contains("[命中] S1 对举句式（2 处）", text);
+        Assert.Contains("[命中] parallel-contrast 对举句式（2 处）", text);
         Assert.Contains("第 12 行 第 5 列", text);
         Assert.True(text.IndexOf("第 12 行") < text.IndexOf("第 20 行"), "组内应按行号升序");
         Assert.Contains("<- 现在", text);            // Hint 随命中给出
@@ -47,7 +47,7 @@ public class LintTextFormatterTests
             File = "a.md", Chars = 10,
             Hits = new List<LintHit>
             {
-                new() { Id = "P2", Title = "省略号风格", Line = 1, Col = 3, Snippet = "…", SuggestScheme = "去AI味标点归一" },
+                new() { Id = "ellipsis-style", Title = "省略号风格", Line = 1, Col = 3, Snippet = "…", SuggestScheme = "去AI味标点归一" },
             },
         };
 

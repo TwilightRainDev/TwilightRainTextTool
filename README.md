@@ -171,8 +171,8 @@ Run `texttool <command> --help` for each command's options. `update` downloads t
 
 `lint` takes one or more files (`-` reads stdin) and changes nothing: it reports where
 Chinese AI-flavored wording appears, with rule id, line and column. `--json` emits the
-machine-readable contract, `--only S1,L1` runs selected rule ids only, `--min-severity warn`
-keeps the output to `warn` hits. Rule ids `P4`/`P5` and `C1`-`C6` come from the built-in
+machine-readable contract, `--only parallel-contrast,cliche-words` runs selected rule ids only, `--min-severity warn`
+keeps the output to `warn` hits. Rule ids `mixed-quote-style`/`mixed-bracket-width` and `paragraph-length-uniform`-`explicit-numbering` come from the built-in
 detectors, so an external `lint_rules.json` that defines one of them is rejected when rules
 load and the command exits `2` — see [`doc/UpgradeNotes.md`](doc/UpgradeNotes.md).
 
@@ -186,7 +186,7 @@ never branch on file count:
 
 ```json
 {
-  "Version": 2,
+  "Version": 3,
   "Reports": [
     {
       "File": "chapter1.md",
@@ -194,14 +194,14 @@ never branch on file count:
       "ParagraphMode": "markdown",
       "Hits": [
         {
-          "Id": "S1", "Group": "S", "Title": "对举句式", "Severity": "warn",
+          "Id": "parallel-contrast", "Group": "syntax", "Title": "对举句式", "Severity": "warn",
           "Line": 12, "Col": 5, "Length": 7,
           "Match": "不是数据不够，而是口径不同",
           "Snippet": "…不是数据不够，而是口径不同…",
           "Detail": "不是A而是B", "Hint": null, "SuggestScheme": null
         }
       ],
-      "Notes": [{ "Id": "C1", "Text": "段落长度过于均一（变异系数 0.18，12 段）" }]
+      "Notes": [{ "Id": "paragraph-length-uniform", "Text": "段落长度过于均一（变异系数 0.18，12 段）" }]
     }
   ]
 }
@@ -234,11 +234,11 @@ What the contract guarantees:
 The human-readable report groups hits by rule; groups appear in the order of each group's
 first hit position, which is not rule-table order.
 
-**Heuristic limits.** `P4` (quote style) and `P5` (bracket width) match characters without
+**Heuristic limits.** `mixed-quote-style` (quote style) and `mixed-bracket-width` (bracket width) match characters without
 context: the `'` in an English word such as `don't` counts as a quote style, so a Chinese
 quote elsewhere in the same text is reported as mixed, and ASCII brackets written inside a
-code sample count towards bracket-width mixing. The `C` group (`C1`-`C6`) is statistical
-observation and never affects the exit code. `P4`/`P5` are all `info` level — reported by
+code sample count towards bracket-width mixing. The `statistics` group (`paragraph-length-uniform`-`explicit-numbering`) is statistical
+observation and never affects the exit code. `mixed-quote-style`/`mixed-bracket-width` are all `info` level — reported by
 default, and excluded from a gate by `--min-severity warn`.
 
 **Paragraph model.** The model is detected per file, from the first 4096 characters only: when blank
@@ -250,18 +250,18 @@ files land at 7.7%–53% blank lines, line-oriented text at 0%. The threshold is
 conservative, so a miss degrades to the line model rather than misfiring on line-oriented
 text. The model used is reported as `ParagraphMode`, and in the `[NOTE]` line of the
 human-readable report. Under the line model a soft-wrapped paragraph is split per line, so
-the paragraph-scoped rules `S2` (ordinals inside one paragraph) and `S3` (elevated ending)
+the paragraph-scoped rules `paragraph-ordinals` (ordinals inside one paragraph) and `elevated-ending` (elevated ending)
 can under-report — a known boundary.
 
-**Two rules may report the same span.** `。。。。` fires both `P1` and `P2`, and other
+**Two rules may report the same span.** `。。。。` fires both `repeated-punctuation` and `ellipsis-style`, and other
 overlapping pairs behave the same way. That is **intentional**: the two rules carry
 different suggestions, and de-duplicating in the report layer would drop advice and break
 the `--only` contract (the surviving id decides whether the hit is emitted at all).
 Consumers that want one hit per span have to de-duplicate on their side.
 
 **One side effect of a suggested scheme.** `引号括号统一` rewrites full-width brackets to
-half-width, and a half-width bracket next to Chinese is exactly what `P3` reports (measured:
-`（中文）` scores no hit, `(中文)` scores two). Re-lint after applying it; it is not a `P3`
+half-width, and a half-width bracket next to Chinese is exactly what `mixed-punctuation-width` reports (measured:
+`（中文）` scores no hit, `(中文)` scores two). Re-lint after applying it; it is not a `mixed-punctuation-width`
 remedy.
 
 ### Project Structure
@@ -544,8 +544,8 @@ texttool update [--check]           自更新（--check 仅检查）
 运行 `texttool <命令> --help` 查看各命令选项。`update` 从 GitHub Release 下载新 CLI zip，校验 SHA-256 后自动替换自身（`--check` 可只检查不更新）。`v2.6.1` 及更早的客户端用不了 `update`，需手动下载替换（见 [`doc/UpgradeNotes.md`](doc/UpgradeNotes.md)）。
 
 `lint` 接受一个或多个文件（`-` 表示从 stdin 读），不改动任何内容：只报告中文 AI 味出现的位置，
-给出规则 Id、行号与列号。`--json` 输出机器可读契约，`--only S1,L1` 只跑指定规则 Id，
-`--min-severity warn` 只保留 `warn` 及以上命中。`P4`/`P5` 与 `C1`-`C6` 这批规则 Id 由程序内
+给出规则 Id、行号与列号。`--json` 输出机器可读契约，`--only parallel-contrast,cliche-words` 只跑指定规则 Id，
+`--min-severity warn` 只保留 `warn` 及以上命中。`mixed-quote-style`/`mixed-bracket-width` 与 `paragraph-length-uniform`-`explicit-numbering` 这批 Id 由程序内
 探测器产出，外部 `lint_rules.json` 若定义了同 Id，会在加载时报错、命令退 `2`——见
 [`doc/UpgradeNotes.md`](doc/UpgradeNotes.md)。
 
@@ -557,7 +557,7 @@ texttool update [--check]           自更新（--check 仅检查）
 
 ```json
 {
-  "Version": 2,
+  "Version": 3,
   "Reports": [
     {
       "File": "chapter1.md",
@@ -565,14 +565,14 @@ texttool update [--check]           自更新（--check 仅检查）
       "ParagraphMode": "markdown",
       "Hits": [
         {
-          "Id": "S1", "Group": "S", "Title": "对举句式", "Severity": "warn",
+          "Id": "parallel-contrast", "Group": "syntax", "Title": "对举句式", "Severity": "warn",
           "Line": 12, "Col": 5, "Length": 7,
           "Match": "不是数据不够，而是口径不同",
           "Snippet": "…不是数据不够，而是口径不同…",
           "Detail": "不是A而是B", "Hint": null, "SuggestScheme": null
         }
       ],
-      "Notes": [{ "Id": "C1", "Text": "段落长度过于均一（变异系数 0.18，12 段）" }]
+      "Notes": [{ "Id": "paragraph-length-uniform", "Text": "段落长度过于均一（变异系数 0.18，12 段）" }]
     }
   ]
 }
@@ -598,24 +598,24 @@ texttool update [--check]           自更新（--check 仅检查）
 
 人读报告按规则分组，各组的出现顺序是各组首命中的位置顺序，不再等于规则表顺序。
 
-**启发式规则的边界。** `P4`（引号风格）、`P5`（括号全半角）只看字符不看上下文：
+**启发式规则的边界。** `mixed-quote-style`（引号风格）、`mixed-bracket-width`（括号全半角）只看字符不看上下文：
 英文词里的 `'`（如 `don't`）会被当作一种引号风格，与文中别处的中文引号并列为「混用」；
-代码片段里写的 ASCII 括号同样计入括号混用。`C` 组（`C1`–`C6`）是统计观察，不进退出码。
-`P4`/`P5` 一律 `info` 级：默认只报，用 `--min-severity warn` 即可把它们排除在关卡之外。
+代码片段里写的 ASCII 括号同样计入括号混用。`statistics` 组（`paragraph-length-uniform`–`explicit-numbering`）是统计观察，不进退出码。
+`mixed-quote-style`/`mixed-bracket-width` 一律 `info` 级：默认只报，用 `--min-severity warn` 即可把它们排除在关卡之外。
 
 **段落口径。** 口径按文件探测，只取首 4096 字符：其中空行占行数比例达到 10% 且非全空（末尾单个
 换行不算一行）即判为 Markdown——按空行分段，软换行并入同一段，列表项、引用行与编号行各自成段；
 否则每个非空行各成一段。实测样本：真实 Markdown 文件空行占比 7.7%–53%，行式文本为 0%；
 阈值取保守方向，漏判只退化成行式口径，不会误判行式文本。当次采用的口径随报告输出
 （`ParagraphMode` 字段与人读报告的 `[NOTE]` 行）。行式口径下软换行的段落被拆成多行，
-段落作用域的 `S2`（段内序数词）与 `S3`（结尾升华）因此可能少报——属已知边界。
+段落作用域的 `paragraph-ordinals`（段内序数词）与 `elevated-ending`（结尾升华）因此可能少报——属已知边界。
 
-**两条规则可能报同一跨度。** `。。。。` 会同时命中 `P1` 与 `P2`，其它重叠规则同理。
+**两条规则可能报同一跨度。** `。。。。` 会同时命中 `repeated-punctuation` 与 `ellipsis-style`，其它重叠规则同理。
 这是**有意行为**：两条规则给的建议不同，报告层去重会丢掉建议，也会破坏 `--only` 契约
 （去重后留下的 Id 决定该命中是否输出）。需要「一个跨度只留一条」的消费者请自行去重。
 
-**建议方案的一处副作用。** `引号括号统一` 会把全角括号转成半角，而半角括号紧邻中文正是 `P3`
-要报的（实测 `（中文）` 0 处命中、`(中文)` 2 处）。用完请重跑检查，它不是 `P3` 的解法。
+**建议方案的一处副作用。** `引号括号统一` 会把全角括号转成半角，而半角括号紧邻中文正是 `mixed-punctuation-width`
+要报的（实测 `（中文）` 0 处命中、`(中文)` 2 处）。用完请重跑检查，它不是 `mixed-punctuation-width` 的解法。
 
 ### 项目结构
 

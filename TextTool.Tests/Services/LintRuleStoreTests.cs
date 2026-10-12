@@ -4,27 +4,27 @@ public class LintRuleStoreTests
 {
     private static LintRule Rule(string id, string pattern = "测试") => new()
     {
-        Id = id, Group = "L", Title = "标题", Kind = "literal",
+        Id = id, Group = "lexis", Title = "标题", Kind = "literal",
         Patterns = new List<string> { pattern }, Severity = "info",
     };
 
     [Fact]
     public void Merge_外部规则按Id覆盖内置_其余保留()
     {
-        var builtIn = new List<LintRule> { Rule("L1"), Rule("L2") };
-        var external = new List<LintRule> { Rule("L2", "覆盖"), Rule("L9") };
+        var builtIn = new List<LintRule> { Rule("cliche-words"), Rule("ai-frequent-words") };
+        var external = new List<LintRule> { Rule("ai-frequent-words", "覆盖"), Rule("appended-external-rule") };
 
         var merged = LintRuleStore.Merge(builtIn, external);
 
         Assert.Equal(3, merged.Count);
-        Assert.Equal(new[] { "L1", "L2", "L9" }, merged.Select(r => r.Id));
+        Assert.Equal(new[] { "cliche-words", "ai-frequent-words", "appended-external-rule" }, merged.Select(r => r.Id));
         Assert.Equal("覆盖", merged[1].Patterns[0]);   // 覆盖发生在原位置
     }
 
     [Fact]
     public void Validate_Id为空即抛()
     {
-        var rule = Rule("L1");
+        var rule = Rule("cliche-words");
         rule.Id = "";
 
         Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
@@ -33,7 +33,7 @@ public class LintRuleStoreTests
     [Fact]
     public void Validate_Id重复即抛()
     {
-        var rules = new List<LintRule> { Rule("L1"), Rule("L1") };
+        var rules = new List<LintRule> { Rule("cliche-words"), Rule("cliche-words") };
 
         Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(rules));
     }
@@ -41,17 +41,17 @@ public class LintRuleStoreTests
     [Fact]
     public void Validate_正则语法错即抛()
     {
-        var rule = Rule("P1", "([a-z]");
+        var rule = Rule("repeated-punctuation", "([a-z]");
         rule.Kind = "regex";
 
         var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
-        Assert.Contains("P1", ex.Message);
+        Assert.Contains("repeated-punctuation", ex.Message);
     }
 
     [Fact]
     public void Validate_Hints长度与Patterns不匹配即抛()
     {
-        var rule = Rule("L7");
+        var rule = Rule("filler-phrases");
         rule.Patterns.Add("第二条");
         rule.Hints = new List<string> { "只有一条" };
 
@@ -61,7 +61,7 @@ public class LintRuleStoreTests
     [Fact]
     public void Validate_Patterns为null即抛而非NRE()
     {
-        var rule = Rule("L1");
+        var rule = Rule("cliche-words");
         rule.Patterns = null!;   // JSON 里的 "Patterns": null 会走到这里
 
         var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
@@ -71,7 +71,7 @@ public class LintRuleStoreTests
     [Fact]
     public void Validate_Patterns含空串即抛()
     {
-        var rule = Rule("L1", "");   // 空串模式会匹配任意位置，是配置错误
+        var rule = Rule("cliche-words", "");   // 空串模式会匹配任意位置，是配置错误
 
         Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
     }
@@ -82,9 +82,9 @@ public class LintRuleStoreTests
         var ids = LintRuleStore.GetDefaultRules().Select(r => r.Id).ToArray();
 
         Assert.Equal(
-            new[] { "P1", "P2", "P3", "P6", "P7", "P8",
-                    "L1", "L2", "L3", "L4", "L5", "L6", "L7",
-                    "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8" },
+            new[] { "repeated-punctuation", "ellipsis-style", "mixed-punctuation-width", "dash-and-tilde", "invisible-characters", "emoji-and-symbols",
+                    "cliche-words", "ai-frequent-words", "vague-attribution", "training-cutoff-disclaimer", "chatbot-artifacts", "sycophancy", "filler-phrases",
+                    "parallel-contrast", "paragraph-ordinals", "elevated-ending", "stacked-modifiers", "copula-avoidance", "inline-title-list", "forced-reversal", "accounting-cliche" },
             ids);
     }
 
@@ -96,17 +96,17 @@ public class LintRuleStoreTests
         // 这里把四个非默认字段的实际取值钉在数据上。
         var rules = LintRuleStore.GetDefaultRules().ToDictionary(r => r.Id);
 
-        Assert.Equal(3, rules["L2"].MinCount);
+        Assert.Equal(3, rules["ai-frequent-words"].MinCount);
 
-        Assert.Equal("paragraph", rules["S2"].Scope);
-        Assert.Equal(2, rules["S2"].MinCount);
+        Assert.Equal("paragraph", rules["paragraph-ordinals"].Scope);
+        Assert.Equal(2, rules["paragraph-ordinals"].MinCount);
 
-        Assert.Equal("paragraph", rules["S3"].Scope);
-        Assert.Equal(30, rules["S3"].TailChars);
+        Assert.Equal("paragraph", rules["elevated-ending"].Scope);
+        Assert.Equal(30, rules["elevated-ending"].TailChars);
 
         Assert.Equal(
             new[] { "为了实现这一点", "因为下雨", "现在", "如果您需要帮助", "系统可以处理", "数据显示" },
-            rules["L7"].Hints!.ToArray());
+            rules["filler-phrases"].Hints!.ToArray());
     }
 
     [Fact]
@@ -149,8 +149,8 @@ public class LintRuleStoreTests
     [Fact]
     public void Merge_同Id外部规则出现两次不抛且以最后一次为准()
     {
-        var builtIn = new List<LintRule> { Rule("L1") };
-        var external = new List<LintRule> { Rule("L1", "第一次"), Rule("L1", "第二次") };
+        var builtIn = new List<LintRule> { Rule("cliche-words") };
+        var external = new List<LintRule> { Rule("cliche-words", "第一次"), Rule("cliche-words", "第二次") };
 
         // Load() 会先被 Validate(external) 挡住，但 Merge 自身也不能把索引留在被替换掉的对象上
         var merged = LintRuleStore.Merge(builtIn, external);
@@ -162,9 +162,9 @@ public class LintRuleStoreTests
     [Fact]
     public void Merge_结果不与任一侧入参共享引用()
     {
-        var builtIn = new List<LintRule> { Rule("L1") };
-        var overwritten = Rule("L1", "覆盖");
-        var appended = Rule("L9");
+        var builtIn = new List<LintRule> { Rule("cliche-words") };
+        var overwritten = Rule("cliche-words", "覆盖");
+        var appended = Rule("appended-external-rule");
         var external = new List<LintRule> { overwritten, appended };
 
         var merged = LintRuleStore.Merge(builtIn, external);
@@ -177,7 +177,7 @@ public class LintRuleStoreTests
     [Fact]
     public void Validate_列表含null元素即抛而非NRE()
     {
-        var rules = new List<LintRule> { Rule("L1"), null! };
+        var rules = new List<LintRule> { Rule("cliche-words"), null! };
 
         var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(rules));
 
@@ -187,17 +187,17 @@ public class LintRuleStoreTests
     [Fact]
     public void ValidateNoAlgorithmIdCollision_外部Id撞算法Id即抛()
     {
-        var external = new List<LintRule> { Rule("P4") };
+        var external = new List<LintRule> { Rule("mixed-quote-style") };
 
         // 直接测守卫本身，不往程序目录写 lint_rules.json：那个文件会被并行跑的其它测试类读到
         var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.ValidateNoAlgorithmIdCollision(external));
 
-        Assert.Contains("P4", ex.Message);
+        Assert.Contains("mixed-quote-style", ex.Message);
     }
 
     [Fact]
     public void ValidateNoAlgorithmIdCollision_数据规则Id放行()
     {
-        LintRuleStore.ValidateNoAlgorithmIdCollision(new List<LintRule> { Rule("L1"), Rule("X9") });
+        LintRuleStore.ValidateNoAlgorithmIdCollision(new List<LintRule> { Rule("cliche-words"), Rule("X9") });
     }
 }

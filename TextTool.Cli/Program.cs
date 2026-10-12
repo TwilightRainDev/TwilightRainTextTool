@@ -388,7 +388,7 @@ public static class Program
         Console.WriteLine("""
             lint 选项：
               --json                以 JSON 输出（契约见 README.md 的「命令行（CLI）」节）
-              --only <Id,...>       只跑指定规则，如 --only S1,L1
+              --only <Id,...>       只跑指定规则，如 --only parallel-contrast,cliche-words
               --min-severity <info|warn>  只输出 warn 及以上（统计项不受影响）
 
             输入：文件路径可多个；传 - 表示从 stdin 读。

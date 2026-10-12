@@ -56,7 +56,7 @@ public sealed class LintTabControl : UserControl, IStatusSource, IThemedTab
 
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
         _lblOnly = ControlsHelper.MakeLabel("Only:");
-        _txtOnly = new TextBox { Anchor = AnchorStyles.Left | AnchorStyles.Right, PlaceholderText = "S1,L1" };
+        _txtOnly = new TextBox { Anchor = AnchorStyles.Left | AnchorStyles.Right, PlaceholderText = "parallel-contrast,cliche-words" };
         layout.Controls.Add(_lblOnly, 0, 1);
         layout.Controls.Add(_txtOnly, 1, 1);
 

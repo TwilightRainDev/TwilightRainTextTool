@@ -77,14 +77,14 @@ public class LintRuleStoreTests
     }
 
     [Fact]
-    public void GetDefaultRules_数据规则19条且顺序完整()
+    public void GetDefaultRules_数据规则21条且顺序完整()
     {
         var ids = LintRuleStore.GetDefaultRules().Select(r => r.Id).ToArray();
 
         Assert.Equal(
             new[] { "P1", "P2", "P3", "P6", "P7", "P8",
                     "L1", "L2", "L3", "L4", "L5", "L6", "L7",
-                    "S1", "S2", "S3", "S4", "S5", "S6" },
+                    "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8" },
             ids);
     }
 
@@ -115,9 +115,9 @@ public class LintRuleStoreTests
         var builtIn = LintRuleStore.GetDefaultRules();
         var rules = LintRuleStore.Load();
 
-        // 计数不钉 19：Load 读的是程序目录的 lint_rules.json（装过方案的机器上可能有它），
-        // 钉死计数就把这条用例变成环境耦合。内置 19 条的精确清单由
-        // GetDefaultRules_数据规则19条且顺序完整 在资源层钉住，与目录内容无关。
+        // 计数不钉 21：Load 读的是程序目录的 lint_rules.json（装过方案的机器上可能有它），
+        // 钉死计数就把这条用例变成环境耦合。内置 21 条的精确清单由
+        // GetDefaultRules_数据规则21条且顺序完整 在资源层钉住，与目录内容无关。
         Assert.NotEmpty(builtIn);
         Assert.All(builtIn, b => Assert.Contains(rules, r => r.Id == b.Id));
         Assert.All(rules, r =>

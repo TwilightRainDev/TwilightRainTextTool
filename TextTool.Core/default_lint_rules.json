@@ -103,5 +103,14 @@
 
   { "Id": "S6", "Group": "S", "Title": "内联标题列表", "Kind": "regex",
     "Patterns": ["(?m)^[-*]\\s+\\*\\*[^*\\n]{1,20}\\*\\*[：:]"],
-    "Severity": "info", "Detail": "粗体标题 + 冒号的清单项" }
+    "Severity": "info", "Detail": "粗体标题 + 冒号的清单项" },
+
+  { "Id": "S7", "Group": "S", "Title": "强加反转", "Kind": "literal",
+    "Patterns": ["反而"],
+    "Severity": "info", "Detail": "「反而」裸词——无让步前提的强加反转；命中是候选，读语境再判" },
+
+  { "Id": "S8", "Group": "S", "Title": "算账式引出数据", "Kind": "regex",
+    "Patterns": ["(?<![结清核对分])算[^。！？\\n]{0,8}账(?![户单号簿面款项目])",
+      "这[一二]?笔账", "账[^。！？\\n]{0,6}要[^。！？\\n]{0,6}算"],
+    "Severity": "info", "Detail": "「算一笔账」式陈词滥调：用虚构动作引出数据" }
 ]

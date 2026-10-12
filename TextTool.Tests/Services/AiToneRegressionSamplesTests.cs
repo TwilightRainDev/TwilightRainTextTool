@@ -11,11 +11,16 @@ namespace TextTool.Tests.Services;
 /// 1. 每一处「反而」都要报出来（漏报一处 AI 味，就是留一个病灶——实测那一批漏报 8 处，全是 AI 原话）；
 /// 2. 「算…账」的术语护栏必须挡住（`结算账户`/`核算账目`/`账单日` 这类真术语不是套话）。
 ///
-/// 改判据先跑这些用例：「反而」那条（`S7`）取裸词而非词表，正是因为词表档位在这批样本上漏掉了 8 处 AI 原话。
+/// 改判据先跑这些用例：「反而」那条取裸词而非词表，正是因为词表档位在这批样本上漏掉了 8 处 AI 原话。
 /// </summary>
 public class AiToneRegressionSamplesTests
 {
     private static AiToneLintService Service() => new(LintRuleStore.GetDefaultRules());
+
+    // 规则在报告与 --only 里的标识。码只在这里各出现一次，用例正文一律按现象名引用——
+    // 读用例的人不必先解码，改规则 Id 时也只改这两行。
+    private const string 强加反转 = "S7";
+    private const string 算账式引出数据 = "S8";
 
     private static List<LintHit> HitsOf(string id, string text) =>
         Service().Scan(text, "样本.txt").Hits.Where(h => h.Id == id).ToList();
@@ -54,7 +59,7 @@ public class AiToneRegressionSamplesTests
     [MemberData(nameof(反而样本))]
     public void 反而每一处都报出且命中原文为反而(string origin, string text)
     {
-        var hits = HitsOf("S7", text);
+        var hits = HitsOf(强加反转, text);
 
         var hit = Assert.Single(hits);
         Assert.Equal("反而", hit.Match);
@@ -69,7 +74,7 @@ public class AiToneRegressionSamplesTests
     [InlineData("这笔账算下来也值。整个项目实际消耗约 4 亿 token，折人民币 23 块。")]   // 实测语料里的真命中，作者确认是模型蹦出的词
     public void 算账式陈词滥调报出(string text)
     {
-        Assert.NotEmpty(HitsOf("S8", text));
+        Assert.NotEmpty(HitsOf(算账式引出数据, text));
     }
 
     [Theory]
@@ -79,6 +84,6 @@ public class AiToneRegressionSamplesTests
     [InlineData("账户余额不足，账单已出。")]
     public void 算账术语护栏挡住真术语(string text)
     {
-        Assert.Empty(HitsOf("S8", text));
+        Assert.Empty(HitsOf(算账式引出数据, text));
     }
 }

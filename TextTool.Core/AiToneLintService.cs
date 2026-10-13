@@ -37,7 +37,7 @@ public sealed class AiToneLintService
         return report;
     }
 
-    /// <summary>判定段落口径的取样长度：与编码探测同一量级（ADR-004 的 4KB）。</summary>
+    /// <summary>判定段落口径的取样长度：4096 个字符，与编码探测的 4KB（ADR-004，4096 字节）同一量级但口径不同。</summary>
     internal const int ParagraphProbeChars = 4096;
 
     /// <summary>

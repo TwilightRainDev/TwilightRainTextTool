@@ -134,13 +134,28 @@ try {
     if (Test-Path -LiteralPath $notePath) {
         $note = ([IO.File]::ReadAllText($notePath, [Text.Encoding]::UTF8)).Trim()
         $current = [string]$release.body
-        if ($current.StartsWith(($note -split "`n")[0])) {
+        # 幂等判据：并入时写入一段稳定哨兵注释，重复执行只认哨兵——标题行改动或
+        # CRLF 归一都不会让它失配；再用「整段包含」兜住此前已并入、尚无哨兵的 release。
+        $sentinel = "<!-- texttool-upgrade-notes -->"
+        $normalizedCurrent = ($current -replace "`r`n", "`n").Trim()
+        $normalizedNote = ($note -replace "`r`n", "`n").Trim()
+        if ($normalizedCurrent.Contains($sentinel) -or $normalizedCurrent.Contains($normalizedNote)) {
             Write-Host "release 说明已含升级提示，跳过"
         }
         else {
-            Set-GithubReleaseBody -Repo $Repo -ReleaseId ([long]$release.id) -Body ($note + "`n`n---`n`n" + $current)
+            # 正文为空时不要落一条悬空分隔线。
+            $mergedBody = if ([string]::IsNullOrWhiteSpace($normalizedCurrent)) {
+                $sentinel + "`n`n" + $note
+            }
+            else {
+                $sentinel + "`n`n" + $note + "`n`n---`n`n" + $current
+            }
+            Set-GithubReleaseBody -Repo $Repo -ReleaseId ([long]$release.id) -Body $mergedBody
             Write-Host "已把升级提示并入 release 说明"
         }
+    }
+    else {
+        Write-Warning "未找到升级提示文件（$notePath），已跳过并入 release 说明；发布继续"
     }
 
     Write-Host "检查清单：zip 存在 / .sha256 存在 / .sig 存在且 verify 通过 / release 说明已含升级提示 / 待执行：本地真实 update 冒烟"

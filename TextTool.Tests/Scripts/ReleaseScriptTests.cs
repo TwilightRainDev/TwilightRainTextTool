@@ -48,9 +48,7 @@ public class ReleaseScriptTests
 
     private static (int Code, string Stderr, string Stdout) Invoke(params string[] args)
     {
-        var shell = File.Exists(@"C:\Program Files\PowerShell\7\pwsh.exe")
-            ? @"C:\Program Files\PowerShell\7\pwsh.exe"
-            : "powershell.exe";
+        var shell = PowerShellLocator.Resolve();
         var arg_line = $"-NoProfile -ExecutionPolicy Bypass -File \"{ScriptPath}\"";
         if (args.Length > 0)
             arg_line += " " + string.Join(" ", args);

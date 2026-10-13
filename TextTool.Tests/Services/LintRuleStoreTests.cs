@@ -39,6 +39,16 @@ public class LintRuleStoreTests
     }
 
     [Fact]
+    public void Validate_Id仅差大小写即抛()
+    {
+        // 口径与 ValidateNoAlgorithmIdCollision 及下游 --only / Filter 一致：Id 大小写不敏感，
+        // 否则校验放过、下游把它们塌缩成同一个，重复 Id 一直到运行期才暴露
+        var rules = new List<LintRule> { Rule("cliche-words"), Rule("CLICHE-WORDS") };
+
+        Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(rules));
+    }
+
+    [Fact]
     public void Validate_正则语法错即抛()
     {
         var rule = Rule("repeated-punctuation", "([a-z]");
@@ -152,11 +162,25 @@ public class LintRuleStoreTests
         var builtIn = new List<LintRule> { Rule("cliche-words") };
         var external = new List<LintRule> { Rule("cliche-words", "第一次"), Rule("cliche-words", "第二次") };
 
-        // Load() 会先被 Validate(external) 挡住，但 Merge 自身也不能把索引留在被替换掉的对象上
+        // Load() 会先被 Validate(external) 挡住，但 Merge 自身也必须把重复 Id 落到同一位置：
+        // 索引存下标后第二次进来仍能命中，不再有 IndexOf 返回 -1 的坑
         var merged = LintRuleStore.Merge(builtIn, external);
 
         Assert.Single(merged);
         Assert.Equal("第二次", merged[0].Patterns[0]);
+    }
+
+    [Fact]
+    public void Merge_大小写不同的同Id覆盖原位置()
+    {
+        var builtIn = new List<LintRule> { Rule("cliche-words"), Rule("ai-frequent-words") };
+        var external = new List<LintRule> { Rule("CLICHE-WORDS", "覆盖") };
+
+        var merged = LintRuleStore.Merge(builtIn, external);
+
+        Assert.Equal(2, merged.Count);
+        Assert.Equal(new[] { "CLICHE-WORDS", "ai-frequent-words" }, merged.Select(r => r.Id));
+        Assert.Equal("覆盖", merged[0].Patterns[0]);
     }
 
     [Fact]

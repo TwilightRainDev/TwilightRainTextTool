@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
 using TextTool.Services;
@@ -24,6 +25,14 @@ public static class Program
     public static int Main(string[] args)
     {
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+        // stderr 行尾统一 LF（本工作区文本约定）：重定向到文件时不带进 CR。
+        // 包一层保留 AutoFlush，内容与既有 stderr 一致，只改换行符
+        Console.SetError(new StreamWriter(Console.OpenStandardError(), new UTF8Encoding(false))
+        {
+            AutoFlush = true,
+            NewLine = "\n",
+        });
 
         if (args.Length == 0)
         {
@@ -309,8 +318,12 @@ public static class Program
         {
             // Windows 控制台默认 GBK 码页：报隐形字符/中文时可能编码失败，强制 UTF-8 输出。
             // 宿主拒绝设置（无控制台、编码不受支持、权限受限）一律吞掉：此时按既有编码输出，
-            // 遇到编不出的字符仍由外层 catch 响亮退 2，不静默
-            try { Console.OutputEncoding = new UTF8Encoding(false); } catch (Exception) { }
+            // 遇到编不出的字符仍由外层 catch 响亮退 2，不静默。
+            // Console.OutputEncoding 的 setter 只抛这三类：宿主无控制台/重定向失败为 IOException，
+            // 权限受限为 SecurityException，编码不受支持为 ArgumentException；
+            // 其它异常不属于「宿主拒绝设置」，不在这里吞。
+            try { Console.OutputEncoding = new UTF8Encoding(false); }
+            catch (Exception ex) when (ex is IOException or SecurityException or ArgumentException) { }
 
             var files = new List<string>();
             bool json = false;
@@ -344,19 +357,8 @@ public static class Program
 
             var reportSet = LintRunner.Run(inputs, onlyIds, minSeverity);
 
-            if (!json)
-            {
-                // 人读输出常被重定向成文件：行尾统一 LF（本工作区约定）；
-                // 报告之间空一行（多文件可读性），尾部只保留一个换行
-                for (int i = 0; i < reportSet.Reports.Count; i++)
-                {
-                    if (i > 0) Console.Write("\n");
-                    Console.Write(LintTextFormatter.Format(reportSet.Reports[i]).Replace("\r\n", "\n") + "\n");
-                }
-            }
-            else
-                // ToJson() 的正文已是 LF；Console.WriteLine 会补 CRLF 结尾，这里只补一个 \n
-                Console.Write(reportSet.ToJson() + "\n");
+            // 两条分支共用同一个纯函数，行尾/报告间隔/尾换行的契约只在 LintOutput 里维护
+            Console.Write(LintOutput.Render(reportSet, json));
 
             bool anyHit = reportSet.Reports.Any(r => r.Hits.Count > 0);
             return anyHit ? 1 : 0;

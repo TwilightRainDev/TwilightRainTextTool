@@ -64,26 +64,27 @@ public static class LintRuleStore
         return JsonSerializer.Deserialize<List<LintRule>>(reader.ReadToEnd()) ?? new List<LintRule>();
     }
 
-    /// <summary>外部规则按 Id 覆盖内置（覆盖后仍排原位置），新 Id 追加在末尾。</summary>
+    /// <summary>外部规则按 Id 覆盖内置（覆盖后仍排原位置），新 Id 追加在末尾。Id 大小写不敏感。</summary>
     internal static List<LintRule> Merge(List<LintRule> builtIn, List<LintRule> external)
     {
         var result = builtIn.Select(Clone).ToList();
-        var index = result.ToDictionary(r => r.Id, StringComparer.Ordinal);
+        // 字典直接存下标：覆盖写回原位置，位置不变；
+        // 若同 Id 的外部规则第二次进来仍能命中同一位置，不再依赖 IndexOf（那会因对象已被换掉而返回 -1）。
+        // 比较口径与 Validate / ValidateNoAlgorithmIdCollision / 下游 --only 一致，均为大小写不敏感。
+        var index = result
+            .Select((rule, i) => (rule.Id, Position: i))
+            .ToDictionary(x => x.Id, x => x.Position, StringComparer.OrdinalIgnoreCase);
         foreach (var rule in external)
         {
-            if (index.TryGetValue(rule.Id, out var existing))
+            if (index.TryGetValue(rule.Id, out int at))
             {
-                // 索引必须跟着替换走：否则同 Id 第二次进来时 existing 已不在列表里，
-                // IndexOf 返回 -1，result[-1] 抛 ArgumentOutOfRangeException
-                int at = result.IndexOf(existing);
                 result[at] = Clone(rule);
-                index[rule.Id] = result[at];
             }
             else
             {
                 // 外部侧同样 Clone：合并结果与调用方的对象脱钩，两侧对称
                 result.Add(Clone(rule));
-                index[rule.Id] = result[^1];
+                index[rule.Id] = result.Count - 1;
             }
         }
         return result;
@@ -102,7 +103,7 @@ public static class LintRuleStore
 
     internal static void Validate(List<LintRule> rules)
     {
-        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var rule in rules)
         {
             if (rule is null)

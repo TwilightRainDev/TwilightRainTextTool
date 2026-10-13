@@ -163,10 +163,12 @@ public class LintReportTests
     [Fact]
     public void ToJson_HTML敏感字符转义()
     {
+        // 夹具同时含 HTML/UTF-7 敏感 ASCII、U+0022 双引号与中文字“赋”：中文进夹具后
+        // 「不转义」的断言才不再恒真，双引号则单独钉住 U+0022 的转义。
         var report = new LintReport
         {
             File = "a.md", Chars = 3,
-            Hits = new List<LintHit> { new() { Id = "cliche-words", Match = "a<b&c'd+e>f`g" } },
+            Hits = new List<LintHit> { new() { Id = "cliche-words", Match = "a<b&c'd+e>f`g\"赋能" } },
         };
 
         var json = new LintReportSet { Reports = new List<LintReport> { report } }.ToJson();
@@ -177,7 +179,9 @@ public class LintReportTests
         Assert.Contains("\\u002B", json);   // +
         Assert.Contains("\\u003E", json);   // >
         Assert.Contains("\\u0060", json);   // 反引号
-        Assert.DoesNotContain("\\u8D4B", json);   // 中文仍不转义
+        Assert.Contains("\\u0022", json);   // " —— 转义关掉会退成裸引号
+        Assert.Contains("赋能", json);        // 中文原样出现……
+        Assert.DoesNotContain("\\u8D4B", json);   // ……且不被转义成 \uXXXX
     }
 
     [Fact]

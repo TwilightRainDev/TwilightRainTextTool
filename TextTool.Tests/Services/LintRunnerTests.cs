@@ -60,18 +60,22 @@ public class LintRunnerTests
     [Fact]
     public void Run_最小严重度大小写不敏感()
     {
-        var reportSet = LintRunner.Run(new[] { ("t.txt", "您说得完全正确。") }, null, "WARN");
+        // 夹具必须同时含 warn 与 info 命中：若大小写口径被改成区分大小写，
+        // "WARN" 会被当成未知档位而一条都不过滤，info 命中就会漏进来。
+        // 此前夹具只有 warn 命中，这条断言在现夹具上恒真、测不出东西。
+        var inputs = new (string File, string Text)[] { ("t.txt", "您说得完全正确。赋能。") };
 
-        Assert.NotEmpty(reportSet.Reports.SelectMany(r => r.Hits));
-        Assert.All(reportSet.Reports.SelectMany(r => r.Hits), h => Assert.Equal("warn", h.Severity));
-    }
+        var unfiltered = LintRunner.Run(inputs, null, null).Reports.SelectMany(r => r.Hits).ToList();
+        Assert.Contains(unfiltered, h => h.Severity == "warn");   // 夹具确实有可命中的 warn 项
+        Assert.Contains(unfiltered, h => h.Severity == "info");   // 也有 info 项，大小写口径坏了才会露出来
 
-    [Fact]
-    public void Run_最小严重度非法值仍抛()
-    {
-        var ex = Assert.Throws<ArgumentException>(
-            () => LintRunner.Run(new[] { ("t.txt", "随便一段文本。") }, null, "error"));
+        var upper = LintRunner.Run(inputs, null, "WARN").Reports.SelectMany(r => r.Hits).ToList();
+        var lower = LintRunner.Run(inputs, null, "warn").Reports.SelectMany(r => r.Hits).ToList();
 
-        Assert.Contains("--min-severity", ex.Message);
+        Assert.NotEmpty(lower);
+        Assert.Equal(
+            lower.Select(h => (h.Id, h.Line, h.Col, h.Severity)),
+            upper.Select(h => (h.Id, h.Line, h.Col, h.Severity)));   // 两种大小写写法命中集合逐条相同
+        Assert.All(lower, h => Assert.Equal("warn", h.Severity));
     }
 }

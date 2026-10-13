@@ -48,6 +48,18 @@ public class PublishScriptTests
 
         Assert.Contains("UpgradeNotes.md", text, StringComparison.Ordinal);
         Assert.Contains("Set-GithubReleaseBody", text, StringComparison.Ordinal);
+
+        // 只钉「两个词都出现过」发现不了调用点被挪到 -SkipUpload 之前（那会让
+        // -SkipUpload 反而去改 release 正文）。这里按文本位置钉住顺序：
+        // Set-GithubReleaseBody 必须排在提前返回分支的 exit 0 之后。
+        int skipBranch = text.IndexOf("if ($SkipUpload)", StringComparison.Ordinal);
+        Assert.True(skipBranch >= 0, "未找到 -SkipUpload 提前返回分支");
+
+        int skipExit = text.IndexOf("exit 0", skipBranch, StringComparison.Ordinal);
+        Assert.True(skipExit >= 0, "未找到 -SkipUpload 分支的提前返回");
+
+        int setBody = text.IndexOf("Set-GithubReleaseBody", StringComparison.Ordinal);
+        Assert.True(setBody > skipExit, "Set-GithubReleaseBody 必须位于 -SkipUpload 提前返回之后");
     }
 
     [Fact]

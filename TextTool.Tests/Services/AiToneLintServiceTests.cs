@@ -288,6 +288,15 @@ public class AiToneLintServiceTests
     }
 
     [Fact]
+    public void Scan_显式序号标记恰两处仍不报C6()
+    {
+        // 阈值是既定的「≥3」：恰好 2 处是上界，仍不报
+        var report = Service().Scan("1. 甲\n2. 乙\n正文一段。\n", "t.txt");
+
+        Assert.DoesNotContain(report.Notes, n => n.Id == "explicit-numbering");
+    }
+
+    [Fact]
     public void Scan_中文序号与括号序号也计入C6()
     {
         var text = "一、甲\n（2）乙\n3) 丙\n";

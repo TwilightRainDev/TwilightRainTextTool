@@ -57,6 +57,22 @@ public class LintTextFormatterTests
     }
 
     [Fact]
+    public void Format_无建议方案时不渲染方案后缀()
+    {
+        // 反例：SuggestScheme 为空时不得出现「方案：」后缀（正例见 Format_渲染建议方案）
+        var report = new LintReport
+        {
+            File = "a.md", Chars = 10,
+            Hits = new List<LintHit>
+            {
+                new() { Id = "ellipsis-style", Title = "省略号风格", Line = 1, Col = 3, Snippet = "…" },
+            },
+        };
+
+        Assert.DoesNotContain("方案：", LintTextFormatter.Format(report));
+    }
+
+    [Fact]
     public void Format_末尾不带换行()
     {
         var text = LintTextFormatter.Format(new LintReport { File = "a.md", Chars = 5 });

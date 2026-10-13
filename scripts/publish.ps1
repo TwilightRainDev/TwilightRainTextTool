@@ -3,7 +3,7 @@ param(
     [string]$Version,
     [switch]$SkipUpload,
     [switch]$Force,
-    [string]$KeyPath = "E:\WorkZone\ApiKey\TextTool\TextTool-signing.priv.pem",
+    [string]$KeyPath = $env:TEXTTOOL_SIGN_KEY,
     [string]$Repo = "TwilightRainDev/TwilightRainTextTool"
 )
 
@@ -21,6 +21,10 @@ try {
     $raw = $Version -replace '^v', ''
     $tag = "v$raw"
     $repoRoot = Split-Path -Parent $PSScriptRoot
+    if ([string]::IsNullOrWhiteSpace($KeyPath)) {
+        [Console]::Error.WriteLine("未设置 TEXTTOOL_SIGN_KEY，也没有传 -KeyPath")
+        exit 1
+    }
     $pubKey = (Split-Path $KeyPath) + "\TextTool-signing.pub.pem"
     $work = Join-Path $env:TEMP ("texttool-publish-" + $raw)
 

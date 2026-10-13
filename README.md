@@ -352,10 +352,9 @@ TextTool/
 │   ├── Publish.md                # Release checklist
 │   ├── UpdateSecurity.md         # Update trust model (TLS pinning, signing)
 │   ├── ReplaceSchemesDesign.md   # Replace-scheme design note
-│   ├── TECH-DEBT.md              # Open optimizations and known debt
+│   ├── UpgradeNotes.md           # Manual-upgrade notice, shipped in release notes
 │   ├── adr/                      # Architecture Decision Records (9 ADRs)
-│   ├── specs/                    # Living / in-flight specs
-│   └── archive/                  # Closed specs, plans, landed debt
+│   └── specs/                    # Living / in-flight specs
 │
 ├── scripts/
 │   ├── github-release.ps1        # GitHub REST helpers (curl; no gh)
@@ -705,10 +704,9 @@ TextTool/
 │   ├── Publish.md                # 发布清单
 │   ├── UpdateSecurity.md         # 更新信任模型（TLS 固定、签名验签）
 │   ├── ReplaceSchemesDesign.md   # 替换方案设计说明
-│   ├── TECH-DEBT.md              # 未落地优化项与技术债
+│   ├── UpgradeNotes.md           # 手动升级提示，随发布说明出货
 │   ├── adr/                      # 架构决策记录（9 份 ADR）
-│   ├── specs/                    # 现行/在途规格
-│   └── archive/                  # 已收口规格、计划、已落地债条
+│   └── specs/                    # 现行/在途规格
 │
 ├── scripts/
 │   ├── github-release.ps1        # GitHub REST 辅助（curl，不用 gh）

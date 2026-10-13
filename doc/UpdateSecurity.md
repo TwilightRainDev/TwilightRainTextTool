@@ -14,29 +14,28 @@
 
 ### TLS 策略（默认不强制固定）
 
-签名落地后，中间人已无法伪造更新内容（签名兜底），因此 TLS 公共根固定从"必要防线"降级为**可选的加固/检测手段**，默认关闭——国内 DNS 污染下 S302 类加速器/企业代理是主流连法，强制固定会让这部分用户无法更新：
+签名落地后，中间人已无法伪造更新内容（签名兜底），因此 TLS 公共根固定是**可选的加固/检测手段**，默认关闭——国内 DNS 污染下 S302 类加速器/企业代理是主流连法，强制固定会让这部分用户无法更新：
 
 - **默认**：OS 信任校验 TLS，若链根非公共 CA（中间代理存在）CLI 打印警告但不中断；`.sig` 签名仍保证安装包安全
 - **严格模式**：`TEXTTOOL_UPDATE_STRICT_TLS=1` 时链根必须为公共 CA（`pinned_roots.txt`），任何 MITM 代理直接拒绝连接（更新失败是预期行为）
 
 ## 密钥管理
 
-- **私钥**：`E:\WorkZone\ApiKey\TextTool\TextTool-signing.priv.pem`（ECDsa P-256，PKCS#8 PEM）
-- **公钥**：`E:\WorkZone\ApiKey\TextTool\TextTool-signing.pub.pem`（SPKI PEM，与客户端内嵌常量一致）
+- **私钥**：`<密钥目录>/TextTool-signing.priv.pem`（ECDsa P-256，PKCS#8 PEM）
+- **公钥**：`<密钥目录>/TextTool-signing.pub.pem`（SPKI PEM，与客户端内嵌常量一致）
 - 生成/重建（私钥文件存在时会拒绝覆盖，需先手动备份）：
   ```
-  dotnet run --project tools/ReleaseSigner -- keygen E:\WorkZone\ApiKey\TextTool [--passphrase <p>]
+  dotnet run --project tools/ReleaseSigner -- keygen <密钥目录> [--passphrase <p>]
   ```
-- 私钥**明文存储**（与 ApiKey 目录内其他明文 token 同一保护水平）。2026-09-29 用户决定维持明文、
-  不做加密，不再作为待办跟踪；`ReleaseSigner` 支持加密 PEM 与 `TEXTTOOL_SIGN_PASSPHRASE` 的能力保留，
-  若日后改变决定可直接使用，无需改代码
+- 私钥**明文存储**（与同一目录内其他明文 token 同一保护水平）。`ReleaseSigner` 支持加密 PEM 与
+  `TEXTTOOL_SIGN_PASSPHRASE`，改用加密 PEM 无需改代码
 - **绝不**把私钥放进 GitHub/CI（仓库被攻破时 secret 会一起被偷）
 
 ## 发布流程（每次发版）
 
 推荐一条命令：`.\scripts\release.ps1 [-Version <x.y.z>]`。它会核对 `Directory.Build.props`、打 annotated tag、推 tag、等 CI 建好 Release，再调 `publish.ps1` 离线签名并上传 `.sig`。本机没有 `gh`，下载/上传走 GitHub REST + `curl.exe`。令牌来自 `TEXTTOOL_GITHUB_TOKEN` 或凭据目录既有 PAT；**不要**写进 remote URL。
 
-只签已有 Release 时用 `.\scripts\publish.ps1 -Version <x.y.z> [-SkipUpload] [-Force]`。先 `-SkipUpload` 演练签名与自检，确认后再去掉该开关上传 `.sig`。release 上已有 `.sig` 时须加 `-Force` 才会覆盖。可选 `-KeyPath <priv.pem>`、`-Repo owner/name`。CI 已跑完、只补签名：`.\scripts\release.ps1 -SkipTag`。
+只签已有 Release 时用 `.\scripts\publish.ps1 -Version <x.y.z> [-SkipUpload] [-Force]`。先 `-SkipUpload` 演练签名与自检，确认后再去掉该开关上传 `.sig`。release 上已有 `.sig` 时须加 `-Force` 才会覆盖。私钥取 `TEXTTOOL_SIGN_KEY`（或 `-KeyPath <priv.pem>`）、仓库取 `-Repo owner/name`。CI 已跑完、只补签名：`.\scripts\release.ps1 -SkipTag`。
 
 以下手工步骤仅作对照：
 
@@ -44,13 +43,13 @@
 2. 下载 CI 产物 zip 到本地（`publish.ps1` 经 REST 拉取；对照可用浏览器从 Release 页下载）
 3. 离线签名：
    ```
-   dotnet run --project tools/ReleaseSigner -- sign TextTool-CLI-3.0.0-win-x64.zip -k E:\WorkZone\ApiKey\TextTool\TextTool-signing.priv.pem
+   dotnet run --project tools/ReleaseSigner -- sign TextTool-CLI-3.0.0-win-x64.zip -k <密钥目录>/TextTool-signing.priv.pem
    ```
    （或先 `cd tools/ReleaseSigner && dotnet build -c Release`，再直接运行 exe）
 4. 上传 `.sig` 到 release：由 `publish.ps1` 调 `uploads.github.com`，不要装 `gh`
 5. 自检：
    ```
-   dotnet run --project tools/ReleaseSigner -- verify TextTool-CLI-3.0.0-win-x64.zip TextTool-CLI-3.0.0-win-x64.zip.sig -k E:\WorkZone\ApiKey\TextTool\TextTool-signing.pub.pem
+   dotnet run --project tools/ReleaseSigner -- verify TextTool-CLI-3.0.0-win-x64.zip TextTool-CLI-3.0.0-win-x64.zip.sig -k <密钥目录>/TextTool-signing.pub.pem
    texttool update --check   # 或在新版本上跑一次真实 update
    ```
 
@@ -91,15 +90,6 @@
 ## 降级重放检测
 
 签名（`.sig`）不覆盖版本号，中间人理论上可把任一官方旧版安装包"重放"为最新版（签名全合法）。客户端在程序目录维护 `last_known_version.txt`（单目录哲学，ADR-009），记录最近一次**成功安装**的版本；当 GitHub 声称的"最新版"低于该记录时，检查/更新一律报错中止（提示"检测到版本回退"）。首次使用无记录文件，不触发；确认是开发者正常回滚时，删除该文件后重试。
-
-## 已知问题
-
-2.4.4 发布实测暴露的 3 条收口问题（旧客户端 404、S302 代理下下载超时、替换脚本 wait-loop 脆弱）
-及其修复设计见 [`archive/specs/2026-08-03-texttool-2.4.5-design.md`](archive/specs/2026-08-03-texttool-2.4.5-design.md)
-（已收口，单一权威，此处不重复）。
-
-其中"替换脚本脆弱"一项，落地时实测出的根因比原设计假设更多（LF 行尾叠加中文致 cmd 解析错位、
-`tasklist` 退出码不可作存活判据、裸 `timeout` 被遮蔽），三者均已修复，实测结论见该规格 §7。
 
 ## 相关文件
 

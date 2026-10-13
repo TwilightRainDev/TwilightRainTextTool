@@ -5,11 +5,7 @@ function Get-TextToolGithubToken {
     if (-not [string]::IsNullOrWhiteSpace($env:TEXTTOOL_GITHUB_TOKEN)) {
         return $env:TEXTTOOL_GITHUB_TOKEN.Trim()
     }
-    $token_path = Join-Path "E:\WorkZone\ApiKey" "GithubApiToken.txt"
-    if (Test-Path -LiteralPath $token_path) {
-        return ([IO.File]::ReadAllText($token_path)).Trim()
-    }
-    throw "未设置 TEXTTOOL_GITHUB_TOKEN，且默认凭据文件不存在"
+    throw "未设置 TEXTTOOL_GITHUB_TOKEN"
 }
 
 function Get-CurlExe {

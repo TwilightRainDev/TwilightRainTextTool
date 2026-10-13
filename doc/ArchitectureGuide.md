@@ -209,10 +209,9 @@ TextTool/
 │   ├── Publish.md               # Release checklist
 │   ├── UpdateSecurity.md        # Update trust model (TLS pinning, signing)
 │   ├── ReplaceSchemesDesign.md  # Replace-scheme design note
-│   ├── TECH-DEBT.md             # Open optimizations and known debt
+│   ├── UpgradeNotes.md          # Manual-upgrade notice, shipped in release notes
 │   ├── adr/                     # Architecture Decision Records
-│   ├── specs/                   # Living / in-flight specs
-│   └── archive/                 # Closed specs, plans, landed debt
+│   └── specs/                   # Living / in-flight specs
 │
 └── scripts/
     ├── github-release.ps1       # GitHub REST helpers (curl; no gh)

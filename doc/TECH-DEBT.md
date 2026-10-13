@@ -48,7 +48,7 @@
 grep -oP '(?<=<Version>)[0-9.]+(?=<)' Directory.Build.props  # 期望 3.0.0
 
 # 测试用例数（[Fact] + [Theory] 属性条数，非运行条数）
-grep -roE '\[(Fact|Theory)' TextTool.Tests --include=*.cs | wc -l   # 期望 245
+grep -roE '\[(Fact|Theory)' TextTool.Tests --include=*.cs | wc -l   # 期望 248
 
 # ADR 份数
 ls doc/adr/ | wc -l                                          # 期望 9

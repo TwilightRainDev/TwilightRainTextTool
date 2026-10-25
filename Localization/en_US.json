@@ -69,6 +69,7 @@
 
   "StatusSelected": "Selected: {0}  |  Encoding: {1}",
   "StatusFilesSelected": "{0} file(s) selected for batch processing",
+  "StatusFilesSelectedShort": "[{0} files]",
   "StatusBatchComplete": "All {0} file(s) processed successfully!",
   "StatusBatchPartial": "Processed {0}/{1} file(s) with errors",
   "StatusBatchProgress": "Processing {0}/{1} file(s)...",

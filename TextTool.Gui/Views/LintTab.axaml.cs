@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
@@ -25,9 +26,19 @@ public partial class LintTab : UserControl
 
     private readonly List<string> _selectedFiles = new();
 
-    /// <summary>上一次扫过的输入与选项。换语言时拿它重扫，不重新读盘。</summary>
+    /// <summary>规则清单，列表里显示 Title，选中项对应 <see cref="LintRunner.Run"/> 的 onlyIds。</summary>
+    private List<LintRule> _rules = new();
+
+    /// <summary>上一次扫过的输入与选项。换语言时拿它重扫，不重新读盘、不重新取选中项。</summary>
     private List<(string File, string Text)>? _lastInputs;
     private string? _lastMinSeverity;
+    private IReadOnlyCollection<string>? _lastOnlyIds;
+
+    /// <summary>本页正在改列表选中状态时为真，避免 SelectionChanged 回头再改一遍。</summary>
+    private readonly List<(LintRule Rule, CheckBox Box)> _ruleChecks = new();
+
+    /// <summary>程序改勾选状态时用它挡住回调，避免把刚勾回去的那条又判成零选。</summary>
+    private bool _syncingRules;
 
     /// <summary>动态文案记下键与参数，切语言时按新语言重刷。</summary>
     private Message? _result;
@@ -47,6 +58,8 @@ public partial class LintTab : UserControl
     public LintTab()
     {
         InitializeComponent();
+        // 先取规则再刷文案：配置读不出来时，提示是在 LoadRules 里记下的，由 ApplyLocalization 显示。
+        LoadRules();
         ApplyLocalization();
 
         // 订阅挂在 Loaded 上、退订挂在 Unloaded 上：页签被移出视觉树后不再收语言切换的通知，
@@ -78,6 +91,7 @@ public partial class LintTab : UserControl
         SourceLabel.Text = Loc.T("LabelSourceFile");
         BrowseButton.Content = Loc.T("BtnBrowse");
         PasteLabel.Text = Loc.T("LabelLintPaste");
+        OnlyLabel.Text = Loc.T("LabelLintOnly");
         SeverityLabel.Text = Loc.T("LabelLintMinSeverity");
         SeverityAllItem.Content = Loc.T("LintSeverityAll");
         SeverityWarnItem.Content = Loc.T("LintSeverityWarn");
@@ -105,6 +119,89 @@ public partial class LintTab : UserControl
 
     /// <summary>一条待显示的文案。存键与实参而不是成品字串，切语言时才能重算。</summary>
     private sealed record Message(string Key, object[] Args);
+
+    // ================================================================
+    //  规则
+    // ================================================================
+
+    /// <summary>
+    /// 取规则清单填进列表，默认全选。配置读不出来时列表留空、按全跑处理，
+    /// 并用现有文案在这里提示一次；检查那一步会把同一个错误再抛一次，走 ErrorOccurred。
+    /// </summary>
+    private void LoadRules()
+    {
+        try
+        {
+            _rules = LintRuleStore.Load();
+        }
+        catch (Exception ex)
+        {
+            _rules = new();
+            ShowWarning("MsgConfigBroken", ex.Message);
+            return;
+        }
+
+        BuildRuleChecks();
+    }
+
+    /// <summary>每条规则一个勾选框，默认全勾。规则名是数据不是文案，按原样显示。</summary>
+    private void BuildRuleChecks()
+    {
+        _ruleChecks.Clear();
+        RuleItems.Children.Clear();
+
+        foreach (LintRule rule in _rules)
+        {
+            var box = new CheckBox
+            {
+                Content = rule.Title,
+                IsChecked = true,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+
+            box.IsCheckedChanged += (_, _) => OnRuleToggled(box);
+            _ruleChecks.Add((rule, box));
+            RuleItems.Children.Add(box);
+        }
+    }
+
+    /// <summary>
+    /// 一条都不勾在引擎那边没有对应的意思：只有「传一批 Id」与「不传」两种，
+    /// 空集合直接报错。所以勾掉最后一条时把它勾回去，界面上不会出现零选。
+    /// </summary>
+    private void OnRuleToggled(CheckBox source)
+    {
+        if (_syncingRules || source.IsChecked == true)
+            return;
+
+        if (_ruleChecks.Any(pair => pair.Box.IsChecked == true))
+            return;
+
+        _syncingRules = true;
+        try
+        {
+            source.IsChecked = true;
+        }
+        finally
+        {
+            _syncingRules = false;
+        }
+    }
+
+    /// <summary>
+    /// 选中项就是 onlyIds，全选时返回 null。全选必须传 null 而不是全部 Id：
+    /// 算法规则由代码产出（见 AiToneLintService.AlgorithmRuleIds），不在本列表里，
+    /// 传一份数据规则的 Id 会把算法规则的命中一并筛掉。
+    /// </summary>
+    private IReadOnlyCollection<string>? SelectedOnlyIds()
+    {
+        var selected = _ruleChecks
+            .Where(pair => pair.Box.IsChecked == true)
+            .Select(pair => pair.Rule.Id)
+            .ToList();
+
+        return selected.Count == 0 || selected.Count == _rules.Count ? null : selected;
+    }
 
     // ================================================================
     //  选文件
@@ -178,7 +275,7 @@ public partial class LintTab : UserControl
             return;
 
         _selectedFiles.AddRange(valid);
-        FileBox.Text = valid.Count == 1 ? valid[0] : $"[{valid.Count} files selected]";
+        FileBox.Text = valid.Count == 1 ? valid[0] : Loc.T("StatusFilesSelectedShort", valid.Count);
         ClearWarning();
         StatusChanged?.Invoke(Loc.T("StatusFilesSelected", valid.Count));
     }
@@ -210,6 +307,7 @@ public partial class LintTab : UserControl
         }
 
         string? minSeverity = SeverityBox.SelectedIndex == 1 ? "warn" : null;
+        IReadOnlyCollection<string>? onlyIds = SelectedOnlyIds();
         string languageAtStart = Loc.CurrentLang;
 
         _generation++;
@@ -220,10 +318,12 @@ public partial class LintTab : UserControl
 
         try
         {
-            var scan = await Task.Run(() => Run(files, paste, minSeverity));
+            var scan = await Task.Run(() => Run(files, paste, minSeverity, onlyIds));
 
             _lastInputs = scan.Inputs;
             _lastMinSeverity = minSeverity;
+            // 选中项可能在跑完之后又变了，重渲染必须照这一次的原样重放，不能读当前的列表。
+            _lastOnlyIds = onlyIds;
             ReportBox.Text = scan.Text;
             ClearWarning();
             ShowResult(scan.Hits, scan.Notes);
@@ -247,7 +347,8 @@ public partial class LintTab : UserControl
     /// <summary>一次检查的产物：报告正文、命中与统计项计数、以及这次真正扫过的输入。</summary>
     private sealed record Scan(string Text, int Hits, int Notes, List<(string File, string Text)> Inputs);
 
-    private static Scan Run(string[] files, string paste, string? minSeverity)
+    private static Scan Run(
+        string[] files, string paste, string? minSeverity, IReadOnlyCollection<string>? onlyIds)
     {
         var inputs = new List<(string File, string Text)>();
         foreach (string path in files)
@@ -259,13 +360,14 @@ public partial class LintTab : UserControl
         if (!string.IsNullOrWhiteSpace(paste))
             inputs.Add((PasteSource, paste));
 
-        return Render(inputs, minSeverity);
+        return Render(inputs, minSeverity, onlyIds);
     }
 
     /// <summary>扫一遍并渲染成人读报告。文案出处随当前界面语言，缺译时退回引擎里的原文。</summary>
-    private static Scan Render(List<(string File, string Text)> inputs, string? minSeverity)
+    private static Scan Render(
+        List<(string File, string Text)> inputs, string? minSeverity, IReadOnlyCollection<string>? onlyIds)
     {
-        var reportSet = LintRunner.Run(inputs, onlyIds: null, minSeverity, LintTextSource.Instance);
+        var reportSet = LintRunner.Run(inputs, onlyIds, minSeverity, LintTextSource.Instance);
         string text = LintOutput.Render(reportSet, asJson: false, LintTextSource.Instance);
 
         int hits = 0, notes = 0;
@@ -289,10 +391,11 @@ public partial class LintTab : UserControl
 
         int generation = ++_generation;
         string? minSeverity = _lastMinSeverity;
+        IReadOnlyCollection<string>? onlyIds = _lastOnlyIds;
 
         try
         {
-            var scan = await Task.Run(() => Render(inputs, minSeverity));
+            var scan = await Task.Run(() => Render(inputs, minSeverity, onlyIds));
             if (generation != _generation)
                 return;
 

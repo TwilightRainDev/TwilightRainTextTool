@@ -211,7 +211,7 @@ public partial class VnTab : UserControl
             return;
 
         _selectedFiles.AddRange(valid);
-        FileBox.Text = valid.Count == 1 ? valid[0] : $"[{valid.Count} files selected]";
+        FileBox.Text = valid.Count == 1 ? valid[0] : Loc.T("StatusFilesSelectedShort", valid.Count);
 
         // 编码只按第一个文件检测，作为参考显示；处理时每个文件各自严格检测。
         try

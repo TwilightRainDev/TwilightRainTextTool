@@ -160,7 +160,20 @@ internal static class ReplaceTabDriveCheck
         Expect(File.Exists(output), "生成了 _Processed 输出文件");
         Expect(content == "你好,世界.", "替换结果正确（，→ ,   。→ .）");
 
-        // 6. 规则为空时执行要挡住，并给出行内提示。
+        // 6. 非 UTF-8 文件：检测要认，读要读得出来。GBK 这类代码页不注册时
+        //    GetEncoding 直接抛，界面上就是点了没反应，所以这条必须有。
+        string gbkPath = Path.Combine(workDir, "gbk.txt");
+        File.WriteAllText(gbkPath, "你好，世界。", System.Text.Encoding.GetEncoding("GBK"));
+
+        tab.UseFilesForCheck(new[] { gbkPath });
+        Click(run);
+        WaitForResult(tab);
+
+        string gbkOutput = PathHelper.GetProcessedPath(gbkPath);
+        string gbkContent = File.Exists(gbkOutput) ? File.ReadAllText(gbkOutput) : "";
+        Expect(gbkContent == "你好,世界.", "GBK 文件能读出、能替换、输出是 UTF-8");
+
+        // 7. 规则为空时执行要挡住，并给出行内提示。
         tab.SetRules(new List<ReplaceRule>());
         Click(run);
         Dispatcher.UIThread.RunJobs();

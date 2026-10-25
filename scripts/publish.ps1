@@ -130,7 +130,7 @@ try {
         Add-GithubReleaseAsset -Repo $Repo -ReleaseId ([long]$release.id) -FilePath $sig
     }
 
-    $notePath = Join-Path $repoRoot "doc\UpgradeNotes.md"
+    $notePath = Join-Path $repoRoot "doc\ReleaseNotes.md"
     if (Test-Path -LiteralPath $notePath) {
         $note = ([IO.File]::ReadAllText($notePath, [Text.Encoding]::UTF8)).Trim()
         $current = [string]$release.body

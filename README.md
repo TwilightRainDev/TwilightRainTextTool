@@ -41,6 +41,7 @@ Drag-and-drop a text file, pick your options, click **Process** — done.
 | **Fix punct. truncation** | Merge next line if current line ends with any custom punctuation (e.g., `回家吧，\n孩子` → `回家吧，孩子`). Customizable punctuation set. |
 | **Apply punct. replace rules** | Run the punctuation replacement rules configured in Tab 3 |
 | **Line-ending no-merge** | Prevent merging if current line ends with any custom punctuation — overrides both CJK and punct. truncation rules. Useful for keeping chapter titles (`章`, `节`, etc.) or sentence terminators (`.!?。！？`) independent. |
+| **Dangerous overwrite** | Write the result back into the original file instead of `*_Processed.*`. Its companion checkbox **Back up as .bak** decides whether the previous content is kept as `{name}.bak` (rotated to `.bak.1`–`.bak.3`); leave it unchecked and no extra file is created. |
 
 **Processing pipeline** (single-pass, one file write):
 
@@ -118,7 +119,7 @@ extract it, and double-click `TextTool.exe`. Requires .NET 8 Desktop Runtime
 
 Coming from `v2.6.1` or earlier, the in-app updater cannot take you here —
 download the zip and unzip over the old folder by hand
-(see [`doc/UpgradeNotes.md`](doc/UpgradeNotes.md)).
+(see [`doc/ReleaseNotes.md`](doc/ReleaseNotes.md)).
 
 ### Running
 
@@ -167,14 +168,14 @@ texttool lint <file...> [options]      AI-tone check, report only
 texttool update [--check]              Self-update (--check = check only)
 ```
 
-Run `texttool <command> --help` for each command's options. `update` downloads the new CLI zip from the GitHub Release, verifies its SHA-256, and swaps itself in (with `--check` you can check for a new version without updating). It cannot upgrade a client on `v2.6.1` or earlier — those installs have to be replaced by hand (see [`doc/UpgradeNotes.md`](doc/UpgradeNotes.md)).
+Run `texttool <command> --help` for each command's options. `update` downloads the new CLI zip from the GitHub Release, verifies its SHA-256, and swaps itself in (with `--check` you can check for a new version without updating). It cannot upgrade a client on `v2.6.1` or earlier — those installs have to be replaced by hand (see [`doc/ReleaseNotes.md`](doc/ReleaseNotes.md)).
 
 `lint` takes one or more files (`-` reads stdin) and changes nothing: it reports where
 Chinese AI-flavored wording appears, with rule id, line and column. `--json` emits the
 machine-readable contract, `--only parallel-contrast,cliche-words` runs selected rule ids only, `--min-severity warn`
 keeps the output to `warn` hits. Rule ids `mixed-quote-style`/`mixed-bracket-width` and `paragraph-length-uniform`-`explicit-numbering` come from the built-in
 detectors, so an external `lint_rules.json` that defines one of them is rejected when rules
-load and the command exits `2` — see [`doc/UpgradeNotes.md`](doc/UpgradeNotes.md).
+load and the command exits `2` — see [`doc/ReleaseNotes.md`](doc/ReleaseNotes.md).
 
 **Exit codes differ from the other subcommands.** `merge` / `replace` / `vn` / `join` /
 `update` use `0` = success, `1` = failure; `lint` uses `0` = no hits, `1` = hits found,
@@ -299,7 +300,7 @@ TextTool/
 │   ├── PunctFixerService.cs       # Dialogue punctuation completion
 │   ├── VNCharacterScheme.cs       # Character/route preset scheme model & store
 │   ├── ReplaceScheme.cs           # Replace-rule scheme model & store
-│   ├── BackupHelper.cs            # Auto-backup before overwrite (with rotation)
+│   ├── BackupHelper.cs            # Overwrite backup + rotation (opt-in)
 │   ├── AtomicFile.cs              # Atomic output write (temp file + replace)
 │   ├── DialogueLine.cs            # Shared dialogue-line regex detection
 │   ├── RegexGuard.cs              # Regex construction with ReDoS timeout
@@ -347,14 +348,8 @@ TextTool/
 │   ├── TestHelpers.cs
 │   └── Services/                 # One test file per service
 │
-├── doc/                          # Documentation
-│   ├── ArchitectureGuide.md      # Developer architecture guide
-│   ├── Publish.md                # Release checklist
-│   ├── UpdateSecurity.md         # Update trust model (TLS pinning, signing)
-│   ├── ReplaceSchemesDesign.md   # Replace-scheme design note
-│   ├── UpgradeNotes.md           # Manual-upgrade notice, shipped in release notes
-│   ├── adr/                      # Architecture Decision Records (9 ADRs)
-│   └── specs/                    # Living / in-flight specs
+├── doc/                          # Release-note input (only doc kept in-repo)
+│   └── ReleaseNotes.md           # Manual-upgrade notice, shipped in release notes
 │
 ├── scripts/
 │   ├── github-release.ps1        # GitHub REST helpers (curl; no gh)
@@ -369,6 +364,11 @@ TextTool/
 ├── LICENSE                       # MIT License
 └── README.md                     # This file
 ```
+
+> Developer docs (architecture guide, release checklist, update security,
+> replace-scheme design, ADRs, specs) live outside the repo, in
+> [`Docs/Project/TextTool/`](Docs/Project/TextTool/). `ReleaseNotes.md` stays in `doc/` because
+> `scripts/publish.ps1` ships it inside each Release's notes.
 
 ### Tech Stack
 
@@ -421,6 +421,7 @@ Per-version changelog is carried by git tags and GitHub Releases — see
 | **修复标点截断断段** | 行末为指定标点时拼接下行（如 `回家吧，\n孩子` → `回家吧，孩子`）。支持自定义标点集。 |
 | **应用标点替换规则** | 对每行执行 Tab 3 中配置的替换规则 |
 | **行尾部标点不合并** | 行末为指定字符时**阻止合并**——优先级高于 CJK 和标点截断规则。适合让章节标题（`章`、`节`）、句末标点（`.!?。！？`）独立成段。 |
+| **危险覆盖模式** | 结果直接写回原文件，不再另存 `*_Processed.*`。旁边的**覆盖前备份为 .bak** 决定是否把原内容留成 `{name}.bak`（旧备份轮换为 `.bak.1`–`.bak.3`）；不勾选则不产生任何额外文件。 |
 
 **处理流水线**（一次内存传递，最后一次性写入硬盘）：
 
@@ -494,7 +495,7 @@ Per-version changelog is carried by git tags and GitHub Releases — see
 需先安装 .NET 8 Desktop Runtime（见上方系统要求）；缺少运行时会弹出引导对话框。
 
 若你手上是 `v2.6.1` 及更早的版本，程序内自动更新到不了这里——请手动下载 zip 解压覆盖原目录
-（见 [`doc/UpgradeNotes.md`](doc/UpgradeNotes.md)）。
+（见 [`doc/ReleaseNotes.md`](doc/ReleaseNotes.md)）。
 
 ### 运行方式
 
@@ -540,13 +541,13 @@ texttool lint <文件...> [选项]      AI 味检查（只报不改）
 texttool update [--check]           自更新（--check 仅检查）
 ```
 
-运行 `texttool <命令> --help` 查看各命令选项。`update` 从 GitHub Release 下载新 CLI zip，校验 SHA-256 后自动替换自身（`--check` 可只检查不更新）。`v2.6.1` 及更早的客户端用不了 `update`，需手动下载替换（见 [`doc/UpgradeNotes.md`](doc/UpgradeNotes.md)）。
+运行 `texttool <命令> --help` 查看各命令选项。`update` 从 GitHub Release 下载新 CLI zip，校验 SHA-256 后自动替换自身（`--check` 可只检查不更新）。`v2.6.1` 及更早的客户端用不了 `update`，需手动下载替换（见 [`doc/ReleaseNotes.md`](doc/ReleaseNotes.md)）。
 
 `lint` 接受一个或多个文件（`-` 表示从 stdin 读），不改动任何内容：只报告中文 AI 味出现的位置，
 给出规则 Id、行号与列号。`--json` 输出机器可读契约，`--only parallel-contrast,cliche-words` 只跑指定规则 Id，
 `--min-severity warn` 只保留 `warn` 及以上命中。`mixed-quote-style`/`mixed-bracket-width` 与 `paragraph-length-uniform`-`explicit-numbering` 这批 Id 由程序内
 探测器产出，外部 `lint_rules.json` 若定义了同 Id，会在加载时报错、命令退 `2`——见
-[`doc/UpgradeNotes.md`](doc/UpgradeNotes.md)。
+[`doc/ReleaseNotes.md`](doc/ReleaseNotes.md)。
 
 **退出码与其它子命令不同。** `merge` / `replace` / `vn` / `join` / `update` 是
 `0` 成功 / `1` 失败；`lint` 是 `0` 无命中 / `1` 有命中 / `2` 用法或读取错误。
@@ -651,7 +652,7 @@ TextTool/
 │   ├── PunctFixerService.cs       # 对话标点补齐
 │   ├── VNCharacterScheme.cs       # 角色/路线预设方案模型与存储
 │   ├── ReplaceScheme.cs           # 替换规则方案模型与存储
-│   ├── BackupHelper.cs            # 覆盖写前自动备份（含轮换）
+│   ├── BackupHelper.cs            # 覆盖前备份 + 轮换（可选开关）
 │   ├── AtomicFile.cs              # 输出原子写入（临时文件 + 整体替换）
 │   ├── DialogueLine.cs            # 共享对话行正则检测
 │   ├── RegexGuard.cs              # 带 ReDoS 超时的正则构造入口
@@ -699,14 +700,8 @@ TextTool/
 │   ├── TestHelpers.cs
 │   └── Services/                 # 每个服务对应一个测试文件
 │
-├── doc/                          # 文档
-│   ├── ArchitectureGuide.md      # 开发者架构指南
-│   ├── Publish.md                # 发布清单
-│   ├── UpdateSecurity.md         # 更新信任模型（TLS 固定、签名验签）
-│   ├── ReplaceSchemesDesign.md   # 替换方案设计说明
-│   ├── UpgradeNotes.md           # 手动升级提示，随发布说明出货
-│   ├── adr/                      # 架构决策记录（9 份 ADR）
-│   └── specs/                    # 现行/在途规格
+├── doc/                          # 发布说明的输入（仓库内仅留这一份文档）
+│   └── ReleaseNotes.md           # 手动升级提示，随发布说明出货
 │
 ├── scripts/
 │   ├── github-release.ps1        # GitHub REST 辅助（curl，不用 gh）
@@ -721,6 +716,10 @@ TextTool/
 ├── LICENSE                       # MIT 许可证
 └── README.md                     # 本文件
 ```
+
+> 开发文档（架构指南、发布清单、更新安全、替换方案设计、ADR、规格）已移出仓库，
+> 放在工作区 [`Docs/Project/TextTool/`](Docs/Project/TextTool/)。`ReleaseNotes.md` 留在 `doc/` 里，
+> 因为 `scripts/publish.ps1` 要把它并进每个 Release 的发布说明。
 
 ### 技术栈
 
@@ -751,3 +750,9 @@ TextTool/
 ---
 
 © 2026 **TwilightRain**
+
+## 终端字符
+
+本仓的源码与文档只写 ASCII 与汉字、全角标点。这套东西要分发到还停在 Windows XP 那代的机器上，那代控制台用点阵字体，字形来自当时的代码页：别的符号画出来是问号或空格，宽度也对不上，整屏跟着错位。
+
+口径、面清单与逐字符的替代写法见工作区的 `AgentOps/ToolGate/bin/check-terminal-glyphs.mjs`。

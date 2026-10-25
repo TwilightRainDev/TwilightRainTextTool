@@ -46,7 +46,7 @@ public class PublishScriptTests
     {
         var text = File.ReadAllText(ScriptPath);
 
-        Assert.Contains("UpgradeNotes.md", text, StringComparison.Ordinal);
+        Assert.Contains("ReleaseNotes.md", text, StringComparison.Ordinal);
         Assert.Contains("Set-GithubReleaseBody", text, StringComparison.Ordinal);
 
         // 只钉「两个词都出现过」发现不了调用点被挪到 -SkipUpload 之前（那会让
@@ -63,9 +63,9 @@ public class PublishScriptTests
     }
 
     [Fact]
-    public void UpgradeNotes_存在且写明受阻版本()
+    public void ReleaseNotes_存在且写明受阻版本()
     {
-        var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "doc", "UpgradeNotes.md"));
+        var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "doc", "ReleaseNotes.md"));
 
         Assert.True(File.Exists(path), path);
         Assert.Contains("2.6.1", File.ReadAllText(path), StringComparison.Ordinal);

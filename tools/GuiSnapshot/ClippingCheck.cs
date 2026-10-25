@@ -121,7 +121,14 @@ internal static class ClippingCheck
         }
 
         control.Measure(Size.Infinity);
-        Size wanted = control.DesiredSize;
+
+        // DesiredSize 含外边距，Bounds 不含。不减掉的话，凡是设了 Margin 的控件
+        // 都会"超出"一个 Margin 大小，报成假裁切。行合并页之所以没被报，是因为它
+        // 套在 ScrollViewer 里，上面那条早退了。
+        Thickness margin = control.Margin;
+        Size wanted = new(
+            control.DesiredSize.Width - margin.Left - margin.Right,
+            control.DesiredSize.Height - margin.Top - margin.Bottom);
         Size actual = control.Bounds.Size;
 
         if (restoreValue is { } value)
@@ -138,10 +145,17 @@ internal static class ClippingCheck
         if (TrimmingOf(control) is { } trimming && trimming != TextTrimming.None)
             widthClipped = false;
 
-        // 设了 TextWrapping：换行本来就是用高度换宽度，一行放不下就折成两行，
-        // DesiredSize 的高度随之变大是正常的。所以换行的控件只免掉高度方向。
+        // 换行的控件：无界重测得的是单行宽度，比出来的宽度必然偏大，宽度方向没有意义。
+        // 该问的是「按它实际拿到的宽度折行，需要多高」，所以按实际宽度再量一次，
+        // 只保留高度这一项判断。父级把高度写死时，折出来的行数就会超出。
         if (Wraps(control))
-            heightClipped = false;
+        {
+            control.Measure(new Size(actual.Width, double.PositiveInfinity));
+            double wrappedHeight = control.DesiredSize.Height - margin.Top - margin.Bottom;
+            widthClipped = false;
+            heightClipped = wrappedHeight > actual.Height + Tolerance;
+            wanted = new Size(actual.Width, wrappedHeight);
+        }
 
         if (!widthClipped && !heightClipped)
             return;

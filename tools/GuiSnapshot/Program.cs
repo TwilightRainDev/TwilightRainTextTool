@@ -15,6 +15,7 @@ namespace TextTool.Tools.GuiSnapshot;
 ///   2. 截图矩阵：3 个语言 x 2 个主题，共六张 语言-主题.png，同时量页签会不会折行，
 ///      并对同一个窗口查一遍文字裁切（控件的真实需要尺寸比实际 Bounds 大就是被裁）。
 ///   3. 换语言热切换体检：同一个窗口连着换语言，看 DynamicResource 有没有跟着重取。
+///   5. 交互体检：驱动标点替换页按按钮，读回磁盘上的结果比对。
 ///   4. 文案键体检：.axaml 里的 {DynamicResource 键名} 和 .cs 里的 Loc.T("键名") 合并后，
 ///      每个文案键三种语言都得给得出值。
 ///
@@ -56,6 +57,8 @@ internal static class Program
             failures += ThemeCheck.Run();
             failures += SnapshotCheck.Run(outDir, tabIndex);
             failures += SnapshotCheck.HotSwitch();
+            failures += DialogCheck.Run(outDir);
+            failures += ReplaceTabDriveCheck.Run();
             failures += TextKeyCheck.Run();
         }
         catch (Exception error)

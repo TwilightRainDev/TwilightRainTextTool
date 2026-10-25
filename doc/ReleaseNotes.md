@@ -22,3 +22,11 @@
 - **`--min-severity` 不再区分大小写**，`High`、`high` 都认。
 - **规则码换了名字**：从 `P1`、`S5`、`C1` 这类短码，换成 `repeated-punctuation` 这样的可读名字，报告里同时给出中文标题。用 `--only` 时按新名字写。
 - **自定义规则文件变严格**：`lint_rules.json` 里如果定义了程序内置的算法规则 Id（`P4`、`P5`、`C1` 到 `C6`），启动时会直接报错，不再静默接受（原先会让同一个 Id 既有算法命中又有数据命中，报告里冒出重复 Id）。删掉那几个冲突条目即可。
+
+## Linux：命令行版
+
+Release 里多了一份 `TextTool-CLI-<版本>-linux-x64.zip`，与 Windows 版并列。它只包含命令行版，图形界面仍然只有 Windows。
+
+Linux 上需要先装 .NET 8 运行时；zip 不保留可执行位，解压后要 `chmod +x texttool` 才能跑。具体命令见 README 的 Linux 一节。
+
+`update` 在 Linux 上只能查询（`--check`），不提供自动替换。升级请下载新包手动覆盖目录。

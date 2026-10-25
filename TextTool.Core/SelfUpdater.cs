@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO.Compression;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -27,9 +28,18 @@ public static class SelfUpdater
 
     public sealed record UpdateResult(bool HasUpdate, string? LatestVersion = null, string? Error = null);
 
-    /// <summary>CLI 安装包资产名，如 TextTool-CLI-2.4.0-win-x64.zip。</summary>
-    public static string GetCliAssetName(string version) =>
-        $"TextTool-CLI-{version.TrimStart('v')}-win-x64.zip";
+    /// <summary>当前平台的 RID 后缀，与 CI 发布矩阵里的 -r 取值一致，如 win-x64 / linux-x64。</summary>
+    public static string CurrentRid => RuntimeInformation.RuntimeIdentifier;
+
+    /// <summary>CLI 安装包资产名（当前平台），如 TextTool-CLI-2.4.0-win-x64.zip。</summary>
+    public static string GetCliAssetName(string version) => GetCliAssetName(version, CurrentRid);
+
+    /// <summary>
+    /// 指定平台的 CLI 安装包资产名，如 TextTool-CLI-2.4.0-linux-x64.zip。
+    /// 这个命名同时被 CI 的打包步骤和 scripts 里两个发布脚本引用，改名要三处一起改。
+    /// </summary>
+    public static string GetCliAssetName(string version, string rid) =>
+        $"TextTool-CLI-{version.TrimStart('v')}-{rid}.zip";
 
     /// <summary>在 release JSON 的 assets 中查找 CLI zip 下载地址；找不到返回 null。</summary>
     public static string? FindCliAssetUrl(JsonDocument releaseDoc, string version)

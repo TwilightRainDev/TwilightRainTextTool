@@ -41,8 +41,9 @@ try {
         exit 1
     }
 
+    $assetNames = Get-TextToolReleaseAssetNames -Raw $raw
     $zips = @(Get-ChildItem -Path $work -File | Where-Object {
-        $_.Name -like "TextTool-*-$raw-win-x64.zip"
+        $assetNames -contains $_.Name
     })
     if ($zips.Count -eq 0) {
         [Console]::Error.WriteLine("未找到 zip")

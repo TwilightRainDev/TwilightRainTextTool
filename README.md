@@ -121,6 +121,33 @@ Coming from `v2.6.1` or earlier, the in-app updater cannot take you here —
 download the zip and unzip over the old folder by hand
 (see [`doc/ReleaseNotes.md`](doc/ReleaseNotes.md)).
 
+### Linux (CLI only)
+
+The GUI is still Windows-only. On Linux, use the command-line version, shipped as
+`TextTool-CLI-<version>-linux-x64.zip` next to `TextTool-CLI-<version>-win-x64.zip`
+on the [GitHub Releases](https://github.com/TwilightRainDev/TwilightRainTextTool/releases) page.
+
+It is a framework-dependent build, so install the .NET 8 **runtime** (not the SDK)
+first. On Debian/Ubuntu, install the `dotnet-runtime-8.0` package or use Microsoft's
+install script; see the [official install docs](https://learn.microsoft.com/dotnet/core/install/linux)
+for the exact steps.
+
+The zip is packed on Windows and keeps no Unix executable bit, so after extracting
+you have to `chmod +x texttool` before it runs:
+
+```bash
+unzip TextTool-CLI-<version>-linux-x64.zip -d TextTool-CLI
+chmod +x TextTool-CLI/texttool
+./TextTool-CLI/texttool --help
+```
+
+The subcommands are the same as on Windows: `merge`, `replace`, `vn`, `lint` and
+`update`, each with its own `--help`.
+
+On Linux `update` is check-only: `texttool update --check` tells you whether a newer
+release exists, but there is no automatic self-replace. Download the new zip and
+unpack it over the existing folder by hand.
+
 ### Running
 
 #### Option A — Build then run
@@ -496,6 +523,30 @@ Per-version changelog is carried by git tags and GitHub Releases — see
 
 若你手上是 `v2.6.1` 及更早的版本，程序内自动更新到不了这里——请手动下载 zip 解压覆盖原目录
 （见 [`doc/ReleaseNotes.md`](doc/ReleaseNotes.md)）。
+
+### 在 Linux 上使用命令行版
+
+图形界面目前仍然只有 Windows 版，Linux 上能用的是命令行版。发布包新增了一个资产
+`TextTool-CLI-<版本号>-linux-x64.zip`，和已有的 `TextTool-CLI-<版本号>-win-x64.zip`
+并列，从 [GitHub Releases](https://github.com/TwilightRainDev/TwilightRainTextTool/releases)
+页面下载。
+
+这是框架依赖发布，Linux 上需要先装 .NET 8 运行时（不是 SDK）。Debian/Ubuntu 可参考
+apt 装 `dotnet-runtime-8.0` 或微软官方脚本，具体步骤见[官方安装文档](https://learn.microsoft.com/dotnet/core/install/linux)。
+
+zip 是在 Windows 上打的，不保留 Unix 可执行位，解压后必须 `chmod +x texttool`
+才能直接跑：
+
+```bash
+unzip TextTool-CLI-<版本号>-linux-x64.zip -d TextTool-CLI
+chmod +x TextTool-CLI/texttool
+./TextTool-CLI/texttool --help
+```
+
+可用的子命令与 Windows 版一致：`merge`、`replace`、`vn`、`lint`、`update`，每个都支持 `--help`。
+
+`update` 在 Linux 上只能查询：`texttool update --check` 可以看有没有新版，但不提供自动替换，
+需要手动下载新包覆盖目录。
 
 ### 运行方式
 

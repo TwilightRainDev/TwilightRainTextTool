@@ -254,6 +254,17 @@ public static class Program
             }
         }
 
+        // 自动替换靠一个 cmd 脚本在进程退出后跑（见 SelfUpdater.BuildUpdateScript），
+        // Linux 上没有对应实现。这里直接拒绝，不给出“下载成功但换不了”的假成功；
+        // --check 只是查询，两个平台都放行。
+        if (!checkOnly && !OperatingSystem.IsWindows())
+        {
+            Console.Error.WriteLine(
+                "错误：自动替换只在 Windows 上提供。Linux 请手动下载 TextTool-CLI-<版本>-linux-x64.zip 解压覆盖，" +
+                "可以用 update --check 看看有没有新版。");
+            return 1;
+        }
+
         using var client = UpdateClient.Create(TimeSpan.FromSeconds(30));
         UpdateClient.ResetMitmDetection();
         var result = checkOnly
@@ -458,6 +469,8 @@ public static class Program
         Console.WriteLine("""
             update 选项：
               --check       仅检查是否有新版本，不执行更新
+
+            Windows 上不带 --check 会下载并自动替换；Linux 上只能查询，替换请手动做。
             """);
 
     private static void PrintMergeHelp() =>

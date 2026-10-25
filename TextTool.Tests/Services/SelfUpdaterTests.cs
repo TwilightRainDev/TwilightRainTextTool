@@ -9,11 +9,22 @@ namespace TextTool.Tests.Services;
 public class SelfUpdaterTests
 {
     [Theory]
-    [InlineData("2.3.0", "TextTool-CLI-2.3.0-win-x64.zip")]
-    [InlineData("v2.3.0", "TextTool-CLI-2.3.0-win-x64.zip")]
-    public void GetCliAssetName_StripsV(string version, string expected)
+    [InlineData("2.3.0", "win-x64", "TextTool-CLI-2.3.0-win-x64.zip")]
+    [InlineData("v2.3.0", "win-x64", "TextTool-CLI-2.3.0-win-x64.zip")]
+    [InlineData("2.3.0", "linux-x64", "TextTool-CLI-2.3.0-linux-x64.zip")]
+    [InlineData("v2.3.0", "linux-x64", "TextTool-CLI-2.3.0-linux-x64.zip")]
+    public void GetCliAssetName_StripsVAndUsesRid(string version, string rid, string expected)
     {
-        Assert.Equal(expected, SelfUpdater.GetCliAssetName(version));
+        Assert.Equal(expected, SelfUpdater.GetCliAssetName(version, rid));
+    }
+
+    [Fact]
+    public void GetCliAssetName_默认取当前平台()
+    {
+        // 资产名跟运行平台走，否则 Linux 客户端会去找 Windows 的包，更新永远停在“下载失败”。
+        Assert.Equal(
+            SelfUpdater.GetCliAssetName("2.3.0", SelfUpdater.CurrentRid),
+            SelfUpdater.GetCliAssetName("2.3.0"));
     }
 
     [Theory]

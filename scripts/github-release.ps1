@@ -109,16 +109,36 @@ function Get-GithubWorkflowRuns {
     return $res.Body | ConvertFrom-Json
 }
 
+function Get-TextToolReleaseAssetNames {
+    # 发布产物名单。命名必须与 TextTool.Core/SelfUpdater.GetCliAssetName 和
+    # .github/workflows/build-test.yml 的打包步骤一致，否则客户端找得到的包和
+    # 签名脚本管得到的包会对不上。
+    param(
+        [Parameter(Mandatory = $true)][string]$Raw
+    )
+    return @(
+        "TextTool-GUI-$Raw-win-x64.zip",
+        "TextTool-CLI-$Raw-win-x64.zip",
+        "TextTool-CLI-$Raw-linux-x64.zip"
+    )
+}
+
 function Save-GithubReleaseAssets {
     param(
         [Parameter(Mandatory = $true)]$Release,
         [Parameter(Mandatory = $true)][string]$Raw,
         [Parameter(Mandatory = $true)][string]$DestDir
     )
+    $prefixes = Get-TextToolReleaseAssetNames -Raw $Raw
     $saved = @()
     foreach ($asset in @($Release.assets)) {
         $name = [string]$asset.name
-        if ($name -notlike "TextTool-*-$Raw-win-x64.zip*") {
+        # 尾部的 * 让 .sha256 / .sig 一起下来，它们跟 zip 同名。
+        $matched = $false
+        foreach ($prefix in $prefixes) {
+            if ($name -like "$prefix*") { $matched = $true; break }
+        }
+        if (-not $matched) {
             continue
         }
         $dest = Join-Path $DestDir $name

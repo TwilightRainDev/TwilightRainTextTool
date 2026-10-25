@@ -143,12 +143,11 @@ try {
             if ($null -ne $release.assets) {
                 $names = @($release.assets | ForEach-Object { $_.name })
             }
-            $need = @(
-                "TextTool-GUI-$raw-win-x64.zip",
-                "TextTool-GUI-$raw-win-x64.zip.sha256",
-                "TextTool-CLI-$raw-win-x64.zip",
-                "TextTool-CLI-$raw-win-x64.zip.sha256"
-            )
+            $need = @()
+            foreach ($name in Get-TextToolReleaseAssetNames -Raw $raw) {
+                $need += $name
+                $need += "$name.sha256"
+            }
             $ok = $true
             foreach ($n in $need) {
                 if ($names -notcontains $n) { $ok = $false }

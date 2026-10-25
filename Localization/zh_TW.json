@@ -70,6 +70,8 @@
   "StatusSelected": "已選擇：{0}  |  編碼：{1}",
   "StatusFilesSelected": "已選擇 {0} 個檔案準備批次處理",
   "StatusFilesSelectedShort": "[{0} 個檔案]",
+  "FileFilterText": "文字檔 (*.txt)",
+  "FileFilterAll": "所有檔案 (*.*)",
   "StatusBatchComplete": "全部 {0} 個檔案處理成功！",
   "StatusBatchPartial": "已處理 {0}/{1} 個檔案（部分有錯誤）",
   "StatusBatchProgress": "正在處理 {0}/{1} 個檔案...",

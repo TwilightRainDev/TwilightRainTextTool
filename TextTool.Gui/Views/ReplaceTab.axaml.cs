@@ -132,8 +132,8 @@ public partial class ReplaceTab : UserControl
             AllowMultiple = true,
             FileTypeFilter = new[]
             {
-                new FilePickerFileType("Text files") { Patterns = new[] { "*.txt" } },
-                new FilePickerFileType("All files") { Patterns = new[] { "*" } },
+                new FilePickerFileType(Loc.T("FileFilterText")) { Patterns = new[] { "*.txt" } },
+                new FilePickerFileType(Loc.T("FileFilterAll")) { Patterns = new[] { "*" } },
             },
         });
 

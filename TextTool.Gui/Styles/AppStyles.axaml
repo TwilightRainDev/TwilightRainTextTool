@@ -95,12 +95,24 @@
     <Setter Property="BorderBrush" Value="{DynamicResource MutedFg}" />
   </Style>
 
-  <!-- 危险操作勾选项：橙色提醒，但保持可读 -->
+  <!--
+    勾选项的文字是用 TextBlock 做内容的（为了能换行），而下面那条全局
+    TextBlock 样式会把 Foreground 刷成正文色，把勾选框上的语义色盖掉。
+    所以带语义色的勾选框必须同时指定内容里的 TextBlock。
+  -->
   <Style Selector="CheckBox.danger">
     <Setter Property="Foreground" Value="{DynamicResource WarningFg}" />
   </Style>
 
+  <Style Selector="CheckBox.danger TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource WarningFg}" />
+  </Style>
+
   <Style Selector="CheckBox.secondary">
+    <Setter Property="Foreground" Value="{DynamicResource MutedFg}" />
+  </Style>
+
+  <Style Selector="CheckBox.secondary TextBlock">
     <Setter Property="Foreground" Value="{DynamicResource MutedFg}" />
   </Style>
 

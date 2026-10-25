@@ -110,9 +110,25 @@ internal static class ClippingCheck
         // DesiredSize 报的就是 20，和 Bounds 一般大，永远看不出被裁。
         // 所以用无界约束重测一次，拿到的才是控件真正需要的尺寸。
         // 重测会改掉这一轮布局的状态，拍照已经完成，Check 结束前会整棵树重排回去。
+        // 数值框要拨到极值再量：默认值往往最短（20），装得下；拨到 1000 才看得出
+        // 固定宽度够不够。量完立刻还原，不影响同一次里的其它控件。
+        decimal? restoreValue = null;
+        if (control is NumericUpDown numeric && numeric.Maximum is { } maximum && numeric.Value != maximum)
+        {
+            restoreValue = numeric.Value;
+            numeric.Value = maximum;
+            Dispatcher.UIThread.RunJobs();
+        }
+
         control.Measure(Size.Infinity);
         Size wanted = control.DesiredSize;
         Size actual = control.Bounds.Size;
+
+        if (restoreValue is { } value)
+        {
+            ((NumericUpDown)control).Value = value;
+            Dispatcher.UIThread.RunJobs();
+        }
 
         bool widthClipped = wanted.Width > actual.Width + Tolerance;
         bool heightClipped = wanted.Height > actual.Height + Tolerance;

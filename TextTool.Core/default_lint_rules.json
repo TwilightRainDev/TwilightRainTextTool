@@ -7,7 +7,7 @@
   { "Id": "ellipsis-style", "Group": "punctuation", "Title": "省略号风格", "Kind": "regex",
     "Patterns": ["\\.{3,}", "。{3,}", "(?<!…)…(?!…)"],
     "Severity": "warn", "Detail": "非标准省略号写法（标准为 ……）",
-    "SuggestScheme": "去AI味标点归一" },
+    "SuggestScheme": "横线省略号→逗号" },
 
   { "Id": "mixed-punctuation-width", "Group": "punctuation", "Title": "全半角混用", "Kind": "regex",
     "Patterns": [
@@ -15,18 +15,18 @@
       "[\\u3400-\\u4DBF\\u4E00-\\u9FFF\\uF900-\\uFAFF\\u3000-\\u303F\\uFF00-\\uFFEF][,;:?!()\"']"
     ],
     "Severity": "warn", "Detail": "半角标点与中文或全角字符相邻",
-    "SuggestScheme": "去AI味标点归一" },
+    "SuggestScheme": "标点符号转换" },
 
   { "Id": "dash-and-tilde", "Group": "punctuation", "Title": "破折号与波浪号", "Kind": "regex",
     "Patterns": ["--+", "(?<!—)—(?!—)",
       "[\\u3400-\\u4DBF\\u4E00-\\u9FFF] ?- ?[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "~{2,}|[～]"],
     "Severity": "info", "Detail": "破折号/波浪号写法不规范",
-    "SuggestScheme": "去AI味标点归一" },
+    "SuggestScheme": "横线省略号→逗号" },
 
   { "Id": "invisible-characters", "Group": "punctuation", "Title": "隐形字符", "Kind": "regex",
     "Patterns": ["\\u200B", "\\u200C", "\\u200D", "\\u200E", "\\u200F", "\\u2060", "\\u00AD", "\\u00A0"],
     "Severity": "warn", "Detail": "隐形字符（零宽/软连字符/不换行空格）",
-    "SuggestScheme": "去AI味标点归一" },
+    "SuggestScheme": "特殊符号清除" },
 
   { "Id": "emoji-and-symbols", "Group": "punctuation", "Title": "表情与装饰符号", "Kind": "regex",
     "Patterns": ["[\\uFE0F]", "\\uD83C[\\uDF00-\\uDFFF]", "\\uD83D[\\uDC00-\\uDEFF]",

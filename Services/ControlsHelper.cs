@@ -73,35 +73,13 @@ internal static class ControlsHelper
     /// 进度与错误通过 <paramref name="progress"/> 封送回 UI 线程。
     /// 返回 (成功数, 是否被取消)。
     /// </summary>
-    public static async Task<(int Success, bool Cancelled)> RunBatchAsync(
+    public static Task<(int Success, bool Cancelled)> RunBatchAsync(
         IReadOnlyList<string> files,
         Action<string, CancellationToken> processFile,
         IProgress<(int Done, string Status)>? progress,
-        CancellationToken token)
-    {
-        return await Task.Run(() =>
-        {
-            int success = 0;
-            for (int i = 0; i < files.Count; i++)
-            {
-                if (token.IsCancellationRequested)
-                    return (success, true);
-                try
-                {
-                    processFile(files[i], token);
-                    success++;
-                }
-                catch (OperationCanceledException) { return (success, true); }
-                catch (Exception ex)
-                {
-                    progress?.Report((i + 1, ex.Message));
-                    continue; // 失败文件不再报告成功进度
-                }
-                progress?.Report((i + 1, ""));
-            }
-            return (success, false);
-        }, token);
-    }
+        CancellationToken token) =>
+        // 实现在 Core，两个界面共用一份，行为有单元测试盯着。
+        BatchRunner.RunAsync(files, processFile, progress, token);
 
     // ================================================================
     //  统一拖放事件处理（H2-1）

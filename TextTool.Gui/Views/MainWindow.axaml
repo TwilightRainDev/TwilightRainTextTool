@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="using:TextTool.Gui.Localization"
+        xmlns:views="using:TextTool.Gui.Views"
         x:Class="TextTool.Gui.Views.MainWindow"
         Title="{DynamicResource AppTitle}"
         Width="760" Height="560"
@@ -21,8 +22,7 @@
     <TabControl x:Name="Tabs" Margin="8">
 
       <TabItem Header="{DynamicResource TabMerge}">
-        <TextBlock Text="{DynamicResource TabMerge}" Classes="placeholder"
-                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <views:MergeTab x:Name="MergeTabView" />
       </TabItem>
 
       <TabItem Header="{DynamicResource TabJoin}">

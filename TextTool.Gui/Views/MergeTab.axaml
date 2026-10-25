@@ -1,0 +1,119 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="TextTool.Gui.Views.MergeTab">
+
+  <UserControl.Styles>
+    <!-- Avalonia 11.2 的 Grid 还没有 RowSpacing / ColumnSpacing，间距统一给在直接子控件上。 -->
+    <Style Selector="Grid > TextBlock, Grid > CheckBox, Grid > TextBox, Grid > StackPanel, Grid > Button">
+      <Setter Property="Margin" Value="0,0,10,8" />
+    </Style>
+  </UserControl.Styles>
+
+  <!--
+    行合并页。布局规矩（整套界面通用）：
+    - 行高一律 Auto，不写死像素。写死了就会在别的缩放下切字底。
+    - 同一行的勾选框、输入框、按钮放同一个 Grid 行的不同列，不嵌套 FlowLayoutPanel：
+      那类容器自带边距，子控件再叠一层 Margin，固定行高里就装不下字。
+    - 同行控件统一 VerticalAlignment=Center，谁都不许贴行顶或贴行底。
+    - 长文案的勾选项用 TextBlock 内容加 TextWrapping，窗口再窄也是折行，不是截断。
+    - 外面套 ScrollViewer：内容比窗口高时给出滚动条，不去压字。
+  -->
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <Grid Margin="16"
+          ColumnDefinitions="Auto,*,Auto"
+          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+
+      <!-- 源文件 -->
+      <TextBlock x:Name="SourceLabel" Grid.Row="0" Grid.Column="0"
+                 VerticalAlignment="Center" />
+      <TextBox x:Name="FileBox" Grid.Row="0" Grid.Column="1"
+               VerticalAlignment="Center" />
+      <Button x:Name="BrowseButton" Grid.Row="0" Grid.Column="2"
+              VerticalAlignment="Center" Click="OnBrowse" />
+
+      <!-- 阈值与统计口径 -->
+      <TextBlock x:Name="ThresholdLabel" Grid.Row="1" Grid.Column="0"
+                 VerticalAlignment="Center" />
+      <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                  Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+        <NumericUpDown x:Name="ThresholdBox" Minimum="1" Maximum="1000" Value="20" Width="110" />
+        <RadioButton x:Name="ByteRadio" GroupName="threshold-mode" VerticalAlignment="Center" />
+        <RadioButton x:Name="CharRadio" GroupName="threshold-mode" IsChecked="True" VerticalAlignment="Center" />
+      </StackPanel>
+
+      <!-- 检测编码 -->
+      <TextBlock x:Name="EncodingLabel" Grid.Row="2" Grid.Column="0"
+                 VerticalAlignment="Center" />
+      <TextBlock x:Name="EncodingValue" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                 VerticalAlignment="Center" Classes="muted" TextWrapping="Wrap" />
+
+      <!-- 后处理：修复中文截断 -->
+      <TextBlock x:Name="PostProcessLabel" Grid.Row="3" Grid.Column="0"
+                 VerticalAlignment="Center" TextWrapping="Wrap" />
+      <CheckBox x:Name="FixCjkCheck" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                VerticalAlignment="Center" IsChecked="True">
+        <TextBlock x:Name="FixCjkText" TextWrapping="Wrap" />
+      </CheckBox>
+
+      <!-- 后处理：修复标点截断 + 自定义标点 -->
+      <StackPanel Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
+                  Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+        <CheckBox x:Name="FixPunctCheck" VerticalAlignment="Center">
+          <TextBlock x:Name="FixPunctText" TextWrapping="Wrap" />
+        </CheckBox>
+        <TextBlock x:Name="PunctCharsLabel" VerticalAlignment="Center" />
+        <TextBox x:Name="PunctCharsBox" Text="，" Width="100" VerticalAlignment="Center" />
+      </StackPanel>
+
+      <!-- 后处理：应用标点替换规则 -->
+      <CheckBox x:Name="ApplyReplaceCheck" Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
+                VerticalAlignment="Center">
+        <TextBlock x:Name="ApplyReplaceText" TextWrapping="Wrap" />
+      </CheckBox>
+
+      <!-- 后处理：行末标点不合并 + 自定义标点 -->
+      <StackPanel Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
+                  Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+        <CheckBox x:Name="NoMergeCheck" VerticalAlignment="Center">
+          <TextBlock x:Name="NoMergeText" TextWrapping="Wrap" />
+        </CheckBox>
+        <TextBlock x:Name="NoMergeCharsLabel" VerticalAlignment="Center" />
+        <TextBox x:Name="NoMergeCharsBox" Text="。！？" Width="100" VerticalAlignment="Center" />
+      </StackPanel>
+
+      <!-- 后处理：去除行首逗号 -->
+      <CheckBox x:Name="TrimCommaCheck" Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"
+                VerticalAlignment="Center" IsChecked="True">
+        <TextBlock x:Name="TrimCommaText" TextWrapping="Wrap" />
+      </CheckBox>
+
+      <!-- 危险操作：覆盖原文件，备份与否自己选 -->
+      <StackPanel Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2"
+                  Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+        <CheckBox x:Name="OverwriteCheck" Classes="danger" VerticalAlignment="Center">
+          <TextBlock x:Name="OverwriteText" TextWrapping="Wrap" />
+        </CheckBox>
+        <CheckBox x:Name="BackupCheck" Classes="secondary" VerticalAlignment="Center">
+          <TextBlock x:Name="BackupText" TextWrapping="Wrap" />
+        </CheckBox>
+      </StackPanel>
+
+      <!-- 勾了覆盖才出现的提示，用行内文字代替弹窗：弹窗会打断拖放流程 -->
+      <TextBlock x:Name="OverwriteWarning" Grid.Row="9" Grid.Column="1" Grid.ColumnSpan="2"
+                 TextWrapping="Wrap" IsVisible="False" />
+
+      <!-- 操作按钮 -->
+      <StackPanel Grid.Row="10" Grid.Column="1" Grid.ColumnSpan="2"
+                  Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+        <Button x:Name="ProcessButton" Classes="primary" Click="OnProcess" IsEnabled="False" />
+        <Button x:Name="PreviewButton" Click="OnPreview" IsEnabled="False" />
+      </StackPanel>
+
+      <!-- 批次结果：不定宽，让文字自己撑 -->
+      <TextBlock x:Name="ResultLabel" Grid.Row="11" Grid.Column="1" Grid.ColumnSpan="2"
+                 TextWrapping="Wrap" />
+
+    </Grid>
+  </ScrollViewer>
+
+</UserControl>

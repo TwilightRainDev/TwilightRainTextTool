@@ -56,26 +56,52 @@
     <Setter Property="Foreground" Value="{DynamicResource Fg}" />
   </Style>
 
+  <!-- 默认按钮是次要样式，主操作用 Classes="primary" 反转配色。 -->
   <Style Selector="Button">
-    <Setter Property="Background" Value="{DynamicResource ActionBg}" />
-    <Setter Property="Foreground" Value="{DynamicResource ActionFg}" />
-    <Setter Property="Padding" Value="16,6" />
+    <Setter Property="Background" Value="{DynamicResource ControlBg}" />
+    <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MutedFg}" />
+    <Setter Property="Padding" Value="14,5" />
   </Style>
 
-  <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+  <Style Selector="Button.primary">
+    <Setter Property="Background" Value="{DynamicResource ActionBg}" />
+    <Setter Property="Foreground" Value="{DynamicResource ActionFg}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ActionBg}" />
+    <Setter Property="Padding" Value="22,7" />
+  </Style>
+
+  <!-- 悬停和按下必须显式覆盖，否则 FluentTheme 会拿它自己的状态色，
+       深色主题下主操作按钮一悬停就闪出一块浅灰。 -->
+  <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource ActionBg}" />
     <Setter Property="BorderBrush" Value="{DynamicResource ActionBg}" />
     <Setter Property="TextElement.Foreground" Value="{DynamicResource ActionFg}" />
   </Style>
 
-  <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+  <Style Selector="Button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource ActionBg}" />
     <Setter Property="BorderBrush" Value="{DynamicResource ActionBg}" />
   </Style>
 
+  <!-- 禁用态也要留住按钮轮廓：只剩一行灰字的话，用户看不出那里有个按钮。 -->
   <Style Selector="Button:disabled /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource ControlBg}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MutedFg}" />
     <Setter Property="TextElement.Foreground" Value="{DynamicResource MutedFg}" />
+  </Style>
+
+  <Style Selector="Button:disabled">
+    <Setter Property="BorderBrush" Value="{DynamicResource MutedFg}" />
+  </Style>
+
+  <!-- 危险操作勾选项：橙色提醒，但保持可读 -->
+  <Style Selector="CheckBox.danger">
+    <Setter Property="Foreground" Value="{DynamicResource WarningFg}" />
+  </Style>
+
+  <Style Selector="CheckBox.secondary">
+    <Setter Property="Foreground" Value="{DynamicResource MutedFg}" />
   </Style>
 
 </Styles>

@@ -13,6 +13,11 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         SetupLanguageCombo();
+
+        // 页签只负责干活，状态栏归窗口管。
+        MergeTabView.StatusChanged += message => StatusText.Text = message;
+        MergeTabView.ErrorOccurred += ShowError;
+        MergeTabView.SetRules(LoadReplaceRules());
     }
 
     private void SetupLanguageCombo()
@@ -29,6 +34,25 @@ public partial class MainWindow : Window
         if (LanguageCombo.SelectedItem is LanguageOption option && option.Code != Loc.CurrentLang)
             Loc.SetLanguage(option.Code);
     }
+
+    /// <summary>
+    /// 替换规则来自程序目录的 replace_rules.json。配置坏了不能静悄悄地当空规则跑，
+    /// 这里先报到状态栏；把错误做成醒目提示留给 Step 4 的标点替换页。
+    /// </summary>
+    private List<TextTool.Services.ReplaceRule> LoadReplaceRules()
+    {
+        try
+        {
+            return TextTool.Services.ReplaceRuleStore.Load();
+        }
+        catch (InvalidDataException ex)
+        {
+            StatusText.Text = ex.Message;
+            return new List<TextTool.Services.ReplaceRule>();
+        }
+    }
+
+    private void ShowError(string message) => StatusText.Text = message;
 
     private void OnToggleTheme(object? sender, RoutedEventArgs e)
     {

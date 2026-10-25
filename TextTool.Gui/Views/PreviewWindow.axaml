@@ -1,0 +1,21 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TextTool.Gui.Views.PreviewWindow"
+        Width="720" Height="560"
+        MinWidth="480" MinHeight="320"
+        WindowStartupLocation="CenterOwner">
+
+  <DockPanel Margin="12">
+
+    <TextBlock x:Name="PathLabel" DockPanel.Dock="Top"
+               Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8" />
+
+    <TextBox x:Name="ContentBox" IsReadOnly="True"
+             AcceptsReturn="True" TextWrapping="NoWrap"
+             ScrollViewer.VerticalScrollBarVisibility="Auto"
+             ScrollViewer.HorizontalScrollBarVisibility="Auto"
+             FontFamily="Consolas, monospace" />
+
+  </DockPanel>
+
+</Window>

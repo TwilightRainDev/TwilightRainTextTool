@@ -24,7 +24,10 @@ internal static class SnapshotCheck
         ("dark", ThemeVariant.Dark),
     };
 
-    /// <summary>六张图加上每次的页签布局体检。</summary>
+    /// <summary>
+    /// 六张图，每张图后面跟两次体检：页签条会不会折行，窗口里有没有文字被裁。
+    /// 两者都是布局结论，所以 --tab N 切到别的页签时同样生效。
+    /// </summary>
     public static int Run(string outDir, int tabIndex = 0)
     {
         Report.Section("截图矩阵");
@@ -77,6 +80,12 @@ internal static class SnapshotCheck
                 failures += layoutFailures;
 
                 var frame = window.CaptureRenderedFrame();
+
+                // 拍完图对同一个窗口做一次文字裁切体检。它只看布局量出来的尺寸，跟像素无关，
+                // 所以拍图失败时也照验，免得出图的问题把布局问题一起盖住。
+                ClippingCheck.Result clipping = ClippingCheck.Check(fileName, window);
+                failures += clipping.Count;
+
                 if (frame is null)
                 {
                     Report.Fail($"{fileName}: 渲染结果为空");
@@ -85,7 +94,7 @@ internal static class SnapshotCheck
                     {
                         language.Code, themeName, actualVariant,
                         $"{wanted:F1}/{available:F1}", layoutFailures == 0 ? "装得下" : "折行",
-                        "渲染失败", fileName,
+                        clipping.Summary, "渲染失败", fileName,
                     });
                     window.Close();
                     continue;
@@ -99,7 +108,7 @@ internal static class SnapshotCheck
                 {
                     language.Code, themeName, actualVariant,
                     $"{wanted:F1}/{available:F1}", layoutFailures == 0 ? "装得下" : "折行",
-                    pixels, fileName,
+                    clipping.Summary, pixels, fileName,
                 });
 
                 window.Close();
@@ -107,10 +116,10 @@ internal static class SnapshotCheck
         }
 
         Report.PrintTable(
-            new[] { "语言", "主题", "实际变体", "页签合宽/可用", "页签", "像素", "文件" },
+            new[] { "语言", "主题", "实际变体", "页签合宽/可用", "页签", "文字裁切", "像素", "文件" },
             rows,
             failures == 0
-                ? $"{Loc.SupportedLanguages.Count} 个语言 x {Variants.Length} 个主题，{rows.Count} 张图已写入 {outDir}，布局全通过"
+                ? $"{Loc.SupportedLanguages.Count} 个语言 x {Variants.Length} 个主题，{rows.Count} 张图已写入 {outDir}，布局与文字裁切全通过"
                 : $"{rows.Count} 张图，失败 {failures} 项，见上方失败行");
 
         return failures;

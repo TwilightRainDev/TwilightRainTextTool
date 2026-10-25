@@ -1,7 +1,8 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:TextTool.Gui.Localization"
         x:Class="TextTool.Gui.Views.MainWindow"
-        Title="TwilightRain's Text Tool"
+        Title="{DynamicResource AppTitle}"
         Width="760" Height="560"
         MinWidth="700" MinHeight="520"
         WindowStartupLocation="CenterScreen">
@@ -14,40 +15,54 @@
             BorderBrush="{DynamicResource ControlBg}"
             BorderThickness="0,1,0,0"
             Padding="12,6">
-      <TextBlock x:Name="StatusText" Text="Ready" Classes="muted" />
+      <TextBlock x:Name="StatusText" Text="{DynamicResource StatusReady}" Classes="muted" />
     </Border>
 
     <TabControl x:Name="Tabs" Margin="8">
 
-      <TabItem Header="Line Merge">
-        <TextBlock Text="Line Merge" Classes="placeholder"
+      <TabItem Header="{DynamicResource TabMerge}">
+        <TextBlock Text="{DynamicResource TabMerge}" Classes="placeholder"
                    HorizontalAlignment="Center" VerticalAlignment="Center" />
       </TabItem>
 
-      <TabItem Header="File Join">
-        <TextBlock Text="File Join" Classes="placeholder"
+      <TabItem Header="{DynamicResource TabJoin}">
+        <TextBlock Text="{DynamicResource TabJoin}" Classes="placeholder"
                    HorizontalAlignment="Center" VerticalAlignment="Center" />
       </TabItem>
 
-      <TabItem Header="Punct. Replace">
-        <TextBlock Text="Punct. Replace" Classes="placeholder"
+      <TabItem Header="{DynamicResource TabReplace}">
+        <TextBlock Text="{DynamicResource TabReplace}" Classes="placeholder"
                    HorizontalAlignment="Center" VerticalAlignment="Center" />
       </TabItem>
 
-      <TabItem Header="Visual Novel">
-        <TextBlock Text="Visual Novel" Classes="placeholder"
+      <TabItem Header="{DynamicResource TabVN}">
+        <TextBlock Text="{DynamicResource TabVN}" Classes="placeholder"
                    HorizontalAlignment="Center" VerticalAlignment="Center" />
       </TabItem>
 
-      <TabItem Header="AI-tone Lint">
-        <TextBlock Text="AI-tone Lint" Classes="placeholder"
+      <TabItem Header="{DynamicResource TabLint}">
+        <TextBlock Text="{DynamicResource TabLint}" Classes="placeholder"
                    HorizontalAlignment="Center" VerticalAlignment="Center" />
       </TabItem>
 
-      <TabItem Header="About">
-        <Button x:Name="DarkModeButton" Content="深色模式"
-                HorizontalAlignment="Left" VerticalAlignment="Top"
-                Margin="16" Click="OnToggleTheme" />
+      <TabItem Header="{DynamicResource TabAbout}">
+        <StackPanel Orientation="Vertical" Margin="16" Spacing="12">
+
+          <Button x:Name="DarkModeButton" Content="{DynamicResource BtnDarkMode}"
+                  HorizontalAlignment="Left" Click="OnToggleTheme" />
+
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="{DynamicResource LabelLanguage}" VerticalAlignment="Center" />
+            <ComboBox x:Name="LanguageCombo" MinWidth="140">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="loc:LanguageOption">
+                  <TextBlock Text="{Binding Display}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+          </StackPanel>
+
+        </StackPanel>
       </TabItem>
 
     </TabControl>

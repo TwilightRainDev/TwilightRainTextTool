@@ -45,6 +45,12 @@ public static class AppSettings
         Save();
     }
 
+    public static void SetLanguage(string language)
+    {
+        Language = language;
+        Save();
+    }
+
     public static void Save()
     {
         try

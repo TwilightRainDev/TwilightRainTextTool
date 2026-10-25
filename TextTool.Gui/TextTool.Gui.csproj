@@ -23,4 +23,11 @@
     <ProjectReference Include="..\TextTool.Core\TextTool.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- 直接嵌旧项目目录里的三份 json，不复制：迁移期间两边共用同一份文案。 -->
+    <EmbeddedResource Include="..\Localization\*.json"
+                      Link="Localization\%(Filename)%(Extension)"
+                      LogicalName="TextTool.Gui.Localization.%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

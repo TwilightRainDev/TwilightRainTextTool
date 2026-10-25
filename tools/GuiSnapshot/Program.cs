@@ -1,103 +1,76 @@
 using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Headless;
-using Avalonia.Styling;
-using Avalonia.Threading;
 using TextTool.Gui;
-using TextTool.Gui.Views;
+using TextTool.Gui.Localization;
 
 namespace TextTool.Tools.GuiSnapshot;
 
 /// <summary>
-/// 离屏截图工具：在进程里把主窗口渲染成 PNG，不开任何可见窗口。
+/// Step 2 验收工具：离屏把主窗口渲染成 PNG，并做两项资源体检。
 ///
 /// 用法：dotnet run --project tools/GuiSnapshot -- &lt;输出目录&gt;
-/// 输出：&lt;输出目录&gt;/light.png 和 dark.png，同时打印布局体检结果。
 ///
-/// 存在的理由：上一轮缺陷全是靠肉眼比对截图发现的，而正常运行程序验图会在开发
-/// 伙伴的桌面上弹窗抢焦点。headless 加 Skia 走的是同一套渲染路径，只是画到内存。
+/// 做的四件事：
+///   1. 主题键体检：Light / Dark 下逐个键查 ThemeDictionaries 有没有漏。
+///   2. 截图矩阵：3 个语言 x 2 个主题，共六张 语言-主题.png，同时量页签会不会折行。
+///   3. 换语言热切换体检：同一个窗口连着换语言，看 DynamicResource 有没有跟着重取。
+///   4. 文案键体检：.axaml 里引用的每个文案键，三种语言都得给得出值。
+///
+/// 退出码 0 表示全部通过，非 0 表示有失败项。
+///
+/// 存在的理由：上一轮缺陷全是靠肉眼比对截图发现的，而正常运行程序验图会在开发伙伴的
+/// 桌面上弹窗抢焦点。headless 加 Skia 走的是同一套渲染路径，只是画到内存。
 /// </summary>
 internal static class Program
 {
     [STAThread]
     public static int Main(string[] args)
     {
-        string outDir = args.Length > 0 ? args[0] : "snapshots";
-        Directory.CreateDirectory(outDir);
+        string outDir = args.Length > 0 && !args[0].StartsWith("--", StringComparison.Ordinal)
+            ? args[0]
+            : "snapshots";
 
-        AppBuilder.Configure<App>()
-            .UseSkia()
-            .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
-            .SetupWithoutStarting();
+        // --tab N：先切到第 N 个页签再拍。默认 0，即第一个页签。
+        int tabIndex = 0;
+        int flag = Array.IndexOf(args, "--tab");
+        if (flag >= 0 && flag + 1 < args.Length && int.TryParse(args[flag + 1], out int parsed))
+            tabIndex = parsed;
 
         int failures = 0;
-        foreach ((string name, ThemeVariant variant) in new[]
-                 {
-                     ("light", ThemeVariant.Light),
-                     ("dark", ThemeVariant.Dark),
-                 })
+
+        try
         {
-            Application.Current!.RequestedThemeVariant = variant;
+            Directory.CreateDirectory(outDir);
 
-            var window = new MainWindow();
-            window.Show();
-            Dispatcher.UIThread.RunJobs();
+            AppBuilder.Configure<App>()
+                .UseSkia()
+                .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
+                .SetupWithoutStarting();
 
-            failures += Report(name, window);
+            // 不读磁盘上的偏好：验收要一个确定的起点，否则本机 app_config.json 里的语言和主题
+            // 会悄悄改变这里量出来的结果。
+            Loc.Init(null);
 
-            var frame = window.CaptureRenderedFrame();
-            if (frame is null)
-            {
-                Console.Error.WriteLine($"[失败] {name}: 渲染结果为空");
-                failures++;
-            }
-            else
-            {
-                string path = Path.Combine(outDir, $"{name}.png");
-                frame.Save(path);
-                Console.WriteLine($"[渲染] {name}: {frame.PixelSize.Width}x{frame.PixelSize.Height} -> {path}");
-            }
-
-            window.Close();
+            failures += ThemeCheck.Run();
+            failures += SnapshotCheck.Run(outDir, tabIndex);
+            failures += SnapshotCheck.HotSwitch();
+            failures += TextKeyCheck.Run();
+        }
+        catch (Exception error)
+        {
+            Report.Fail($"未处理异常: {error.GetType().Name}: {error.Message}");
+            Console.Error.WriteLine(error);
+            failures++;
         }
 
-        return failures == 0 ? 0 : 1;
-    }
-
-    /// <summary>
-    /// 布局体检：页签条需要的宽度超过可用宽度，就说明会折行或标题被截。
-    /// 这类判断在像素上不好量，在布局阶段是一句话的事。
-    /// </summary>
-    private static int Report(string name, MainWindow window)
-    {
-        if (window.FindControl<TabControl>("Tabs") is not { } tab)
+        Console.WriteLine();
+        if (failures == 0)
         {
-            Console.Error.WriteLine($"[失败] {name}: 找不到页签控件 Tabs");
-            return 1;
+            Console.WriteLine("[结果] 全部通过，退出码 0");
+            return 0;
         }
 
-        double wanted = 0;
-        for (int i = 0; i < tab.ItemCount; i++)
-        {
-            if (tab.ContainerFromIndex(i) is not Control container)
-            {
-                Console.Error.WriteLine($"[警告] {name}: 第 {i} 个页签还没有容器");
-                continue;
-            }
-
-            container.Measure(Size.Infinity);
-            wanted += container.DesiredSize.Width;
-        }
-
-        double available = tab.Bounds.Width;
-        Console.WriteLine($"[布局] {name}: 页签合宽 {wanted:F1}，可用 {available:F1}，窗口 {window.Width:F0}x{window.Height:F0}");
-
-        if (wanted > available)
-        {
-            Console.Error.WriteLine($"[失败] {name}: 页签要 {wanted:F1} 宽，只有 {available:F1}，会折行");
-            return 1;
-        }
-
-        return 0;
+        Console.WriteLine($"[结果] 失败 {failures} 项，退出码 1");
+        return 1;
     }
 }

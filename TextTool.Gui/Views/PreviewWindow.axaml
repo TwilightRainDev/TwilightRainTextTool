@@ -5,17 +5,36 @@
         MinWidth="480" MinHeight="320"
         WindowStartupLocation="CenterOwner">
 
-  <DockPanel Margin="12">
+  <!--
+    预览窗：先预览、点保存才写盘这条链路的界面。
+    自上而下五行：提示、输出路径、正文、按钮行、结果行。
+    除正文吃剩余高度外，行高全部 Auto；提示与路径都折行，长路径整条看得见。
+    正文等宽不折行，横竖都能滚：排版结果里的缩进和换行位置就是它本来的样子。
+  -->
+  <Grid Margin="12" RowDefinitions="Auto,Auto,*,Auto,Auto">
 
-    <TextBlock x:Name="PathLabel" DockPanel.Dock="Top"
-               Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8" />
+    <TextBlock x:Name="HintLabel" Grid.Row="0" Classes="muted"
+               TextWrapping="Wrap" Margin="0,0,0,6" />
 
-    <TextBox x:Name="ContentBox" IsReadOnly="True"
-             AcceptsReturn="True" TextWrapping="NoWrap"
+    <TextBlock x:Name="OutputPathLabel" Grid.Row="1" Classes="muted"
+               TextWrapping="Wrap" Margin="0,0,0,8" />
+
+    <TextBox x:Name="ContentBox" Grid.Row="2"
+             IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap"
+             FontFamily="Consolas, Menlo, monospace"
              ScrollViewer.VerticalScrollBarVisibility="Auto"
-             ScrollViewer.HorizontalScrollBarVisibility="Auto"
-             FontFamily="Consolas, monospace" />
+             ScrollViewer.HorizontalScrollBarVisibility="Auto" />
 
-  </DockPanel>
+    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right"
+                Spacing="8" Margin="0,8,0,0">
+      <Button x:Name="BtnSavePreview" Classes="primary" Click="OnSave" />
+      <Button x:Name="BtnClose" Click="OnClose" />
+    </StackPanel>
+
+    <!-- 结果行：成功绿色、失败橙色，都是行内文字，不弹系统对话框。 -->
+    <TextBlock x:Name="ResultLabel" Grid.Row="4" TextWrapping="Wrap"
+               IsVisible="False" Margin="0,8,0,0" />
+
+  </Grid>
 
 </Window>

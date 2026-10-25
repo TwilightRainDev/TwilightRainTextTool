@@ -60,6 +60,7 @@ internal static class Program
             failures += SnapshotCheck.Run(outDir, tabIndex);
             failures += SnapshotCheck.HotSwitch();
             failures += DialogCheck.Run(outDir);
+            failures += PreviewCheck.Run();
             failures += ReplaceTabDriveCheck.Run();
             failures += TextKeyCheck.Run();
         }

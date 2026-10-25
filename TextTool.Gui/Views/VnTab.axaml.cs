@@ -17,9 +17,11 @@ namespace TextTool.Gui.Views;
 /// 与行合并页一样，重活在 Core 里（VNReformatterService、PunctFixerService、批量执行、原子写盘），
 /// 这里只管界面。输出路径走 PathHelper.GetProcessedPath，与旧页一致：
 /// 处理结果写成同目录下的「*_Processed.*」，原文件不动。
-/// 界面上刻意不同的两处：
-///   1. 处理前不再弹预览窗，结果直接落盘，进度分条报到状态栏，跑起来再点一次就是取消。
-///   2. 处理完成后不弹「是否打开输出文件夹」，输出路径写在结果行上。
+/// 界面上刻意不同的三处：
+///   1. 单文件先预览后写盘：结果在内存里算出来，交给预览窗，用户点保存才落盘。
+///      多文件仍由 BatchRunner 逐个直接写，批量时逐个预览没法用。
+///   2. 批量进度分条报到状态栏，跑起来再点一次就是取消。
+///   3. 处理完成后不弹「是否打开输出文件夹」，输出路径写在结果行上。
 /// </summary>
 public partial class VnTab : UserControl
 {
@@ -349,17 +351,20 @@ public partial class VnTab : UserControl
 
         try
         {
+            if (files.Length == 1)
+            {
+                await ProcessSingleFileAsync(files[0], doReformat, doFixPunct, options, maxPara);
+                return;
+            }
+
             var (success, cancelled) = await BatchRunner.RunAsync(
                 files,
                 (path, _) =>
                 {
-                    var detection = EncodingDetector.DetectStrict(path);
-                    string content = File.ReadAllText(path, detection.Encoding);
-                    if (doReformat)
-                        content = Reformat(content, options, maxPara);
-                    if (doFixPunct)
-                        content = new PunctFixerService().Fix(content);
-                    AtomicFile.WriteAllText(PathHelper.GetProcessedPath(path), content, Utf8WithBom);
+                    AtomicFile.WriteAllText(
+                        PathHelper.GetProcessedPath(path),
+                        Render(path, doReformat, doFixPunct, options, maxPara),
+                        Utf8WithBom);
                 },
                 progress,
                 _cts.Token);
@@ -387,11 +392,65 @@ public partial class VnTab : UserControl
         }
     }
 
-    /// <summary>跑完一行结果：单文件报具体输出文件，多文件报共同目录。</summary>
+    /// <summary>
+    /// 单文件：先在内存里算出结果，再交给预览窗，用户点保存才写盘，取消则一个字节都不写。
+    /// 输出路径与批量一致，写成同目录下的「*_Processed.*」。
+    /// </summary>
+    private async Task ProcessSingleFileAsync(
+        string path, bool doReformat, bool doFixPunct, CharacterOptions options, int maxPara)
+    {
+        string output = PathHelper.GetProcessedPath(path);
+
+        string text;
+        try
+        {
+            // 排版是纯计算，扔到后台线程，界面在算的时候不僵。
+            text = await Task.Run(() => Render(path, doReformat, doFixPunct, options, maxPara));
+        }
+        catch (Exception ex)
+        {
+            RestoreProcessButton();
+            ShowResult("MsgProcessFailed", warning: true, ex.Message);
+            return;
+        }
+
+        RestoreProcessButton();
+
+        if (TopLevel.GetTopLevel(this) is not Window owner)
+            return;
+
+        if (await PreviewWindow.ShowAsync(owner, text, output))
+        {
+            ShowResult("StatusVNComplete", warning: false, output);
+            return;
+        }
+
+        // 取消：预览窗里没点保存，磁盘上什么都没变，结果行按「完成 0 个文件」说明这一点。
+        ShowResult("StatusBatchCancelled", warning: true, 0);
+    }
+
+    /// <summary>读盘并按当前选项算出一份结果文本，不写盘。</summary>
+    private static string Render(
+        string path, bool doReformat, bool doFixPunct, CharacterOptions options, int maxPara)
+    {
+        var detection = EncodingDetector.DetectStrict(path);
+        string content = File.ReadAllText(path, detection.Encoding);
+        if (doReformat)
+            content = Reformat(content, options, maxPara);
+        if (doFixPunct)
+            content = new PunctFixerService().Fix(content);
+        return content;
+    }
+
+    private void RestoreProcessButton()
+    {
+        ProcessButton.IsEnabled = true;
+        ProcessButton.Content = Loc.T("BtnVNProcess");
+    }
+
+    /// <summary>批量跑完一行结果：报共同目录。单文件的结果行自己报输出文件。</summary>
     private static string OutputTarget(IReadOnlyList<string> files) =>
-        files.Count == 1
-            ? PathHelper.GetProcessedPath(files[0])
-            : Path.GetDirectoryName(files[0]) ?? files[0];
+        Path.GetDirectoryName(files[0]) ?? files[0];
 
     /// <summary>喂给排版引擎的角色集、路线名与场景正则。</summary>
     private sealed record CharacterOptions(

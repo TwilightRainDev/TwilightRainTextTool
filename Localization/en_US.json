@@ -141,6 +141,7 @@
   "MsgSavedTo": "Saved to:\n{0}",
   "MsgSaveTitle": "Saved",
   "MsgSaveFailed": "Save failed: {0}",
+  "MsgConfigBroken": "Failed to read the rule config: {0}",
   "MsgConfigExported": "Configuration exported to:\n{0}",
   "MsgConfigExportFailed": "Export failed: {0}",
   "MsgConfigImported": "Configuration imported successfully.\nLanguage preference reloaded if applicable.",

@@ -1,0 +1,57 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TextTool.Gui.Views.SchemeSelectionDialog"
+        Width="640" Height="560"
+        MinWidth="480" MinHeight="360"
+        WindowStartupLocation="CenterOwner">
+
+  <!--
+    预设方案勾选窗。布局规矩与两个页签一致：行高一律 Auto，只有树那一行是星号，
+    因为它才是唯一该吃掉剩余高度的地方。控件尺寸一概不写死，窗口只给初值与下限。
+    缺输入、导入导出失败、删除确认全部走行内文字，不弹系统对话框。
+  -->
+  <Grid Margin="12" RowDefinitions="*,Auto,Auto,Auto">
+
+    <!-- 方案树：顶层节点是方案，展开后是只读的规则说明 -->
+    <TreeView x:Name="SchemesTree" Grid.Row="0"
+              SelectionChanged="OnSchemeSelected"
+              DoubleTapped="OnTreeDoubleTapped"
+              ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
+
+    <!--
+      方案操作行。删除按钮点下去后原地换成确认与取消两个按钮：
+      两个按钮放在同一个无间距的容器里，删按钮隐藏时不留空档。
+    -->
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,10,0,0">
+      <Button x:Name="NewButton" Click="OnNew" />
+      <Button x:Name="EditButton" Click="OnEdit" IsEnabled="False" />
+      <StackPanel Orientation="Horizontal">
+        <Button x:Name="DeleteButton" Click="OnDeleteRequest" IsEnabled="False" />
+        <StackPanel x:Name="DeleteConfirmPanel" Orientation="Horizontal" Spacing="8"
+                    IsVisible="False">
+          <Button x:Name="ConfirmDeleteButton" Click="OnDeleteConfirm" />
+          <Button x:Name="CancelDeleteButton" Click="OnDeleteCancel" />
+        </StackPanel>
+      </StackPanel>
+      <Button x:Name="ImportButton" Click="OnImport" />
+      <Button x:Name="ExportButton" Click="OnExport" />
+    </StackPanel>
+
+    <!-- 摘要与行内提示：摘要随勾选实时刷新，错误与删除确认用警告色 -->
+    <StackPanel Grid.Row="2" Margin="0,8,0,0" Spacing="4">
+      <TextBlock x:Name="SummaryLabel" Classes="muted" TextWrapping="Wrap" />
+      <TextBlock x:Name="HintLabel" Classes="muted" TextWrapping="Wrap" IsVisible="False" />
+      <TextBlock x:Name="WarningLabel" TextWrapping="Wrap" IsVisible="False"
+                 Foreground="{DynamicResource WarningFg}" />
+    </StackPanel>
+
+    <!-- 取消 / 确定，主操作在右 -->
+    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8"
+                Margin="0,10,0,0">
+      <Button x:Name="CancelButton" Click="OnCancel" />
+      <Button x:Name="OkButton" Classes="primary" Click="OnOk" />
+    </StackPanel>
+
+  </Grid>
+
+</Window>

@@ -24,6 +24,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- 验收工具要能把文件塞进页签，等同一次拖放；只暴露这一个口子。 -->
+    <InternalsVisibleTo Include="GuiSnapshot" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- 直接嵌旧项目目录里的三份 json，不复制：迁移期间两边共用同一份文案。 -->
     <EmbeddedResource Include="..\Localization\*.json"
                       Link="Localization\%(Filename)%(Extension)"

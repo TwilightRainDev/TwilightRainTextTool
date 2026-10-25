@@ -31,8 +31,7 @@
       </TabItem>
 
       <TabItem Header="{DynamicResource TabReplace}">
-        <TextBlock Text="{DynamicResource TabReplace}" Classes="placeholder"
-                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <views:ReplaceTab x:Name="ReplaceTabView" />
       </TabItem>
 
       <TabItem Header="{DynamicResource TabVN}">

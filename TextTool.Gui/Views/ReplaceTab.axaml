@@ -1,0 +1,105 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="TextTool.Gui.Views.ReplaceTab">
+
+  <UserControl.Styles>
+    <!-- 间距给在直接子控件上，理由同行合并页：Avalonia 11.2 的 Grid 没有行间距属性。 -->
+    <Style Selector="Grid > TextBlock, Grid > TextBox, Grid > Button, Grid > StackPanel">
+      <Setter Property="Margin" Value="0,0,10,8" />
+    </Style>
+  </UserControl.Styles>
+
+  <!--
+    标点替换页。布局规矩整套界面通用，与行合并页相同；
+    本页多一条：规则区是唯一可以吃掉剩余高度的地方，所以只有它的行是星号，
+    其余行一律 Auto。页面外面不套 ScrollViewer：套了星号行就失去意义，
+    列表自己会滚。
+  -->
+  <Grid Margin="16"
+        ColumnDefinitions="Auto,*,Auto"
+        RowDefinitions="Auto,Auto,Auto,*,Auto,Auto">
+
+    <!-- 源文件 -->
+    <TextBlock x:Name="SourceLabel" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" />
+    <TextBox x:Name="FileBox" Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" />
+    <Button x:Name="BrowseButton" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
+            Click="OnBrowse" />
+
+    <!-- 检测编码 -->
+    <TextBlock x:Name="EncodingLabel" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" />
+    <TextBlock x:Name="EncodingValue" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+               VerticalAlignment="Center" Classes="muted" TextWrapping="Wrap" />
+
+    <!-- 配置读不出来时的醒目提示：整行横条，不靠状态栏 -->
+    <Border x:Name="ConfigErrorBar" Grid.Row="2" Grid.ColumnSpan="3"
+            IsVisible="False" BorderThickness="1" Padding="10,6" Margin="0,0,0,8"
+            CornerRadius="3"
+            BorderBrush="{DynamicResource WarningFg}"
+            Background="{DynamicResource StatusBg}">
+      <TextBlock x:Name="ConfigErrorText" TextWrapping="Wrap"
+                 Foreground="{DynamicResource WarningFg}" />
+    </Border>
+
+    <!-- 规则区：左边列表，右边编辑，中间可拖的分隔条 -->
+    <Grid Grid.Row="3" Grid.ColumnSpan="3" ColumnDefinitions="2*,Auto,3*"
+          RowDefinitions="Auto,*,Auto">
+
+      <TextBlock x:Name="RulesLabel" Grid.Row="0" Grid.Column="0" TextWrapping="Wrap" />
+      <ListBox x:Name="RuleList" Grid.Row="1" Grid.Column="0"
+               SelectionChanged="OnRuleSelected">
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <!-- 规则长了就折行，不横向截断 -->
+            <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+      <!-- 上移下移不给固定尺寸：宽度高度都跟着文字和字号走 -->
+      <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" Spacing="8"
+                  Margin="0,8,10,0">
+        <Button x:Name="MoveUpButton" Click="OnMoveUp" IsEnabled="False" />
+        <Button x:Name="MoveDownButton" Click="OnMoveDown" IsEnabled="False" />
+      </StackPanel>
+
+      <GridSplitter Grid.RowSpan="3" Grid.Column="1" Width="6"
+                    ResizeDirection="Columns" Background="{DynamicResource StatusBg}" />
+
+      <Grid Grid.RowSpan="3" Grid.Column="2" Margin="10,0,0,0"
+            ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,*">
+
+        <TextBlock x:Name="FindLabel" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" />
+        <TextBox x:Name="FindBox" Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" />
+
+        <TextBlock x:Name="ReplaceWithLabel" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" />
+        <TextBox x:Name="ReplaceBox" Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" />
+
+        <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal"
+                    Spacing="8" Margin="0,0,0,8">
+          <Button x:Name="AddUpdateButton" Click="OnAddOrUpdate" />
+          <Button x:Name="DeleteButton" Click="OnDelete" IsEnabled="False" />
+        </StackPanel>
+
+        <!-- 行内提示：选中哪条规则、缺什么输入、保存失败，都写在这里，不弹窗 -->
+        <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Top"
+                    Spacing="6">
+          <TextBlock x:Name="HintLabel" Classes="muted" TextWrapping="Wrap" />
+          <TextBlock x:Name="InlineWarning" TextWrapping="Wrap" IsVisible="False" />
+        </StackPanel>
+
+      </Grid>
+
+    </Grid>
+
+    <!-- 预设方案与执行 -->
+    <StackPanel Grid.Row="4" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="12"
+                Margin="0,12,10,8">
+      <Button x:Name="PresetSchemesButton" Click="OnPresetSchemes" />
+      <Button x:Name="ReplaceButton" Classes="primary" Click="OnReplace" IsEnabled="False" />
+    </StackPanel>
+
+    <TextBlock x:Name="ResultLabel" Grid.Row="5" Grid.ColumnSpan="3" TextWrapping="Wrap" />
+
+  </Grid>
+
+</UserControl>

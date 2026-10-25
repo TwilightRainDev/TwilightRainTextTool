@@ -43,9 +43,26 @@
     <Setter Property="Foreground" Value="{DynamicResource Fg}" />
   </Style>
 
+  <!--
+    列表和树都要有边框。空列表没有边框时看上去就是一片空白，
+    用户看不出那里是"还没有规则"，也看不出框有多高。
+  -->
   <Style Selector="ListBox">
     <Setter Property="Background" Value="{DynamicResource ControlBg}" />
     <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MutedFg}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="3" />
+    <Setter Property="Padding" Value="2" />
+  </Style>
+
+  <Style Selector="TreeView">
+    <Setter Property="Background" Value="{DynamicResource ControlBg}" />
+    <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MutedFg}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="3" />
+    <Setter Property="Padding" Value="2" />
   </Style>
 
   <Style Selector="CheckBox">

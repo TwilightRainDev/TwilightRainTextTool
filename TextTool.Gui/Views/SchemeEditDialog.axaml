@@ -1,0 +1,74 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TextTool.Gui.Views.SchemeEditDialog"
+        Width="600" Height="480"
+        MinWidth="460" MinHeight="360"
+        WindowStartupLocation="CenterOwner">
+
+  <Window.Styles>
+    <!-- Avalonia 11.2 的 Grid 没有行间距属性，间距给在直接子控件上。 -->
+    <Style Selector="Grid > TextBlock, Grid > TextBox, Grid > ListBox, Grid > StackPanel, Grid > Button">
+      <Setter Property="Margin" Value="0,0,10,8" />
+    </Style>
+  </Window.Styles>
+
+  <!--
+    方案编辑窗：名称、说明、规则列表、规则编辑区、取消与确定。
+    行高一律 Auto，只有规则列表那一行是星号，长列表自己滚。
+    缺输入与名称为空都写在列表下方的行内文字里，不弹系统对话框。
+  -->
+  <Grid Margin="12" ColumnDefinitions="Auto,*"
+        RowDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto,Auto">
+
+    <TextBlock x:Name="NameLabel" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" />
+    <TextBox x:Name="NameBox" Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" />
+
+    <TextBlock x:Name="DescLabel" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" />
+    <TextBox x:Name="DescBox" Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" />
+
+    <TextBlock x:Name="RulesLabel" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+               TextWrapping="Wrap" />
+
+    <!-- 规则列表：每一条显示成 查找 → 替换为 -->
+    <ListBox x:Name="RulesList" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+             SelectionChanged="OnRuleSelected"
+             FontFamily="Consolas, monospace"
+             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+      <ListBox.ItemTemplate>
+        <DataTemplate>
+          <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+
+    <!-- 规则编辑区 -->
+    <Grid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
+          ColumnDefinitions="Auto,*,Auto,*">
+      <TextBlock x:Name="FindLabel" Grid.Column="0" VerticalAlignment="Center" />
+      <TextBox x:Name="FindBox" Grid.Column="1" VerticalAlignment="Center"
+               FontFamily="Consolas, monospace" />
+      <TextBlock x:Name="ReplaceLabel" Grid.Column="2" VerticalAlignment="Center" />
+      <TextBox x:Name="ReplaceBox" Grid.Column="3" VerticalAlignment="Center"
+               FontFamily="Consolas, monospace" />
+    </Grid>
+
+    <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal"
+                Spacing="8" Margin="0,0,10,8">
+      <Button x:Name="AddUpdateButton" Click="OnAddOrUpdate" />
+      <Button x:Name="DeleteRuleButton" Click="OnDeleteRule" IsEnabled="False" />
+    </StackPanel>
+
+    <!-- 行内提示：查找为空、名称为空都写在这里 -->
+    <TextBlock x:Name="WarningLabel" Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2"
+               TextWrapping="Wrap" IsVisible="False" Margin="0,0,10,8"
+               Foreground="{DynamicResource WarningFg}" />
+
+    <StackPanel Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal"
+                HorizontalAlignment="Right" Spacing="8" Margin="0,0,10,0">
+      <Button x:Name="CancelButton" Click="OnCancel" />
+      <Button x:Name="OkButton" Classes="primary" Click="OnOk" />
+    </StackPanel>
+
+  </Grid>
+
+</Window>

@@ -141,6 +141,7 @@
   "MsgSavedTo": "已儲存到：\n{0}",
   "MsgSaveTitle": "已儲存",
   "MsgSaveFailed": "儲存失敗：{0}",
+  "MsgConfigBroken": "規則設定檔讀取失敗：{0}",
   "MsgConfigExported": "設定已匯出到：\n{0}",
   "MsgConfigExportFailed": "匯出失敗：{0}",
   "MsgConfigImported": "設定匯入成功。\n如包含語言設定已自動重新載入。",

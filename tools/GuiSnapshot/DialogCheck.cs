@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia;
 using Avalonia.Headless;
+using Avalonia.Interactivity;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using TextTool.Gui.Localization;
@@ -60,12 +61,110 @@ internal static class DialogCheck
             }
         }
 
+        failures += DriveSelection();
+
         Report.PrintTable(
             new[] { "窗口", "主题", "文字裁切", "像素", "文件" },
             rows,
             failures == 0 ? $"{rows.Count} 张弹窗截图已写入 {outDir}" : $"{rows.Count} 张，失败 {failures} 项");
 
         return failures;
+    }
+
+    /// <summary>
+    /// 勾选语义体检：截图看不出「勾选框点不点得动」，只能按一遍。
+    /// 模拟点击时先把 IsChecked 设成点完之后的值再发 Click，因为真实点击里
+    /// CheckBox 是先切状态再发事件，处理器读到的就是用户想要的状态。
+    /// </summary>
+    private static int DriveSelection()
+    {
+        int failures = 0;
+        Loc.SetLanguage("zh_CN");
+
+        var dialog = new SchemeSelectionDialog(ReplaceSchemeStore.GetDefaultSchemes());
+        dialog.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        var tree = dialog.FindControl<TreeView>("SchemesTree");
+        var summary = dialog.FindControl<TextBlock>("SummaryLabel");
+        if (tree is null || summary is null)
+        {
+            Report.Fail("方案窗里找不到树或摘要");
+            dialog.Close();
+            return 1;
+        }
+
+        void Expect(bool ok, string what)
+        {
+            if (ok)
+                Report.Info($"勾选体检通过：{what}");
+            else
+            {
+                Report.Fail($"勾选体检失败：{what}");
+                failures++;
+            }
+        }
+
+        var firstRoot = tree.Items.OfType<TreeViewItem>().First();
+        var rootCheck = HeaderCheck(firstRoot);
+        var childChecks = firstRoot.Items.OfType<TreeViewItem>().Select(HeaderCheck).ToList();
+
+        Expect(rootCheck is { IsChecked: false }, "初始状态父项未勾");
+
+        // 点父项：全部子项跟着勾上。
+        if (rootCheck is not null)
+        {
+            rootCheck.IsChecked = true;
+            rootCheck.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        Expect(childChecks.All(c => c is { IsChecked: true }), "点父项后子项全部勾上");
+        Expect(summary.Text?.Contains("1 个方案", StringComparison.Ordinal) == true,
+            $"点父项后摘要计入 1 个方案（实际：{summary.Text}）");
+
+        // 点掉一个子项：父项应变成半选，规则数减一。
+        if (childChecks.FirstOrDefault() is { } child)
+        {
+            child.IsChecked = false;
+            child.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        Expect(rootCheck is { IsChecked: null }, "点掉一个子项后父项显示半选");
+        int rulesShown = ExtractRuleCount(summary.Text);
+        Expect(rulesShown == childChecks.Count - 1,
+            $"半选时摘要的规则数为 {childChecks.Count - 1}（实际：{rulesShown}）");
+
+        // 再点父项一次：半选状态下按全勾处理。
+        if (rootCheck is not null)
+        {
+            rootCheck.IsChecked = true;
+            rootCheck.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        Expect(childChecks.All(c => c is { IsChecked: true }), "半选状态下点父项恢复全勾");
+
+        dialog.Close();
+        return failures;
+    }
+
+    private static CheckBox? HeaderCheck(TreeViewItem item) =>
+        item.Header is StackPanel panel ? panel.Children.OfType<CheckBox>().FirstOrDefault() : null;
+
+    /// <summary>摘要形如「已勾选 1 个方案，共 6 条规则」，取最后一个数字段。</summary>
+    private static int ExtractRuleCount(string? text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return -1;
+
+        var numbers = System.Text.RegularExpressions.Regex
+            .Matches(text, @"\d+")
+            .Select(m => int.Parse(m.Value))
+            .ToList();
+
+        return numbers.Count >= 2 ? numbers[1] : -1;
     }
 
     private static int Shot(Window window, string fileName, string outDir, List<string[]> rows)

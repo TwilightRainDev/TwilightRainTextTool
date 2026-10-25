@@ -33,8 +33,14 @@ public sealed partial class SchemeSelectionDialog : Window
     /// <summary>本窗自有的方案副本，调用方传到入口的那一份不会被写。</summary>
     private readonly List<ReplaceScheme> _schemes;
 
-    /// <summary>勾选中的方案，按对象身份记，重建树后不掉勾。</summary>
-    private readonly HashSet<ReplaceScheme> _checked = new();
+    /// <summary>
+    /// 勾选中的规则，按对象身份记，重建树后不掉勾。
+    /// 勾选粒度是规则，不是方案：父项的勾是三态的，全勾、未勾、勾了一部分。
+    /// </summary>
+    private readonly HashSet<ReplaceRule> _selectedRules = new();
+
+    /// <summary>没有规则的方案没法用规则表示勾选状态，只能单独记。</summary>
+    private readonly HashSet<ReplaceScheme> _emptyChecked = new();
 
     private readonly List<SchemeEntry> _entries = new();
 
@@ -93,18 +99,16 @@ public sealed partial class SchemeSelectionDialog : Window
     /// </summary>
     private void RebuildTree(ReplaceScheme? select)
     {
-        _checked.RemoveWhere(scheme => !_schemes.Contains(scheme));
+        var aliveRules = new HashSet<ReplaceRule>(_schemes.SelectMany(scheme => scheme.Rules));
+        _selectedRules.RemoveWhere(rule => !aliveRules.Contains(rule));
+        _emptyChecked.RemoveWhere(scheme => !_schemes.Contains(scheme));
 
         SchemesTree.Items.Clear();
         _entries.Clear();
 
         foreach (ReplaceScheme scheme in _schemes)
         {
-            var check = new CheckBox
-            {
-                IsChecked = _checked.Contains(scheme),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
+            var check = new CheckBox { VerticalAlignment = VerticalAlignment.Center };
 
             var header = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
             header.Children.Add(check);
@@ -123,6 +127,9 @@ public sealed partial class SchemeSelectionDialog : Window
 
             check.Click += (_, _) => OnSchemeCheckChanged(entry);
 
+            // 子节点建完再同步：父项的勾是由子项汇总出来的。
+            SyncEntry(entry);
+
             _entries.Add(entry);
             SchemesTree.Items.Add(item);
 
@@ -135,17 +142,15 @@ public sealed partial class SchemeSelectionDialog : Window
     }
 
     /// <summary>
-    /// 子节点：一条规则的只读说明。勾选框跟着方案走，不接受单独点击，
-    /// 因为勾选的粒度就是方案本身。
+    /// 子节点：一条规则。勾选框是真能点的，勾一条就只带这一条，
+    /// 父项的勾选框随之变成全勾、未勾或半选。
     /// </summary>
-    private static TreeViewItem CreateChildItem(SchemeEntry entry, ReplaceRule rule)
+    private TreeViewItem CreateChildItem(SchemeEntry entry, ReplaceRule rule)
     {
         var check = new CheckBox
         {
-            IsChecked = entry.Check.IsChecked == true,
+            IsChecked = _selectedRules.Contains(rule),
             VerticalAlignment = VerticalAlignment.Center,
-            IsHitTestVisible = false,
-            Focusable = false,
         };
 
         var header = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
@@ -158,7 +163,9 @@ public sealed partial class SchemeSelectionDialog : Window
             VerticalAlignment = VerticalAlignment.Center,
         });
 
-        entry.ChildChecks.Add(check);
+        check.Click += (_, _) => OnRuleCheckChanged(entry, rule, check);
+
+        entry.Children.Add((rule, check));
         return new TreeViewItem { Header = header, Tag = entry.Item };
     }
 
@@ -184,35 +191,79 @@ public sealed partial class SchemeSelectionDialog : Window
         UpdateButtons();
     }
 
-    /// <summary>勾上就带上全部子节点，取消同理。</summary>
+    /// <summary>
+    /// 父项点击：勾上就带上它全部规则，取消就全部去掉。
+    /// CheckBox 先切换自己的状态再发 Click，所以这里读到的就是用户想要的状态；
+    /// 半选状态下点一下按「全勾」处理。
+    /// </summary>
     private void OnSchemeCheckChanged(SchemeEntry entry)
     {
-        bool isChecked = entry.Check.IsChecked == true;
+        bool wantChecked = entry.Check.IsChecked != false;
 
-        if (isChecked)
-            _checked.Add(entry.Scheme);
+        if (entry.Scheme.Rules.Count == 0)
+        {
+            if (wantChecked)
+                _emptyChecked.Add(entry.Scheme);
+            else
+                _emptyChecked.Remove(entry.Scheme);
+        }
+        else if (wantChecked)
+            _selectedRules.UnionWith(entry.Scheme.Rules);
         else
-            _checked.Remove(entry.Scheme);
+            _selectedRules.ExceptWith(entry.Scheme.Rules);
 
-        foreach (CheckBox child in entry.ChildChecks)
-            child.IsChecked = isChecked;
-
+        SyncEntry(entry);
         UpdateSummary();
+    }
+
+    private void OnRuleCheckChanged(SchemeEntry entry, ReplaceRule rule, CheckBox check)
+    {
+        if (check.IsChecked == true)
+            _selectedRules.Add(rule);
+        else
+            _selectedRules.Remove(rule);
+
+        SyncEntry(entry);
+        UpdateSummary();
+    }
+
+    /// <summary>把子项的勾连同父项的汇总状态一起刷新。</summary>
+    private void SyncEntry(SchemeEntry entry)
+    {
+        int checkedCount = 0;
+        foreach ((ReplaceRule rule, CheckBox check) in entry.Children)
+        {
+            bool on = _selectedRules.Contains(rule);
+            check.IsChecked = on;
+            if (on)
+                checkedCount++;
+        }
+
+        if (entry.Children.Count == 0)
+            entry.Check.IsChecked = _emptyChecked.Contains(entry.Scheme);
+        else if (checkedCount == 0)
+            entry.Check.IsChecked = false;
+        else if (checkedCount == entry.Children.Count)
+            entry.Check.IsChecked = true;
+        else
+            entry.Check.IsChecked = null; // 半选：勾了一部分
     }
 
     private void UpdateSummary()
     {
         int schemeCount = 0;
-        int ruleCount = 0;
 
         foreach (ReplaceScheme scheme in _schemes)
         {
-            if (!_checked.Contains(scheme))
-                continue;
+            bool involved = scheme.Rules.Count == 0
+                ? _emptyChecked.Contains(scheme)
+                : scheme.Rules.Any(_selectedRules.Contains);
 
-            schemeCount++;
-            ruleCount += scheme.Rules.Count;
+            if (involved)
+                schemeCount++;
         }
+
+        int ruleCount = _selectedRules.Count;
 
         SummaryLabel.Text = Loc.T("SchemeSummary", schemeCount, ruleCount);
     }
@@ -262,9 +313,15 @@ public sealed partial class SchemeSelectionDialog : Window
         if (edited is null)
             return;
 
-        // 编辑返回的是新副本，勾选状态按身份跟着搬过去。
-        if (_checked.Remove(scheme))
-            _checked.Add(edited);
+        // 编辑返回的是新副本，原来的规则对象都没了。原来勾过的方案，
+        // 编辑后整条勾上，否则用户改一下名称就发现勾没了。
+        bool wasSelected = scheme.Rules.Any(_selectedRules.Contains) || _emptyChecked.Contains(scheme);
+        if (wasSelected)
+        {
+            _selectedRules.UnionWith(edited.Rules);
+            if (edited.Rules.Count == 0)
+                _emptyChecked.Add(edited);
+        }
 
         _schemes[index] = edited;
         RebuildTree(edited);
@@ -291,7 +348,6 @@ public sealed partial class SchemeSelectionDialog : Window
             return;
 
         _schemes.Remove(scheme);
-        _checked.Remove(scheme);
         RebuildTree(null);
     }
 
@@ -356,7 +412,9 @@ public sealed partial class SchemeSelectionDialog : Window
         ClearInline();
         ExitDeleteConfirm();
 
-        var selected = _schemes.Where(_checked.Contains).ToList();
+        var selected = _schemes
+            .Where(scheme => scheme.Rules.Any(_selectedRules.Contains) || _emptyChecked.Contains(scheme))
+            .ToList();
         if (selected.Count == 0)
         {
             ShowHint(Loc.T("SchemeExportHint"));
@@ -396,7 +454,10 @@ public sealed partial class SchemeSelectionDialog : Window
 
     private void OnOk(object? sender, RoutedEventArgs e)
     {
-        var rules = _schemes.Where(_checked.Contains).SelectMany(scheme => scheme.Rules).ToList();
+        var rules = _schemes
+            .SelectMany(scheme => scheme.Rules)
+            .Where(_selectedRules.Contains)
+            .ToList();
         Close(new Result(_schemes, rules));
     }
 
@@ -461,6 +522,6 @@ public sealed partial class SchemeSelectionDialog : Window
 
         public CheckBox Check { get; } = check;
 
-        public List<CheckBox> ChildChecks { get; } = new();
+        public List<(ReplaceRule Rule, CheckBox Check)> Children { get; } = new();
     }
 }

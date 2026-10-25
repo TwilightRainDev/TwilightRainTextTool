@@ -153,7 +153,7 @@ internal static class ReplaceTabDriveCheck
         Expect(run.IsEnabled, "选中文件后执行按钮可用");
 
         Click(run);
-        WaitForResult(tab);
+        WaitForResult(tab, run);
 
         string output = PathHelper.GetProcessedPath(input);
         string content = File.Exists(output) ? File.ReadAllText(output) : "";
@@ -167,7 +167,7 @@ internal static class ReplaceTabDriveCheck
 
         tab.UseFilesForCheck(new[] { gbkPath });
         Click(run);
-        WaitForResult(tab);
+        WaitForResult(tab, run);
 
         string gbkOutput = PathHelper.GetProcessedPath(gbkPath);
         string gbkContent = File.Exists(gbkOutput) ? File.ReadAllText(gbkOutput) : "";
@@ -197,13 +197,22 @@ internal static class ReplaceTabDriveCheck
         Dispatcher.UIThread.RunJobs();
     }
 
-    /// <summary>批处理在后台线程跑，结果回来要把消息泵转起来，最多等五秒。</summary>
-    private static void WaitForResult(ReplaceTab tab)
+    /// <summary>
+    /// 等这一轮跑完。不能只等「结果行有字」：结果行还留着上一次的文字，
+    /// 上一轮刚跑过就会立刻返回，读到的文件其实还没写出来。
+    /// 所以先记下当前文字，等到它变了并且按钮恢复可用。
+    /// </summary>
+    private static void WaitForResult(ReplaceTab tab, Button run)
     {
         var result = Find<TextBlock>(tab, "ResultLabel");
-        for (int i = 0; i < 100 && string.IsNullOrEmpty(result.Text); i++)
+        string? before = result.Text;
+
+        for (int i = 0; i < 200; i++)
         {
             Dispatcher.UIThread.RunJobs();
+            if (run.IsEnabled && !string.IsNullOrEmpty(result.Text) && result.Text != before)
+                return;
+
             Thread.Sleep(50);
         }
     }

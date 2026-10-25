@@ -26,8 +26,7 @@
       </TabItem>
 
       <TabItem Header="{DynamicResource TabJoin}">
-        <TextBlock Text="{DynamicResource TabJoin}" Classes="placeholder"
-                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <views:JoinTab x:Name="JoinTabView" />
       </TabItem>
 
       <TabItem Header="{DynamicResource TabReplace}">
@@ -35,13 +34,11 @@
       </TabItem>
 
       <TabItem Header="{DynamicResource TabVN}">
-        <TextBlock Text="{DynamicResource TabVN}" Classes="placeholder"
-                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <views:VnTab x:Name="VnTabView" />
       </TabItem>
 
       <TabItem Header="{DynamicResource TabLint}">
-        <TextBlock Text="{DynamicResource TabLint}" Classes="placeholder"
-                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <views:LintTab x:Name="LintTabView" />
       </TabItem>
 
       <TabItem Header="{DynamicResource TabAbout}">

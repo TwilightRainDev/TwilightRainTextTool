@@ -1,0 +1,76 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="TextTool.Gui.Views.LintTab">
+
+  <UserControl.Styles>
+    <!-- 间距给在直接子控件上，理由同替换页：Avalonia 11.2 的 Grid 没有行间距属性。 -->
+    <Style Selector="Grid > TextBlock, Grid > TextBox, Grid > Button, Grid > StackPanel">
+      <Setter Property="Margin" Value="0,0,10,8" />
+    </Style>
+  </UserControl.Styles>
+
+  <!--
+    AI 味检查页：输入来自文件或粘贴，交给 LintRunner 出只读报告，全程不写盘。
+    页面分上下两段，中间是可拖的分隔条：上半放输入与选项，下半放报告。
+    上半只有粘贴框吃剩余高度，下半只有报告区吃剩余高度，其余行一律 Auto，
+    所以外面不套 ScrollViewer：套了星号行就失去意义，报告区自己会滚。
+    报告正文由 LintRunner 与 LintOutput 按当前界面语言渲染，本页只把结果放进只读框。
+  -->
+  <Grid Margin="16" RowDefinitions="*,Auto,*">
+
+    <!-- 上半：源文件行、粘贴框、选项与检查按钮 -->
+    <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto"
+          RowDefinitions="Auto,Auto,Auto,*,Auto">
+
+      <TextBlock x:Name="SourceLabel" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" />
+      <TextBox x:Name="FileBox" Grid.Row="0" Grid.Column="1" VerticalAlignment="Center"
+               IsReadOnly="True" />
+      <Button x:Name="BrowseButton" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
+              Click="OnBrowse" />
+
+      <!-- 提示放在粘贴框上面：文案里说的是「在下方粘贴」，位置得对得上。 -->
+      <TextBlock x:Name="HintLabel" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3"
+                 Classes="muted" TextWrapping="Wrap" Margin="0,0,0,8" />
+
+      <TextBlock x:Name="PasteLabel" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" />
+
+      <TextBox x:Name="PasteBox" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3"
+               AcceptsReturn="True" TextWrapping="Wrap"
+               ScrollViewer.VerticalScrollBarVisibility="Auto"
+               ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
+
+      <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal"
+                  Spacing="10">
+        <TextBlock x:Name="SeverityLabel" VerticalAlignment="Center" />
+        <ComboBox x:Name="SeverityBox" SelectedIndex="0" VerticalAlignment="Center">
+          <ComboBoxItem x:Name="SeverityAllItem" />
+          <ComboBoxItem x:Name="SeverityWarnItem" />
+        </ComboBox>
+        <Button x:Name="BtnLint" Classes="primary" Click="OnLint" />
+      </StackPanel>
+
+      <!-- 行内提示：缺输入、文件不见了，都写在这里，不弹窗 -->
+      <TextBlock x:Name="InlineWarning" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3"
+                 TextWrapping="Wrap" IsVisible="False" />
+
+    </Grid>
+
+    <GridSplitter Grid.Row="1" Height="6" HorizontalAlignment="Stretch"
+                  ResizeDirection="Rows" Background="{DynamicResource StatusBg}" />
+
+    <!-- 下半：只读报告、结果行、提示行 -->
+    <Grid Grid.Row="2" RowDefinitions="*,Auto">
+
+      <TextBox x:Name="ReportBox" Grid.Row="0"
+               IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap"
+               FontFamily="Consolas, Menlo, monospace"
+               ScrollViewer.VerticalScrollBarVisibility="Auto"
+               ScrollViewer.HorizontalScrollBarVisibility="Auto" />
+
+      <TextBlock x:Name="ResultLabel" Grid.Row="1" TextWrapping="Wrap" />
+
+    </Grid>
+
+  </Grid>
+
+</UserControl>

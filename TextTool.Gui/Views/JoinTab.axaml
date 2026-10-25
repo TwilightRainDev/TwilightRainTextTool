@@ -1,0 +1,64 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="TextTool.Gui.Views.JoinTab">
+
+  <UserControl.Styles>
+    <!-- Avalonia 11.2 的 Grid 没有 RowSpacing / ColumnSpacing，间距统一给在直接子控件上。 -->
+    <Style Selector="Grid > TextBlock, Grid > TextBox, Grid > StackPanel, Grid > Button">
+      <Setter Property="Margin" Value="0,0,10,8" />
+    </Style>
+
+    <!-- 结果行的两种语义色靠类切换，取色仍是 DynamicResource，换主题时自己重取。 -->
+    <Style Selector="TextBlock.success">
+      <Setter Property="Foreground" Value="{DynamicResource SuccessFg}" />
+    </Style>
+
+    <Style Selector="TextBlock.warning">
+      <Setter Property="Foreground" Value="{DynamicResource WarningFg}" />
+    </Style>
+  </UserControl.Styles>
+
+  <!--
+    文件拼接页。布局规矩与行合并页一致：行高一律 Auto，同行控件 VerticalAlignment=Center，
+    外面套 ScrollViewer，内容比窗口高时给滚动条而不是压字。
+    这是一个只有四行表单的短页，所以不留星号行，五行全 Auto。
+    校验没过的提示与执行结果共用最后一行：当前发生了什么只在一个地方说，不弹窗。
+  -->
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <Grid Margin="16" ColumnDefinitions="Auto,*,Auto"
+          RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+
+      <!-- 源文件夹：只读，路径只能来自浏览对话框 -->
+      <TextBlock x:Name="FolderLabel" Grid.Row="0" Grid.Column="0"
+                 VerticalAlignment="Center" />
+      <TextBox x:Name="FolderBox" Grid.Row="0" Grid.Column="1"
+               VerticalAlignment="Center" IsReadOnly="True" />
+      <Button x:Name="BrowseButton" Grid.Row="0" Grid.Column="2"
+              VerticalAlignment="Center" Click="OnBrowse" />
+
+      <!-- 匹配模式 -->
+      <TextBlock x:Name="PatternLabel" Grid.Row="1" Grid.Column="0"
+                 VerticalAlignment="Center" />
+      <TextBox x:Name="PatternBox" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+               VerticalAlignment="Center" />
+
+      <!-- 输出文件名，落在上面选中的文件夹里 -->
+      <TextBlock x:Name="OutputLabel" Grid.Row="2" Grid.Column="0"
+                 VerticalAlignment="Center" />
+      <TextBox x:Name="OutputBox" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+               VerticalAlignment="Center" />
+
+      <!-- 主操作 -->
+      <StackPanel Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                  Orientation="Horizontal" VerticalAlignment="Center">
+        <Button x:Name="JoinButton" Classes="primary" Click="OnJoin" />
+      </StackPanel>
+
+      <!-- 结果行：缺输入、文件夹不对、拼接成败都写在这里 -->
+      <TextBlock x:Name="ResultLabel" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3"
+                 TextWrapping="Wrap" />
+
+    </Grid>
+  </ScrollViewer>
+
+</UserControl>

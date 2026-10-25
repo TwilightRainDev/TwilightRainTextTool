@@ -1,0 +1,68 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="TextTool.Gui.Views.VnTab">
+
+  <UserControl.Styles>
+    <!-- 间距给在直接子控件上，理由同其它页签：Avalonia 11.2 的 Grid 没有行间距属性。 -->
+    <Style Selector="Grid > TextBlock, Grid > TextBox, Grid > Button, Grid > StackPanel, Grid > NumericUpDown">
+      <Setter Property="Margin" Value="0,0,10,8" />
+    </Style>
+  </UserControl.Styles>
+
+  <!--
+    视觉小说页。行高一律 Auto：本页没有列表，内容随窗口高度伸展没有必要，
+    窗口一矮就靠外面的 ScrollViewer 滚动，控件不会被压扁或截断。
+  -->
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <Grid Margin="16"
+          ColumnDefinitions="Auto,*,Auto"
+          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+
+      <!-- 源文件 -->
+      <TextBlock x:Name="SourceLabel" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" />
+      <TextBox x:Name="FileBox" Grid.Row="0" Grid.Column="1" VerticalAlignment="Center"
+               IsReadOnly="True" />
+      <Button x:Name="BrowseButton" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center"
+              Click="OnBrowse" />
+
+      <!-- 检测编码 -->
+      <TextBlock x:Name="EncodingLabel" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" />
+      <TextBlock x:Name="EncodingValue" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                 VerticalAlignment="Center" Classes="muted" TextWrapping="Wrap" />
+
+      <!-- 处理模式 -->
+      <TextBlock x:Name="ModeLabel" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" />
+      <StackPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Orientation="Horizontal"
+                  Spacing="16" VerticalAlignment="Center">
+        <RadioButton x:Name="AllRadio" GroupName="VnMode" IsChecked="True"
+                     VerticalAlignment="Center" />
+        <RadioButton x:Name="ReformatRadio" GroupName="VnMode" VerticalAlignment="Center" />
+        <RadioButton x:Name="FixPunctRadio" GroupName="VnMode" VerticalAlignment="Center" />
+      </StackPanel>
+
+      <!-- 最大段落字数：只给最小宽度，宽度跟着字号与格式串走 -->
+      <TextBlock x:Name="MaxParaLabel" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" />
+      <NumericUpDown x:Name="MaxParaBox" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                     VerticalAlignment="Center" HorizontalAlignment="Left"
+                     FormatString="0" MinWidth="80" Minimum="100" Maximum="2000" />
+
+      <!-- 预设角色方案与当前摘要 -->
+      <Grid Grid.Row="4" Grid.ColumnSpan="3" ColumnDefinitions="Auto,*">
+        <Button x:Name="PresetSchemesButton" Grid.Column="0" VerticalAlignment="Center"
+                Click="OnPresetSchemes" />
+        <TextBlock x:Name="PresetSummary" Grid.Column="1" Classes="muted" TextWrapping="Wrap"
+                   VerticalAlignment="Center" Margin="12,0,10,8" />
+      </Grid>
+
+      <!-- 执行 -->
+      <Button x:Name="ProcessButton" Grid.Row="5" Grid.ColumnSpan="3" Classes="primary"
+              HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"
+              Click="OnProcess" />
+
+      <!-- 结果行：成功绿、失败橙，以及配置读不出来一类的行内提示 -->
+      <TextBlock x:Name="ResultLabel" Grid.Row="6" Grid.ColumnSpan="3" TextWrapping="Wrap" />
+
+    </Grid>
+  </ScrollViewer>
+
+</UserControl>

@@ -1,0 +1,51 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="using:TextTool.Gui.Localization"
+             x:Class="TextTool.Gui.Views.AboutTab">
+
+  <!--
+    关于页。自上而下一列，行高一律 Auto，不写任何固定尺寸。
+    文字全部在代码里按当前语言赋（Loc.T），颜色全部来自主题资源：
+    深浅切换只切 ThemeVariant，这里不写一种具体颜色。
+    仓库链接用会换行的 TextBlock，窗口再窄也不会有半截网址露不出来。
+  -->
+  <StackPanel Margin="16" Spacing="8" VerticalAlignment="Top">
+
+    <TextBlock x:Name="AboutTitle" FontWeight="Bold" TextWrapping="Wrap" />
+
+    <TextBlock x:Name="AboutVersion" Classes="muted" TextWrapping="Wrap" />
+
+    <TextBlock x:Name="AboutAuthor" TextWrapping="Wrap" Margin="0,4,0,0" />
+
+    <TextBlock x:Name="AboutRepositoryLink" TextWrapping="Wrap"
+               TextDecorations="Underline" Cursor="Hand"
+               PointerPressed="OnOpenRepository" />
+
+    <TextBlock x:Name="AboutDescription" TextWrapping="Wrap" Margin="0,4,0,12" />
+
+    <!-- 语言与深浅切换 -->
+    <StackPanel Orientation="Horizontal" Spacing="12">
+      <TextBlock x:Name="LanguageLabel" VerticalAlignment="Center" />
+      <ComboBox x:Name="LanguageCombo" MinWidth="140" VerticalAlignment="Center">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="loc:LanguageOption">
+            <TextBlock Text="{Binding Display}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+      <Button x:Name="ThemeButton" VerticalAlignment="Center" Click="OnToggleTheme" />
+    </StackPanel>
+
+    <!-- 配置导入导出与检查更新 -->
+    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+      <Button x:Name="ExportConfigButton" Click="OnExportConfig" />
+      <Button x:Name="ImportConfigButton" Click="OnImportConfig" />
+      <Button x:Name="CheckUpdateButton" Click="OnCheckUpdate" />
+    </StackPanel>
+
+    <!-- 结果行：成功绿、失败橙，切主题后按新主题重取画刷 -->
+    <TextBlock x:Name="ResultLabel" TextWrapping="Wrap" Margin="0,4,0,0" />
+
+  </StackPanel>
+
+</UserControl>

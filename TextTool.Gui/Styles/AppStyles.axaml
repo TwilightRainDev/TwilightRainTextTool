@@ -1,0 +1,81 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!--
+    控件外观只在这里定义。FluentTheme 自带的状态色（悬停、按下）会把按钮刷回主题色，
+    所以主操作按钮必须在 pointerover / pressed 上显式覆盖模板里的 ContentPresenter，
+    否则深色主题下悬停时会闪出一块浅灰。
+  -->
+
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{DynamicResource Bg}" />
+    <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+    <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+    <Setter Property="FontSize" Value="{DynamicResource AppFontSize}" />
+  </Style>
+
+  <!--
+    FluentTheme 的页签头用的是 24 DIP 的 WinUI 式大字号，还附带 48 的最小高度。
+    六个页签在这个字号下装不进 760 DIP 的窗口，会折成两行。这里改回正文字号。
+  -->
+  <Style Selector="TabItem">
+    <Setter Property="FontSize" Value="{DynamicResource AppFontSize}" />
+    <Setter Property="MinHeight" Value="32" />
+    <Setter Property="Padding" Value="12,6" />
+  </Style>
+
+  <Style Selector="TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+  </Style>
+
+  <Style Selector="TextBlock.muted">
+    <Setter Property="Foreground" Value="{DynamicResource MutedFg}" />
+  </Style>
+
+  <Style Selector="TextBox">
+    <Setter Property="Background" Value="{DynamicResource ControlBg}" />
+    <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MutedFg}" />
+  </Style>
+
+  <Style Selector="ComboBox">
+    <Setter Property="Background" Value="{DynamicResource ControlBg}" />
+    <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+  </Style>
+
+  <Style Selector="ListBox">
+    <Setter Property="Background" Value="{DynamicResource ControlBg}" />
+    <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+  </Style>
+
+  <Style Selector="CheckBox">
+    <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+  </Style>
+
+  <Style Selector="RadioButton">
+    <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+  </Style>
+
+  <Style Selector="Button">
+    <Setter Property="Background" Value="{DynamicResource ActionBg}" />
+    <Setter Property="Foreground" Value="{DynamicResource ActionFg}" />
+    <Setter Property="Padding" Value="16,6" />
+  </Style>
+
+  <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ActionBg}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ActionBg}" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource ActionFg}" />
+  </Style>
+
+  <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ActionBg}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ActionBg}" />
+  </Style>
+
+  <Style Selector="Button:disabled /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource ControlBg}" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource MutedFg}" />
+  </Style>
+
+</Styles>

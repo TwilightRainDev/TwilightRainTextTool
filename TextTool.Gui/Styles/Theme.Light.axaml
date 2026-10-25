@@ -1,0 +1,16 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <SolidColorBrush x:Key="Bg" Color="#FFFFFF" />
+  <SolidColorBrush x:Key="Fg" Color="#000000" />
+  <SolidColorBrush x:Key="ControlBg" Color="#FFFFFF" />
+  <SolidColorBrush x:Key="MutedFg" Color="#808080" />
+  <SolidColorBrush x:Key="SuccessFg" Color="#008000" />
+  <SolidColorBrush x:Key="WarningFg" Color="#AA5500" />
+  <!-- 主操作按钮的反转配色：浅色主题下深底浅字 -->
+  <SolidColorBrush x:Key="ActionBg" Color="#1E1E1E" />
+  <SolidColorBrush x:Key="ActionFg" Color="#FFFFFF" />
+  <SolidColorBrush x:Key="StatusBg" Color="#F3F3F3" />
+  <SolidColorBrush x:Key="DragHighlightBg" Color="#FFFACD" />
+
+</ResourceDictionary>

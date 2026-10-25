@@ -1,0 +1,24 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+             x:Class="TextTool.Gui.App"
+             RequestedThemeVariant="Light">
+
+  <Application.Styles>
+    <FluentTheme />
+    <StyleInclude Source="avares://TextTool.Gui/Styles/AppStyles.axaml" />
+  </Application.Styles>
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <!-- 界面字号与字体只在这里定义一次。13.33 DIP 等于 WinForms 版的 10pt。 -->
+      <sys:Double x:Key="AppFontSize">13.33</sys:Double>
+      <FontFamily x:Key="AppFontFamily">Microsoft YaHei UI, Noto Sans CJK SC, Noto Sans CJK, sans-serif</FontFamily>
+
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://TextTool.Gui/Styles/Theme.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+
+</Application>

@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TextTool.Tests", "TextTool.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TextTool.Cli", "TextTool.Cli\TextTool.Cli.csproj", "{6C9B2E88-5D4E-4F62-8B3C-6A4F7E8D9B10}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TextTool.Gui", "TextTool.Gui\TextTool.Gui.csproj", "{FCABCBF1-DE87-4154-83A9-C3E17EF7BAF9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{D9598FA1-85FB-4FFB-BF98-104ECFEB1177}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D9598FA1-85FB-4FFB-BF98-104ECFEB1177}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D9598FA1-85FB-4FFB-BF98-104ECFEB1177}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FCABCBF1-DE87-4154-83A9-C3E17EF7BAF9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FCABCBF1-DE87-4154-83A9-C3E17EF7BAF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FCABCBF1-DE87-4154-83A9-C3E17EF7BAF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FCABCBF1-DE87-4154-83A9-C3E17EF7BAF9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

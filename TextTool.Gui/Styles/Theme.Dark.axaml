@@ -1,0 +1,18 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <SolidColorBrush x:Key="Bg" Color="#1E1E1E" />
+  <SolidColorBrush x:Key="Fg" Color="#DCDCDC" />
+  <SolidColorBrush x:Key="ControlBg" Color="#2D2D2D" />
+  <SolidColorBrush x:Key="MutedFg" Color="#B4B4B4" />
+  <!-- 深底上的绿和橙要比浅底亮一档，否则对比度不到 4.5:1 -->
+  <SolidColorBrush x:Key="SuccessFg" Color="#96EB96" />
+  <SolidColorBrush x:Key="WarningFg" Color="#FFAA3C" />
+  <!-- 主操作按钮的反转配色：深色主题下浅底深字 -->
+  <SolidColorBrush x:Key="ActionBg" Color="#FFFFFF" />
+  <SolidColorBrush x:Key="ActionFg" Color="#000000" />
+  <!-- 拖放高亮：不用浅黄，深底上会糊成一片 -->
+  <SolidColorBrush x:Key="StatusBg" Color="#252525" />
+  <SolidColorBrush x:Key="DragHighlightBg" Color="#484228" />
+
+</ResourceDictionary>

@@ -27,6 +27,9 @@
     <EmbeddedResource Remove="TextTool.Core\**" />
     <Compile Remove="TextTool.Cli\**" />
     <EmbeddedResource Remove="TextTool.Cli\**" />
+    <Compile Remove="TextTool.Gui\**" />
+    <EmbeddedResource Remove="TextTool.Gui\**" />
+    <None Remove="TextTool.Gui\**" />
     <Compile Remove="tools\**" />
     <EmbeddedResource Remove="tools\**" />
     <None Remove="tools\**" />

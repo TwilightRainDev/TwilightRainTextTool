@@ -1,0 +1,57 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TextTool.Gui.Views.MainWindow"
+        Title="TwilightRain's Text Tool"
+        Width="760" Height="560"
+        MinWidth="700" MinHeight="520"
+        WindowStartupLocation="CenterScreen">
+
+  <DockPanel>
+
+    <!-- 状态栏 -->
+    <Border DockPanel.Dock="Bottom"
+            Background="{DynamicResource StatusBg}"
+            BorderBrush="{DynamicResource ControlBg}"
+            BorderThickness="0,1,0,0"
+            Padding="12,6">
+      <TextBlock x:Name="StatusText" Text="Ready" Classes="muted" />
+    </Border>
+
+    <TabControl x:Name="Tabs" Margin="8">
+
+      <TabItem Header="Line Merge">
+        <TextBlock Text="Line Merge" Classes="placeholder"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </TabItem>
+
+      <TabItem Header="File Join">
+        <TextBlock Text="File Join" Classes="placeholder"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </TabItem>
+
+      <TabItem Header="Punct. Replace">
+        <TextBlock Text="Punct. Replace" Classes="placeholder"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </TabItem>
+
+      <TabItem Header="Visual Novel">
+        <TextBlock Text="Visual Novel" Classes="placeholder"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </TabItem>
+
+      <TabItem Header="AI-tone Lint">
+        <TextBlock Text="AI-tone Lint" Classes="placeholder"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </TabItem>
+
+      <TabItem Header="About">
+        <Button x:Name="DarkModeButton" Content="深色模式"
+                HorizontalAlignment="Left" VerticalAlignment="Top"
+                Margin="16" Click="OnToggleTheme" />
+      </TabItem>
+
+    </TabControl>
+
+  </DockPanel>
+
+</Window>

@@ -1,139 +1,120 @@
 # TwilightRain Text Tool
 
-集行合并、文件拼接、中文截断修复、标点截断修复、标点替换于一体的 Windows 文本处理工具。  
-An all-in-one Windows text processing tool: line merge, file join, CJK truncation fix, punct. truncation fix & punctuation replacement.
+A text tool for Chinese manuscripts: line merge, file join, punctuation replacement,
+visual novel reformatting and an AI-tone lint pass. Desktop app plus a command line version
+sharing the same engine.
 
----
+一个面向中文稿件的文本工具：行合并、文件拼接、标点替换、视觉小说排版与 AI 味检查。
+图形界面与命令行共用同一套引擎。
 
-[English](#english) · [中文](#中文)
-
----
+[English](#english) \| [中文](#中文)
 
 ## English
 
-A **Windows WinForms (.NET 8)** desktop utility that replaces four legacy batch/PowerShell scripts with a unified GUI.  
-Drag-and-drop a text file, pick your options, click **Process** — done.
+### What it does
 
-### Features
+| Tab | What it does |
+| --- | --- |
+| Line merge | Appends short lines until they reach a length threshold, then optionally fixes truncated paragraphs and applies replacement rules |
+| File join | Concatenates every file matching a pattern in one folder into one output file |
+| Punctuation replace | Keeps a list of find and replace rules, saves them to disk, and applies them to one or many files |
+| Visual novel | Rebuilds hard-wrapped scripts into natural paragraphs and completes dialogue punctuation |
+| AI-tone lint | Reports wording that reads like generated Chinese; never rewrites the file |
+| About | Version, author, repository link, language and theme switches, config import and export, update check |
 
-| Tab / CLI | Description |
-| :-- | :---------- |
-| **Line Merge** | Merge short lines up to a configurable threshold, with optional post-processing |
-| **File Join** | Concatenate all matching files in a directory into one |
-| **Punct. Replace** | Freely configurable find-&-replace rules with reordering, persisted as JSON |
-| **Visual Novel** | Reformat VN scripts to natural paragraphs, complete dialogue punctuation, character/route presets |
-| **AI-tone Lint** | GUI tab and `texttool lint` share the same engine — reports only, never rewrites |
-| **About** | Version, author, avatar, GitHub link, language selector |
+### Tabs
 
-#### Tab 1 · Line Merge
+#### Tab 1: Line merge
 
-- **Threshold merging** — continuously append short lines until a byte/character threshold is met
-- Dual mode: **byte count** or **character count** (1–1000 range)
-- **Auto-detect encoding** — BOM → UTF-8 validation → GBK fallback
-- **Drag-and-drop** `.txt` files onto the window
-- **Safe output** — saves as `*_Processed.*`, never overwrites originals
+- Pick files or drag them onto the window; several files are processed as one batch.
+- Threshold from 1 to 1000, counted in characters (default 20) or in bytes.
+- The detected encoding is shown under the source row.
+- Post-processing after the threshold merge, in this order:
+  - Fix CJK truncation: if a line ends with a CJK character, join the next line (on by default).
+  - Fix punctuation truncation: join the next line when the current one ends with any character of a custom set (default `，`).
+  - Trim leading comma (on by default).
+  - Apply the replacement rules from Tab 3.
+- Line-end no-merge is part of the merge itself: with a custom set (default `。！？`), a line ending with one of those characters is never joined. It overrides both truncation fixes.
+- Output goes to `*_Processed.*` next to the source file; the source is not touched.
+- Overwriting the source file is a separate opt-in. With the backup box checked, the previous content is kept as `{name}.bak` and older copies rotate to `.bak.1` through `.bak.3`.
+- Preview runs the current options and shows the result in a separate window; single file only.
 
-**Post-processing options (applied in-memory after threshold merge):**
+#### Tab 2: File join
 
-| Option | Description |
-|--------|-------------|
-| **Fix CJK truncation** | Merge next line if current line ends with a CJK character (e.g., `Hello\nWorld` → `HelloWorld`) |
-| **Fix punct. truncation** | Merge next line if current line ends with any custom punctuation (e.g., `回家吧，\n孩子` → `回家吧，孩子`). Customizable punctuation set. |
-| **Apply punct. replace rules** | Run the punctuation replacement rules configured in Tab 3 |
-| **Line-ending no-merge** | Prevent merging if current line ends with any custom punctuation — overrides both CJK and punct. truncation rules. Useful for keeping chapter titles (`章`, `节`, etc.) or sentence terminators (`.!?。！？`) independent. |
-| **Dangerous overwrite** | Write the result back into the original file instead of `*_Processed.*`. Its companion checkbox **Back up as .bak** decides whether the previous content is kept as `{name}.bak` (rotated to `.bak.1`–`.bak.3`); leave it unchecked and no extra file is created. |
+- Folder plus a glob pattern (default `*.txt`) plus an output name (default `combined.txt`).
+- Files are sorted by name before joining.
+- Each file is read with its own detected encoding.
+- Output is always UTF-8 with BOM.
 
-**Processing pipeline** (single-pass, one file write):
+#### Tab 3: Punctuation replace
 
-```text
-Read file → Threshold merge → CJK fix → Punct. truncation fix → Punct. replace → Write output
-```
+- Rule list with add, update, delete and move up or down.
+- Rules are saved to `replace_rules.json` right after each change.
+- The rule list is the same list the line merge tab uses, so a change is visible there immediately.
+- One or many files per run; each file is read with its own detected encoding.
+- Output goes to `*_Processed.*`.
+- Preset schemes: pick built-in or custom schemes, tick single rules, add, rename or delete schemes, import and export scheme files as JSON.
 
-#### Tab 2 · File Joiner
+#### Tab 4: Visual novel
 
-- Merge all files matching a glob pattern in a directory into one output file
-- Files sorted by name before merging
-- Each file re-read with its own detected encoding
-- Unified output as **UTF-8 with BOM**
-- Safe output: `*_Processed.*` naming
+- Rebuilds fixed-width hard-wrapped lines into paragraphs; classifies dialogue, narration, scene markers and route headings.
+- Three modes: reformat plus punctuation, reformat only, punctuation only.
+- Character and route schemes, with an optional scene marker regex per scheme.
+- Maximum paragraph length from 100 to 2000 (default 450).
+- A single file opens the preview window, and nothing is written until you save there. A batch writes directly and reports progress on the status bar.
 
-#### Tab 3 · Punctuation Replacement
+#### Tab 5: AI-tone lint
 
-- **Freely configurable** find-&-replace rules (e.g., `。。` → `。`)
-- **Reordering** — move rules up/down with dedicated buttons
-- Rule list with live preview
-- Add, update, and delete rules
-- **JSON persistence** — `replace_rules.json` at runtime, survives restarts
-- Drag-and-drop `.txt` file support (single or batch)
-- **Batch processing** — select multiple files, process all at once
-- Safe output: `*_Processed.*`
+- Input is one or more files, pasted text, or both.
+- Rule checklist: leave everything unchecked to run all rules.
+- Severity filter for `warn` and above.
+- Report only. Nothing is written, and the report follows the interface language.
+- The CLI subcommand `lint` runs the same engine.
 
-#### Tab 4 · Visual Novel
+#### Tab 6: About
 
-- **Reformat** — rebuild VN scripts from fixed-width hard-wrapped lines into natural paragraphs
-- Auto-classifies lines into **dialogue / narrative / scene markers / route headings**
-- Recognizes `「角色」「台词」` and `角色名「台词」` / `角色名，「台词」` dialogue patterns
-- **Dialogue punctuation completion** — appends `。` to dialogue lines missing sentence-end punctuation
-- **Character & route presets** — bundled Steins;Gate / Attack on Titan / Kara no Kyoukai / Subahibi schemes, editable via dialog
-- Max paragraph length adjustable (100–2000)
-- Long narrative paragraphs auto-split at sentence boundaries
-- Three modes: **All-in-One** (reformat + fix punct.), **Reformat only**, **Fix Punct. only**
-- Safe output: `*_Processed.*`
+- Program version, author, repository link.
+- Language switch: Simplified Chinese, Traditional Chinese, English. The choice is saved to `app_config.json` and applies without restarting.
+- Light and dark theme toggle.
+- Export and import of `app_config.json` and `replace_rules.json`.
+- Check for updates: reports whether a newer release exists, nothing else.
 
-#### Tab 5 · About
+### Supported platforms
 
-- Program icon (64×64) + **TwilightRain avatar** (64×64) side by side
-- App name + version side by side
-- Author + GitHub link side by side
-- Description
-- **Language selector** — switch between 简体中文 / 繁體中文 / English on the fly
-- Language preference persisted to `app_config.json`
+| Platform | Desktop app | Command line |
+| --- | --- | --- |
+| Windows x64 | `TextTool-GUI-<version>-win-x64.zip` | `TextTool-CLI-<version>-win-x64.zip` |
+| Linux x64 | `TextTool-GUI-<version>-linux-x64.zip` | `TextTool-CLI-<version>-linux-x64.zip` |
 
-### i18n / Localization
+All four packages are framework-dependent builds: they do not carry a .NET runtime.
 
-Three built-in languages, auto-detected from system UI culture:
+Requirements:
 
-| Language | Code | File |
-|----------|------|------|
-| 简体中文 | `zh_CN` | `Localization/zh_CN.json` |
-| 繁體中文 | `zh_TW` | `Localization/zh_TW.json` |
-| English | `en_US` | `Localization/en_US.json` |
+- Windows: .NET 8 runtime (x64), from
+  [dotnet.microsoft.com/download/dotnet/8.0](https://dotnet.microsoft.com/download/dotnet/8.0).
+- Linux: .NET 8 runtime, not the SDK. On Debian and Ubuntu the package is
+  `dotnet-runtime-8.0`; the official steps are in the
+  [Linux install docs](https://learn.microsoft.com/dotnet/core/install/linux).
+- Linux: a CJK font, for example `fonts-noto-cjk`. Without one the desktop app and the terminal
+  show Chinese as boxes. The packages do not bundle any font.
 
-- System language auto-detection matches `zh-CN`, `zh-TW`, `zh-HK`, `zh-MO`, `en-*`
-- Manual override via the About page language combo
-- Choice saved in `app_config.json`
+### Download and install
 
-### Requirements
+Desktop app:
 
-- **.NET 8 Desktop Runtime** (Windows WinForms)
-- Download from: [dotnet.microsoft.com/download/dotnet/8.0](https://dotnet.microsoft.com/download/dotnet/8.0)
-- Choose **.NET Desktop Runtime 8.0 (x64)**
-- Missing runtime shows a guided download dialog
+1. Download `TextTool-GUI-<version>-win-x64.zip` or `TextTool-GUI-<version>-linux-x64.zip` from
+   [GitHub Releases](https://github.com/TwilightRainDev/TwilightRainTextTool/releases).
+2. Unzip it anywhere. The folder holds everything except the .NET runtime; configuration and
+   output files are written next to the program.
+3. Run the program in that folder. The app does not start without the .NET 8 runtime,
+   so install it first if needed. On Linux the zip keeps no executable bit, so run
+   `chmod +x TextTool.Gui` before starting it.
 
-### Installation (end users)
+Command line:
 
-Download the latest `TextTool-GUI-*-win-x64.zip` from the
-[GitHub Releases](https://github.com/TwilightRainDev/TwilightRainTextTool/releases),
-extract it, and double-click `TextTool.exe`. Requires .NET 8 Desktop Runtime
-(see Requirements above); a missing runtime shows a guided download dialog.
-
-Coming from `v2.6.1` or earlier, the in-app updater cannot take you here —
-download the zip and unzip over the old folder by hand
-(see [`doc/ReleaseNotes.md`](doc/ReleaseNotes.md)).
-
-### Linux (CLI only)
-
-The GUI is still Windows-only. On Linux, use the command-line version, shipped as
-`TextTool-CLI-<version>-linux-x64.zip` next to `TextTool-CLI-<version>-win-x64.zip`
-on the [GitHub Releases](https://github.com/TwilightRainDev/TwilightRainTextTool/releases) page.
-
-It is a framework-dependent build, so install the .NET 8 **runtime** (not the SDK)
-first. On Debian/Ubuntu, install the `dotnet-runtime-8.0` package or use Microsoft's
-install script; see the [official install docs](https://learn.microsoft.com/dotnet/core/install/linux)
-for the exact steps.
-
-The zip is packed on Windows and keeps no Unix executable bit, so after extracting
-you have to `chmod +x texttool` before it runs:
+1. Download `TextTool-CLI-<version>-win-x64.zip` or `TextTool-CLI-<version>-linux-x64.zip`.
+2. Unzip it anywhere.
+3. On Linux the zip does not keep the executable bit, so run `chmod +x texttool` first.
 
 ```bash
 unzip TextTool-CLI-<version>-linux-x64.zip -d TextTool-CLI
@@ -141,76 +122,74 @@ chmod +x TextTool-CLI/texttool
 ./TextTool-CLI/texttool --help
 ```
 
-The subcommands are the same as on Windows: `merge`, `replace`, `vn`, `lint` and
-`update`, each with its own `--help`.
+Each zip has a `.sha256` file with the same name. Compare it if you want to rule out a broken
+download:
 
-On Linux `update` is check-only: `texttool update --check` tells you whether a newer
-release exists, but there is no automatic self-replace. Download the new zip and
-unpack it over the existing folder by hand.
+```bash
+sha256sum TextTool-CLI-<version>-linux-x64.zip
+```
 
-### Running
+### Build from source
 
-#### Option A — Build then run
+Requires the .NET 8 SDK (8.0.425 was used for the current builds).
 
 ```bash
 dotnet build TextTool.sln -c Release
-# Output → bin/Release/net8.0-windows/TextTool.exe
-double-click bin/Release/net8.0-windows/TextTool.exe
+dotnet run --project TextTool.Gui
+dotnet run --project TextTool.Cli -- lint --help
+dotnet test TextTool.Tests/TextTool.Tests.csproj
 ```
 
-#### Option B — From source
+Build output of the desktop app is `TextTool.Gui/bin/Release/net8.0/TextTool.Gui.exe` on Windows.
+
+Publish a framework-dependent build:
 
 ```bash
-dotnet run --project TextTool.csproj
+dotnet publish TextTool.Gui/TextTool.Gui.csproj -c Release -r win-x64 --self-contained false -o publish/TextTool.Gui/win-x64
+dotnet publish TextTool.Cli/TextTool.Cli.csproj -c Release -r win-x64 -o publish/TextTool.Cli/win-x64
+dotnet publish TextTool.Gui/TextTool.Gui.csproj -c Release -r linux-x64 --self-contained false -o publish/TextTool.Gui/linux-x64
+dotnet publish TextTool.Cli/TextTool.Cli.csproj -c Release -r linux-x64 -o publish/TextTool.Cli/linux-x64
 ```
 
-#### Publishing (same command as CI)
+Do not point `-o` at `bin/Release`: the SDK does not clean the target folder, so stale files
+from older builds stay there and the host may load the wrong assembly.
+
+There is also an offline UI check tool, not part of the solution:
 
 ```bash
-dotnet publish TextTool.csproj -c Release -r win-x64 -o publish/TextTool
-# Output → publish/TextTool/   (official release artifact is the CI-built zip)
+dotnet run --project tools/GuiSnapshot -c Release -- snapshots
 ```
 
-> Note: do not point `-o` at `bin/Release` — the SDK never cleans old files, so
-> publish output would mix with build artifacts and leave stale-version files
-> behind (the .NET host may then load the wrong assembly). To clean local build
-> output, delete the `bin/` and `obj/` directories and rebuild.
+### Command line
 
-> Note: a RID build (`-r win-x64`) writes its intermediate output to
-> `bin/Release/net8.0-windows/win-x64/` — that is the SDK's standard output
-> location for RID builds (publish copies from there to `-o`), not a backup
-> copy. It is already gitignored; no need to delete it, the next publish
-> reuses it incrementally.
-
-#### Command Line (CLI)
-
-`texttool` — the same engine, scriptable:
-
-```bash
-texttool merge <file...> [options]     Line merge + post-processing
-texttool replace <file...> [options]   Punctuation replacement
-texttool vn <file...> [options]        Visual novel reformatting
-texttool join <dir> [options]          File joining
-texttool lint <file...> [options]      AI-tone check, report only
-texttool update [--check]              Self-update (--check = check only)
+```text
+texttool merge <file...>     Line merge plus post-processing
+texttool replace <file...>   Punctuation replacement
+texttool vn <file...>        Visual novel reformatting
+texttool join <directory>    File joining
+texttool lint <file...>      AI-tone check, report only
+texttool update [--check]    Self update; --check only queries
 ```
 
-Run `texttool <command> --help` for each command's options. `update` downloads the new CLI zip from the GitHub Release, verifies its SHA-256, and swaps itself in (with `--check` you can check for a new version without updating). It cannot upgrade a client on `v2.6.1` or earlier — those installs have to be replaced by hand (see [`doc/ReleaseNotes.md`](doc/ReleaseNotes.md)).
+Options per subcommand:
 
-`lint` takes one or more files (`-` reads stdin) and changes nothing: it reports where
-Chinese AI-flavored wording appears, with rule id, line and column. `--json` emits the
-machine-readable contract, `--only parallel-contrast,cliche-words` runs selected rule ids only, `--min-severity warn`
-keeps the output to `warn` hits. Rule ids `mixed-quote-style`/`mixed-bracket-width` and `paragraph-length-uniform`-`explicit-numbering` come from the built-in
-detectors, so an external `lint_rules.json` that defines one of them is rejected when rules
-load and the command exits `2` — see [`doc/ReleaseNotes.md`](doc/ReleaseNotes.md).
+| Subcommand | Options |
+| --- | --- |
+| `merge` | `--threshold <N>` (default 20), `--chars` or `--bytes`, `--overwrite`, `--backup`, `--no-cjk`, `--fix-punct`, `--punct-chars <chars>`, `--no-trim-comma` |
+| `replace` | `--scheme <name>`; without it the rules in `replace_rules.json` are used |
+| `vn` | `--scheme <name>` (repeatable), `--max-para <N>` (default 450), `--reformat-only`, `--punct-only` |
+| `join` | `--pattern <glob>` (default `*.txt`), `--output <name>` (default `joined.txt`) |
+| `lint` | `--only <id,...>`, `--min-severity <info\|warn>`, `--json`; `-` reads stdin |
+| `update` | `--check` |
 
-**Exit codes differ from the other subcommands.** `merge` / `replace` / `vn` / `join` /
-`update` use `0` = success, `1` = failure; `lint` uses `0` = no hits, `1` = hits found,
-`2` = usage or read error. The hit test runs after filtering, so `--min-severity warn`
-means "exit 1 only when a `warn` hit exists".
+Every subcommand prints its own help with `--help`.
 
-**`--json` contract.** One wrapper regardless of how many files are passed, so consumers
-never branch on file count:
+Exit codes: `merge`, `replace`, `vn`, `join` and `update` return 0 on success and 1 on failure.
+`lint` is different: 0 means no hits, 1 means hits, 2 means a usage or read error. The hit test
+runs after filtering, so `--min-severity warn` exits 1 only when a `warn` hit exists.
+
+`lint --json` writes one wrapper for any number of inputs, so consumers never branch on file
+count:
 
 ```json
 {
@@ -235,376 +214,295 @@ never branch on file count:
 }
 ```
 
-Fields are PascalCase. The wrapper's `Version` is `2` — the gate for this contract, since
-version 1 did not promise the line endings, the escape set, the hit ordering or
-`ParagraphMode`. `Match` is the matched source text — word-list rules use it to name
-the word that fired; `Snippet` is the surrounding context; `Hint` is the index-aligned
-suggested rewrite, `null` when there is none. `ParagraphMode` is the paragraph model the
-scan used, `line` or `markdown` (see Heuristic limits below). `Notes` carries statistical
-observations and never affects the exit code. Invisible characters are escaped as `\u200b`
-in both the human-readable and the JSON output.
+The contract:
 
-What the contract guarantees:
+- `Version` is 3. A consumer that cannot handle the field set should refuse the payload.
+- Fields are PascalCase.
+- Line endings are LF in both the human-readable report and the JSON output.
+- `Hits` is sorted by `Line` then `Col`. Hits sharing a position keep engine order: rule table
+  order, then pattern order.
+- `Match` is the matched source text, `Snippet` the surrounding context, `Hint` the suggested
+  rewrite (`null` when there is none). Both `Match` and `Snippet` are contiguous slices of the
+  source, so a hit spanning a line break keeps the newline.
+- `ParagraphMode` is `line` or `markdown`, decided per file from its first 4096 characters.
+- `Notes` carries statistical observations and never affects the exit code.
+- `"`, `&`, `'`, `+`, `<`, `>` and the backtick are escaped as `\uXXXX`; a backslash becomes
+  `\\`; Chinese is written as is. Invisible characters are escaped the same way in lowercase
+  hex, for example `\u200b`.
 
-- **Line endings are LF** in both the human-readable report and `--json`.
-- **Escaping.** `"`, `&`, `'`, `+`, `<`, `>` and the backtick are escaped as `\uXXXX`
-  (`\u0022` `\u0026` `\u0027` `\u002B` `\u003C` `\u003E` `\u0060`); a backslash becomes `\\`;
-  Chinese is emitted as-is, as are `/ ~ % @ = | !`. Invisible characters are escaped the
-  same way but by a second code path, which writes **lowercase** hex (`\u200b`), while the
-  JSON encoder writes uppercase (`\u002B`) — both parse identically.
-- **`Hits` is sorted by `(Line, Col)` ascending**, and hits sharing a position keep engine
-  order (rule table order, then pattern order).
-- **`Match` and `Snippet` are contiguous slices of the source text.** A hit that spans a
-  line break keeps the newline in both: the human-readable report renders it as `\u000a`,
-  while the JSON text holds `\n`. Input is not line-ending-normalized on read, so with CRLF
-  input these fields can contain a CR too (`\u000d` in the report, `\r` in the JSON text).
+Two rules may report the same span on purpose: `repeated-punctuation` and `ellipsis-style` both
+fire on `。。。。` and carry different suggestions. Consumers that want one hit per span have to
+de-duplicate on their side.
 
-The human-readable report groups hits by rule; groups appear in the order of each group's
-first hit position, which is not rule-table order.
+`update` on Linux only queries. Run `texttool update --check` to see whether a newer release
+exists, then download the zip and overwrite the folder by hand.
 
-**Heuristic limits.** `mixed-quote-style` (quote style) and `mixed-bracket-width` (bracket width) match characters without
-context: the `'` in an English word such as `don't` counts as a quote style, so a Chinese
-quote elsewhere in the same text is reported as mixed, and ASCII brackets written inside a
-code sample count towards bracket-width mixing. The `statistics` group (`paragraph-length-uniform`-`explicit-numbering`) is statistical
-observation and never affects the exit code. `mixed-quote-style`/`mixed-bracket-width` are all `info` level — reported by
-default, and excluded from a gate by `--min-severity warn`.
+### Where files are written
 
-**Paragraph model.** The model is detected per file, from the first 4096 characters only: when blank
-lines make up at least 10% of the lines counted there and not all of those lines are blank (a trailing
-newline does not count as a line), the file is read as Markdown — paragraphs split on blank lines,
-soft-wrapped lines join into one paragraph, and list items, block quotes and numbered lines each form
-their own paragraph. Otherwise every non-blank line is one paragraph. Measured samples: real Markdown
-files land at 7.7%–53% blank lines, line-oriented text at 0%. The threshold is deliberately
-conservative, so a miss degrades to the line model rather than misfiring on line-oriented
-text. The model used is reported as `ParagraphMode`, and in the `[NOTE]` line of the
-human-readable report. Under the line model a soft-wrapped paragraph is split per line, so
-the paragraph-scoped rules `paragraph-ordinals` (ordinals inside one paragraph) and `elevated-ending` (elevated ending)
-can under-report — a known boundary.
+Configuration, rules and schemes live in the program folder:
 
-**Two rules may report the same span.** `。。。。` fires both `repeated-punctuation` and `ellipsis-style`, and other
-overlapping pairs behave the same way. That is **intentional**: the two rules carry
-different suggestions, and de-duplicating in the report layer would drop advice and break
-the `--only` contract (the surviving id decides whether the hit is emitted at all).
-Consumers that want one hit per span have to de-duplicate on their side.
+| File | Content |
+| --- | --- |
+| `app_config.json` | Interface language and theme |
+| `replace_rules.json` | Punctuation replacement rules |
+| `replace_schemes.json` | Named replacement schemes |
+| `vn_schemes.json` | Character and route schemes |
+| `lint_rules.json` | Extra lint rules, keyed by rule id |
+| `last_known_version.txt` | Last installed version, used to refuse replayed older packages |
 
-**One side effect of a suggested scheme.** `引号括号统一` rewrites full-width brackets to
-half-width, and a half-width bracket next to Chinese is exactly what `mixed-punctuation-width` reports (measured:
-`（中文）` scores no hit, `(中文)` scores two). Re-lint after applying it; it is not a `mixed-punctuation-width`
-remedy.
+Processed files are written next to their source as `{name}_Processed{ext}`. Backups are
+`{name}.bak`, with older copies rotated to `.bak.1` through `.bak.3`.
 
-### Project Structure
+### FAQ
+
+**Which encoding is used?** Input encoding is detected in this order: BOM, valid UTF-8, GBK
+fallback. When the header looks like UTF-8, the whole file is checked again before the decision
+is kept. Output is always written as UTF-8 with BOM, whatever the input was.
+
+**Where did my original file go?** It stays where it was. Results go to a new `*_Processed.*`
+file unless you tick the overwrite box. With overwrite ticked and the backup box also ticked,
+the previous content is kept as `{name}.bak`.
+
+**How do updates work?** The desktop app only reports whether a newer release exists, on both
+platforms. The command line can replace itself on Windows: it downloads the new zip, checks the
+SHA256 and the publisher signature, then swaps files after the process exits. A missing or
+invalid signature stops the update. On Linux only `texttool update --check` is available.
+
+**Why does the update say the version went backwards?** The updater records the last installed
+version in `last_known_version.txt` and refuses a release whose version is lower. Delete that
+file if the release was rolled back on purpose.
+
+**A config file got corrupted.** The program reports the file name instead of silently running
+with empty rules. Restore it from an export made on the About tab, or delete the file to fall
+back to defaults.
+
+### Project structure
 
 ```text
 TextTool/
-├── TextTool.sln                  # Solution file
-├── TextTool.csproj               # .NET 8 WinForms, v3.0.0
-├── Directory.Build.props         # Centralized version (3.0.0)
-├── Program.cs                    # Entry point, registers GBK encoding
-├── MainForm.cs                   # Main window (214 lines, hosts 6 tabs)
-│
-├── Controls/                     # Tab pages (extracted from MainForm)
-│   ├── MergeTabControl.cs        # Tab 1: Line merge (drag-drop, batch, preview)
-│   ├── JoinTabControl.cs         # Tab 2: File join (directory + pattern)
-│   ├── ReplaceTabControl.cs      # Tab 3: Punct. replace (CRUD, batch processing)
-│   ├── VNTabControl.cs           # Tab 4: Visual novel (reformat, punct. fix, presets)
-│   ├── LintTabControl.cs         # Tab 5: AI-tone lint (report only, shared engine)
-│   ├── VNCharacterSchemeForm.cs  # Character/route preset selection & editing
-│   ├── SchemeSelectionForm.cs    # Punct.-replace scheme selection dialog
-│   ├── SchemeSelectionFormBase.cs# Shared base for the two scheme dialogs
-│   ├── IThemedTab.cs             # Tab interface for theme traversal
-│   ├── AboutTabControl.cs        # Tab 6: About, language, dark mode, config I/O
-│   └── PreviewForm.cs            # Preview dialog (merge result before saving)
-│
-├── TextTool.Core/                 # Pure logic class library (no UI deps)
-│   ├── EncodingDetector.cs        # BOM → UTF-8 → GBK auto-detection (+ strict mode)
-│   ├── LineMerger.cs              # Threshold-based line merge algorithm
-│   ├── FileJoiner.cs              # Multi-file directory concatenation
-│   ├── CjkParagraphMerger.cs      # CJK truncation fix + no-merge support
-│   ├── PunctTruncationMerger.cs   # Punctuation truncation fix + no-merge support
-│   ├── PunctuationReplacer.cs     # Find-&-replace engine + ReplaceRuleStore
-│   ├── ProcessingPipeline.cs      # Single-pass pipeline orchestration
-│   ├── VNReformatterService.cs    # VN script reformatting engine (lines→paragraphs)
-│   ├── PunctFixerService.cs       # Dialogue punctuation completion
-│   ├── VNCharacterScheme.cs       # Character/route preset scheme model & store
-│   ├── ReplaceScheme.cs           # Replace-rule scheme model & store
-│   ├── BackupHelper.cs            # Overwrite backup + rotation (opt-in)
-│   ├── AtomicFile.cs              # Atomic output write (temp file + replace)
-│   ├── DialogueLine.cs            # Shared dialogue-line regex detection
-│   ├── RegexGuard.cs              # Regex construction with ReDoS timeout
-│   ├── JsonFileStore.cs           # Generic JSON file persistence
-│   ├── PathHelper.cs              # Shared file path utilities
-│   ├── TextUtils.cs               # Extension methods (EndsWithAny, etc.)
-│   ├── LintRule.cs                # AI-tone rule model + store (per-id merge with external file)
-│   ├── LintReport.cs              # Lint report model and JSON contract
-│   ├── AiToneLintService.cs       # AI-tone check engine (data rules + algorithmic detectors)
-│   ├── LintTextFormatter.cs       # Human-readable report rendering (invisible chars escaped)
-│   ├── LintRunner.cs              # Shared CLI/GUI lint orchestration (validate + scan + filter)
-│   ├── UpdateChecker.cs           # GitHub latest-release version check
-│   ├── UpdateClient.cs            # Update-only HttpClient (pinned roots, no redirects)
-│   ├── ReleaseVerifier.cs         # Release zip signature verification (ECDsa P-256)
-│   ├── ReleaseSigningPublicKey.cs # Publisher public key constant (SPKI base64)
-│   ├── PinnedRoots.cs             # Public root CA allow-list (SPKI)
-│   ├── LastKnownVersion.cs        # Last installed version (downgrade-replay detection)
-│   ├── SelfUpdater.cs              # CLI self-update: download, verify, staged swap
-│   ├── default_schemes.json       # Embedded default replace schemes
-│   ├── default_vn_schemes.json    # Embedded default VN schemes
-│   ├── default_lint_rules.json    # Embedded default AI-tone rules
-│   └── pinned_roots.txt           # Embedded root CA list (certifi)
-│
-├── TextTool.Cli/                  # Command-line entry (texttool.exe)
-│   └── Program.cs                 # merge / replace / vn / join / lint / update subcommands
-│
-├── Services/                      # UI-adjacent services
-│   ├── ThemeManager.cs            # Semantic color palette (dark/light mode)
-│   ├── ThemedFlatButton.cs        # Flat button with disabled-state ForeColor fix
-│   ├── ControlsHelper.cs          # Shared UI factories (buttons, labels, dialogs)
-│   └── IStatusSource.cs           # Status event interface for tabs
-│
-├── Localization/                  # i18n
-│   ├── Strings.cs                # Loc singleton (auto-detect, switch, persist)
-│   ├── zh_CN.json                # Simplified Chinese locale
-│   ├── zh_TW.json                # Traditional Chinese locale
-│   └── en_US.json                # English locale
-│
-├── Resources/
-│   ├── icon.ico                  # App icon
-│   └── TwilightRain.jpg          # Avatar in About page
-│
-├── TextTool.Tests/               # Unit tests (xUnit, 245 [Fact]/[Theory])
-│   ├── TextTool.Tests.csproj
-│   ├── TestHelpers.cs
-│   └── Services/                 # One test file per service
-│
-├── doc/                          # Release-note input (only doc kept in-repo)
-│   └── ReleaseNotes.md           # Manual-upgrade notice, shipped in release notes
-│
+├── TextTool.sln
+├── Directory.Build.props         Single source of the version number
+├── TextTool.Core/                Engine, config stores, update and signature checks
+│   ├── default_schemes.json      Embedded default replacement schemes
+│   ├── default_vn_schemes.json   Embedded default character schemes
+│   ├── default_lint_rules.json   Embedded default lint rules
+│   └── pinned_roots.txt          Embedded public root CA list for updates
+├── TextTool.Gui/                 Desktop app (Avalonia)
+│   ├── App.axaml                 Font size, font family, theme include
+│   ├── Views/                    One .axaml plus one .axaml.cs per tab and dialog
+│   ├── Styles/                   Theme.axaml, Theme.Light.axaml, Theme.Dark.axaml, AppStyles.axaml
+│   ├── Localization/             Loc.cs, LintTextSource.cs
+│   └── Services/                 AppSettings.cs
+├── TextTool.Cli/                 Command line entry, assembly name texttool
+├── TextTool.Tests/               xUnit tests, Core plus release scripts
+├── Localization/                 zh_CN.json, zh_TW.json, en_US.json
+├── Resources/                    icon.ico and the avatar used on the About tab
+├── tools/
+│   ├── GuiSnapshot/              Offscreen UI check tool
+│   └── ReleaseSigner/            Release package signing tool
 ├── scripts/
-│   ├── github-release.ps1        # GitHub REST helpers (curl; no gh)
-│   ├── publish.ps1               # Sign an existing Release and upload .sig
-│   └── release.ps1               # Tag, wait for CI, then publish.ps1
-│
-├── .github/workflows/
-│   └── build-test.yml            # CI: build + test + format + publish on release
-│
-├── replace_rules.json            # Runtime-generated rules (auto)
-├── app_config.json               # Language & theme preferences (auto)
-├── LICENSE                       # MIT License
-└── README.md                     # This file
+│   ├── release.ps1               Tag, wait for CI, then call publish.ps1
+│   ├── publish.ps1               Sign the release assets and upload the signatures
+│   └── github-release.ps1        Shared GitHub REST helpers
+├── doc/ReleaseNotes.md           Upgrade notice merged into each release body
+└── .github/workflows/build-test.yml
 ```
 
-> Developer docs (architecture guide, release checklist, update security,
-> replace-scheme design, ADRs, specs) live outside the repo, in
-> [`Docs/Project/TextTool/`](Docs/Project/TextTool/). `ReleaseNotes.md` stays in `doc/` because
-> `scripts/publish.ps1` ships it inside each Release's notes.
+### Tech stack
 
-### Tech Stack
+| Part | Technology |
+| --- | --- |
+| Runtime | .NET 8 |
+| Desktop UI | Avalonia 11.2.3, hand-written axaml, no MVVM |
+| Command line | Plain console entry, no argument parser package |
+| Persistence | JSON through `System.Text.Json` |
+| Encoding support | `System.Text.Encoding.CodePages` for GBK, built into the shared framework |
+| Tests | xUnit 2.4.2 |
+| Version | Single `<Version>` in `Directory.Build.props` |
 
-| Component | Technology |
-|-----------|-----------|
-| Framework | .NET 8 WinForms |
-| UI construction | Pure C# (programmatic, no Designer files) |
-| Encoding (GBK) | `System.Text.Encoding.CodePages`, built into the .NET 8 shared framework (no NuGet package) |
-| Output encoding | UTF-8 with BOM |
-| Persistence | JSON (`System.Text.Json`) |
-| i18n | Custom `Loc` singleton with JSON locale files |
+### Conventions
 
-### Version History
-
-Per-version changelog is carried by git tags and GitHub Releases — see
-[Tags](https://github.com/TwilightRainDev/TwilightRainTextTool/tags) and
-[Releases](https://github.com/TwilightRainDev/TwilightRainTextTool/releases)
-(14 tags, latest `v3.0.0`). This file does not duplicate it.
+No emoji in code, docs or commit messages. Status markers in terminal output are plain bracket
+text such as `[成功]`, never symbols. Functional characters used by the visual novel formatter
+are content, not decoration.
 
 ---
 
 ## 中文
 
-集行合并、文件拼接、中文截断修复、标点截断修复、标点替换于一体的 **Windows 文本处理桌面工具**，一键替代四个旧版批处理脚本。
-
 ### 功能概览
 
-| 页签 / CLI | 说明 |
-| :-- | :--- |
-| **行合并** | 短行自动拼接至指定阈值，可选多重后处理 |
-| **文件拼接** | 将目录中所有匹配文件合并为一个 |
-| **标点替换** | 自由配置查找/替换规则，支持排序，JSON 持久化 |
-| **视觉小说** | 将 VN 脚本重排为自然段落、补全对话标点、角色/路线预设方案 |
-| **AI 味检查** | GUI 页签与 `texttool lint` 共用引擎，只报不改 |
-| **关于** | 版本、作者、头像、GitHub 链接、语言切换 |
+| 页签 | 说明 |
+| --- | --- |
+| 行合并 | 把短行拼到指定长度为止，可选修复截断段落、套用替换规则 |
+| 文件拼接 | 把一个文件夹里所有匹配的文件拼成一个 |
+| 标点替换 | 维护查找替换规则并存盘，按规则批量改写文件 |
+| 视觉小说 | 把硬换行的脚本排成自然段，顺带补全对话标点 |
+| AI 味检查 | 报告读起来像生成文本的措辞，只报不改 |
+| 关于 | 版本、作者、仓库链接、语言与主题切换、配置导入导出、检查更新 |
 
-#### Tab 1 · 行合并
+### 各页签
 
-- **阈值合并** — 短行持续合并，直到字节数/字符数达到阈值为止
-- 双模式：**字节计数** / **字符计数**（1–1000 可调）
-- **编码自动检测** — BOM 判断 → UTF-8 验证 → GBK 回退
-- **拖放支持** — 拖入 `.txt` 文件即可
-- **安全输出** — 保存为 `*_Processed.*`，绝不覆盖源文件
+#### 页签 1：行合并
 
-**后处理选项（阈值合并后在内存中依次处理）：**
+- 选择文件或把文件拖到窗口上；选多个文件即按批处理。
+- 阈值 1 到 1000，可按字符数（默认 20）或按字节数计。
+- 来源行下面显示检测到的编码。
+- 阈值合并之后的后处理，按这个顺序执行：
+  - 修复中文截断：行末是汉字时拼接下一行（默认勾选）。
+  - 修复标点截断：行末是自定义字符集里的字符时拼接下一行（默认字符集 `，`）。
+  - 去掉行首逗号（默认勾选）。
+  - 应用页签 3 的标点替换规则。
+- 行末标点不合并属于合并这一步：给了自定义字符集（默认 `。！？`），行末是其中任一字符就不拼接。它的优先级高于上面两条截断修复。
+- 结果写在源文件旁边的 `*_Processed.*`，源文件不动。
+- 覆盖原文件需要另行勾选。同时勾选备份时，原内容留作 `{原名}.bak`，更早的副本轮换为 `.bak.1` 到 `.bak.3`。
+- 单文件可以点预览，按当前选项跑一遍，在单独的窗口里看结果。
 
-| 选项 | 说明 |
-|------|------|
-| **修复中文截断断段** | 行末为汉字时拼接下行（如 `你好\n吗？` → `你好吗？`） |
-| **修复标点截断断段** | 行末为指定标点时拼接下行（如 `回家吧，\n孩子` → `回家吧，孩子`）。支持自定义标点集。 |
-| **应用标点替换规则** | 对每行执行 Tab 3 中配置的替换规则 |
-| **行尾部标点不合并** | 行末为指定字符时**阻止合并**——优先级高于 CJK 和标点截断规则。适合让章节标题（`章`、`节`）、句末标点（`.!?。！？`）独立成段。 |
-| **危险覆盖模式** | 结果直接写回原文件，不再另存 `*_Processed.*`。旁边的**覆盖前备份为 .bak** 决定是否把原内容留成 `{name}.bak`（旧备份轮换为 `.bak.1`–`.bak.3`）；不勾选则不产生任何额外文件。 |
+#### 页签 2：文件拼接
 
-**处理流水线**（一次内存传递，最后一次性写入硬盘）：
+- 文件夹、匹配模式（默认 `*.txt`）、输出文件名（默认 `combined.txt`）。
+- 拼接前按文件名排序。
+- 每个文件按自身检测到的编码读取。
+- 输出统一为 UTF-8 with BOM。
 
-```text
-读取文件 → 阈值合并 → 中文截断修复 → 标点截断修复 → 标点替换 → 写出文件
-```
+#### 页签 3：标点替换
 
-#### Tab 2 · 文件拼接
+- 规则列表支持添加、更新、删除、上移、下移。
+- 每次改动后立即写入 `replace_rules.json`。
+- 这份规则列表与行合并页共用，改动在那里立刻生效。
+- 一次可以处理一个或多个文件，每个文件按自身检测到的编码读取。
+- 结果写在 `*_Processed.*`。
+- 预设方案：勾选内置或自定义方案，按规则粒度勾选，支持新建、改名、删除方案，以及导入导出方案文件（JSON）。
 
-- 将目录中所有匹配 Glob 模式的文件合并为一个
-- 按文件名排序后合并
-- 每个文件按自身编码独立读取
-- 统一输出为 **UTF-8 with BOM**
-- 安全输出：`*_Processed.*`
+#### 页签 4：视觉小说
 
-#### Tab 3 · 标点替换
+- 把固定宽度硬换行的文本排成自然段，区分为对话、叙述、场景标记、路线标题。
+- 三种模式：排版加补标点、仅排版、仅补标点。
+- 角色与路线方案，每个方案可以带一条场景标记正则。
+- 段落最大字数 100 到 2000（默认 450）。
+- 单文件先开预览窗，在那里点保存才写盘；批量直接写盘，进度报到状态栏。
 
-- **自由配置** 查找/替换规则（如 `。。` → `。`）
-- **可排序** — 通过上移/下移按钮调整规则顺序
-- 左侧规则列表实时预览
-- 支持添加、更新、删除规则
-- **JSON 持久化** — 自动保存到 `replace_rules.json`，重启不丢失
-- 支持拖放 `.txt` 文件（单文件或批量）
-- **批量处理** — 选择多个文件，一键处理所有
-- 安全输出：`*_Processed.*`
+#### 页签 5：AI 味检查
 
-#### Tab 4 · 视觉小说
+- 输入可以是一个或多个文件，也可以直接粘贴文本，两者可以同时给。
+- 规则清单可以逐条勾选；全部不勾等于跑全部规则。
+- 严重度过滤可选只看 `warn` 及以上。
+- 只出报告，不写任何文件；报告文字跟随界面语言。
+- 命令行子命令 `lint` 用的是同一套引擎。
 
-- **排版** — 将 VN 脚本从固定宽度硬换行重建为自然段落
-- 自动识别 **对话 / 叙事 / 场景标记 / 路线标题** 四类行
-- 识别 `「角色」「台词」` 与 `角色名「台词」` / `角色名，「台词」` 对话模式
-- **对话补标点** — 为缺少句末标点的对话行补全 `。`
-- **角色/路线预设方案** — 内置命运石之门 / 进击的巨人 / 空之境界 / 樱之诗方案，支持对话框编辑
-- 最大段落字数可调（100–2000）
-- 超长叙事段落在句界自动拆分
-- 三种模式：**一条龙**（排版+补标点）、**仅排版**、**仅补标点**
-- 安全输出：`*_Processed.*`
+#### 页签 6：关于
 
-#### Tab 5 · 关于
+- 程序版本、作者、仓库链接。
+- 语言切换：简体中文、繁體中文、English。选择存到 `app_config.json`，切换不需要重启。
+- 深浅主题切换。
+- 导出、导入 `app_config.json` 与 `replace_rules.json`。
+- 检查更新：只查有没有新版本，不下载也不替换。
 
-- 程序图标 (64×64) + **TwilightRain 头像** (64×64) 并排显示
-- 程序名称 + 版本号并排
-- 作者 + GitHub 链接并排
-- 功能介绍
-- **语言选择器** — 在 简体中文 / 繁體中文 / English 三者间即时切换
-- 语言偏好保存到 `app_config.json`，下次启动自动恢复
+### 支持的平台
 
-### 国际化 / i18n
+| 平台 | 图形界面 | 命令行 |
+| --- | --- | --- |
+| Windows x64 | `TextTool-GUI-<版本>-win-x64.zip` | `TextTool-CLI-<版本>-win-x64.zip` |
+| Linux x64 | `TextTool-GUI-<版本>-linux-x64.zip` | `TextTool-CLI-<版本>-linux-x64.zip` |
 
-内置三种语言，自动检测系统 UI 语言：
+四份包都是框架依赖发布，包内不含 .NET 运行时。
 
-| 语言 | 代码 | 文件 |
-|------|------|------|
-| 简体中文 | `zh_CN` | `Localization/zh_CN.json` |
-| 繁體中文 | `zh_TW` | `Localization/zh_TW.json` |
-| English | `en_US` | `Localization/en_US.json` |
+前置依赖：
 
-- 系统语言自动适配 `zh-CN`、`zh-TW`、`zh-HK`、`zh-MO`、`en-*`
-- 可在关于页手动切换，偏好自动持久化
+- Windows：.NET 8 运行时（x64），下载地址
+  [dotnet.microsoft.com/download/dotnet/8.0](https://dotnet.microsoft.com/download/dotnet/8.0)。
+- Linux：.NET 8 运行时（不是 SDK）。Debian 与 Ubuntu 上是 `dotnet-runtime-8.0` 包，
+  具体步骤见[官方安装文档](https://learn.microsoft.com/dotnet/core/install/linux)。
+- Linux：需要中文字体，例如 `fonts-noto-cjk`。没有的话图形界面与终端里的中文显示成方块，
+  发布包不带字体。
 
-### 系统要求
+### 下载与安装
 
-- **.NET 8 Desktop Runtime**（Windows WinForms）
-- 从 [dotnet.microsoft.com/download/dotnet/8.0](https://dotnet.microsoft.com/download/dotnet/8.0) 下载安装 **.NET Desktop Runtime 8.0（x64）**
-- 缺少运行时会弹出引导对话框
+图形界面：
 
-### 安装（最终用户）
+1. 从 [GitHub Releases](https://github.com/TwilightRainDev/TwilightRainTextTool/releases)
+   下载 `TextTool-GUI-<版本>-win-x64.zip` 或 `TextTool-GUI-<版本>-linux-x64.zip`。
+2. 解压到任意目录。除 .NET 运行时之外的东西都在这个目录里，配置与输出文件也写在程序目录。
+3. 运行解压目录里的程序。缺 .NET 8 运行时时程序起不来，先按上面的链接装好。
+   Linux 上 zip 不保留可执行位，启动前先 `chmod +x TextTool.Gui`。
 
-从 [GitHub Releases](https://github.com/TwilightRainDev/TwilightRainTextTool/releases)
-下载最新的 `TextTool-GUI-*-win-x64.zip`，解压后双击 `TextTool.exe` 即可运行。
-需先安装 .NET 8 Desktop Runtime（见上方系统要求）；缺少运行时会弹出引导对话框。
+命令行版：
 
-若你手上是 `v2.6.1` 及更早的版本，程序内自动更新到不了这里——请手动下载 zip 解压覆盖原目录
-（见 [`doc/ReleaseNotes.md`](doc/ReleaseNotes.md)）。
-
-### 在 Linux 上使用命令行版
-
-图形界面目前仍然只有 Windows 版，Linux 上能用的是命令行版。发布包新增了一个资产
-`TextTool-CLI-<版本号>-linux-x64.zip`，和已有的 `TextTool-CLI-<版本号>-win-x64.zip`
-并列，从 [GitHub Releases](https://github.com/TwilightRainDev/TwilightRainTextTool/releases)
-页面下载。
-
-这是框架依赖发布，Linux 上需要先装 .NET 8 运行时（不是 SDK）。Debian/Ubuntu 可参考
-apt 装 `dotnet-runtime-8.0` 或微软官方脚本，具体步骤见[官方安装文档](https://learn.microsoft.com/dotnet/core/install/linux)。
-
-zip 是在 Windows 上打的，不保留 Unix 可执行位，解压后必须 `chmod +x texttool`
-才能直接跑：
+1. 下载 `TextTool-CLI-<版本>-win-x64.zip` 或 `TextTool-CLI-<版本>-linux-x64.zip`。
+2. 解压到任意目录。
+3. Linux 上 zip 不保留可执行位，先 `chmod +x texttool`。
 
 ```bash
-unzip TextTool-CLI-<版本号>-linux-x64.zip -d TextTool-CLI
+unzip TextTool-CLI-<版本>-linux-x64.zip -d TextTool-CLI
 chmod +x TextTool-CLI/texttool
 ./TextTool-CLI/texttool --help
 ```
 
-可用的子命令与 Windows 版一致：`merge`、`replace`、`vn`、`lint`、`update`，每个都支持 `--help`。
+每个 zip 旁边有一个同名 `.sha256` 文件，想排除下载损坏时对一下：
 
-`update` 在 Linux 上只能查询：`texttool update --check` 可以看有没有新版，但不提供自动替换，
-需要手动下载新包覆盖目录。
+```bash
+sha256sum TextTool-CLI-<版本>-linux-x64.zip
+```
 
-### 运行方式
+### 从源码构建
 
-#### 方式一 · 构建后运行
+需要 .NET 8 SDK（当前构建用的是 8.0.425）。
 
 ```bash
 dotnet build TextTool.sln -c Release
-# 输出 → bin/Release/net8.0-windows/TextTool.exe
-double-click bin/Release/net8.0-windows/TextTool.exe
+dotnet run --project TextTool.Gui
+dotnet run --project TextTool.Cli -- lint --help
+dotnet test TextTool.Tests/TextTool.Tests.csproj
 ```
 
-#### 方式二 · 从源码运行
+Windows 上图形界面的构建产物在 `TextTool.Gui/bin/Release/net8.0/TextTool.Gui.exe`。
+
+在本地发布框架依赖版本：
 
 ```bash
-dotnet run --project TextTool.csproj
+dotnet publish TextTool.Gui/TextTool.Gui.csproj -c Release -r win-x64 --self-contained false -o publish/TextTool.Gui/win-x64
+dotnet publish TextTool.Cli/TextTool.Cli.csproj -c Release -r win-x64 -o publish/TextTool.Cli/win-x64
+dotnet publish TextTool.Gui/TextTool.Gui.csproj -c Release -r linux-x64 --self-contained false -o publish/TextTool.Gui/linux-x64
+dotnet publish TextTool.Cli/TextTool.Cli.csproj -c Release -r linux-x64 -o publish/TextTool.Cli/linux-x64
 ```
 
-#### 发布命令（与 CI 一致）
+不要把 `-o` 指到 `bin/Release`：SDK 不会清理目标目录，旧版本的文件会留在里面，宿主可能加载到错的程序集。
+
+另外有一个不进解决方案的离屏界面验收工具：
 
 ```bash
-dotnet publish TextTool.csproj -c Release -r win-x64 -o publish/TextTool
-# 输出 → publish/TextTool/   （正式发布物为 CI 生成的 zip）
+dotnet run --project tools/GuiSnapshot -c Release -- snapshots
 ```
 
-> 注意：不要将 `-o` 指向 `bin/Release` 下 —— SDK 从不清理旧文件，publish
-> 输出会与构建产物混居，残留旧版本文件（.NET host 可能因此加载到错误版本的程序集）。
-> 清理本地构建产物：删除 `bin/`、`obj/` 目录后重新构建即可。
+### 命令行
 
-> 注意：带 `-r win-x64` 的构建会把中间产物写入 `bin/Release/net8.0-windows/win-x64/` ——
-> 这是 SDK 对 RID 构建的标准输出目录（publish 从这里复制到 `-o`，并非备份副本），
-> 已被 git 忽略，无需手动删除，下次 publish 会增量复用。
-
-#### 命令行（CLI）
-
-`texttool` — 同一引擎，可脚本化：
-
-```bash
-texttool merge <文件...> [选项]      行合并 + 后处理
-texttool replace <文件...> [选项]    标点替换
-texttool vn <文件...> [选项]        视觉小说排版
-texttool join <目录> [选项]         文件拼接
-texttool lint <文件...> [选项]      AI 味检查（只报不改）
-texttool update [--check]           自更新（--check 仅检查）
+```text
+texttool merge <文件...>     行合并加后处理
+texttool replace <文件...>   标点替换
+texttool vn <文件...>        视觉小说排版
+texttool join <目录>         文件拼接
+texttool lint <文件...>      AI 味检查，只报不改
+texttool update [--check]    自更新，--check 只查询
 ```
 
-运行 `texttool <命令> --help` 查看各命令选项。`update` 从 GitHub Release 下载新 CLI zip，校验 SHA-256 后自动替换自身（`--check` 可只检查不更新）。`v2.6.1` 及更早的客户端用不了 `update`，需手动下载替换（见 [`doc/ReleaseNotes.md`](doc/ReleaseNotes.md)）。
+各子命令的选项：
 
-`lint` 接受一个或多个文件（`-` 表示从 stdin 读），不改动任何内容：只报告中文 AI 味出现的位置，
-给出规则 Id、行号与列号。`--json` 输出机器可读契约，`--only parallel-contrast,cliche-words` 只跑指定规则 Id，
-`--min-severity warn` 只保留 `warn` 及以上命中。`mixed-quote-style`/`mixed-bracket-width` 与 `paragraph-length-uniform`-`explicit-numbering` 这批 Id 由程序内
-探测器产出，外部 `lint_rules.json` 若定义了同 Id，会在加载时报错、命令退 `2`——见
-[`doc/ReleaseNotes.md`](doc/ReleaseNotes.md)。
+| 子命令 | 选项 |
+| --- | --- |
+| `merge` | `--threshold <N>`（默认 20）、`--chars` 或 `--bytes`、`--overwrite`、`--backup`、`--no-cjk`、`--fix-punct`、`--punct-chars <字符>`、`--no-trim-comma` |
+| `replace` | `--scheme <名称>`；不给就用 `replace_rules.json` 里的规则 |
+| `vn` | `--scheme <名称>`（可多次）、`--max-para <N>`（默认 450）、`--reformat-only`、`--punct-only` |
+| `join` | `--pattern <通配符>`（默认 `*.txt`）、`--output <文件名>`（默认 `joined.txt`） |
+| `lint` | `--only <Id,...>`、`--min-severity <info\|warn>`、`--json`；传 `-` 从 stdin 读 |
+| `update` | `--check` |
 
-**退出码与其它子命令不同。** `merge` / `replace` / `vn` / `join` / `update` 是
-`0` 成功 / `1` 失败；`lint` 是 `0` 无命中 / `1` 有命中 / `2` 用法或读取错误。
-命中判定在过滤之后进行，因此 `--min-severity warn` 的语义是「只在有 `warn` 命中时退 1」。
+每个子命令都能用 `--help` 看自己的说明。
 
-**`--json` 契约。** 无论传几个文件都是同一个包装，消费者不必按文件数分支：
+退出码：`merge`、`replace`、`vn`、`join`、`update` 是 0 表示成功，1 表示失败。
+`lint` 不同：0 表示无命中，1 表示有命中，2 表示用法或读取错误。命中判定发生在过滤之后，
+所以 `--min-severity warn` 只在有 `warn` 命中时返回 1。
+
+`lint --json` 无论几个输入都用同一个外层包装，消费方不必按文件数分支：
 
 ```json
 {
@@ -629,181 +527,116 @@ texttool update [--check]           自更新（--check 仅检查）
 }
 ```
 
-字段为 PascalCase。包装的 `Version` 为 `2`，是本契约的版本闸门——v1 不承诺行尾、转义面、
-命中有序性与 `ParagraphMode`。`Match` 是被命中的原文——词表类规则靠它告诉消费者命中了哪个词；
-`Snippet` 是带上下文的展示片段；`Hint` 是下标对齐出来的建议改法，无则 `null`。
-`ParagraphMode` 是本次扫描采用的段落口径：`line` 或 `markdown`（见下方启发式规则的边界）。
-`Notes` 是统计观察，不计入退出码。隐形字符在人读与 JSON 两种输出里都转义为 `\u200b`。
+契约：
 
-契约保证：
+- `Version` 是 3。处理不了这批字段的消费方应当拒收。
+- 字段名是 PascalCase。
+- 人读报告与 JSON 的行尾都是 LF。
+- `Hits` 先按 `Line` 再按 `Col` 升序。同一位置的多条命中保持引擎顺序：规则表顺序，然后模式顺序。
+- `Match` 是命中的原文，`Snippet` 是上下文的展示片段，`Hint` 是建议改法（没有时为 `null`）。
+  `Match` 与 `Snippet` 都是源文本的连续切片，跨行的命中会保留换行。
+- `ParagraphMode` 是 `line` 或 `markdown`，按每个文件前 4096 个字符判断。
+- `Notes` 是统计观察，不影响退出码。
+- `"`、`&`、`'`、`+`、`<`、`>` 和反引号转义成 `\uXXXX`；反斜杠写成 `\\`；中文照原样输出。
+  隐形字符同样转义，但用小写十六进制，例如 `\u200b`。
 
-- **行尾一律 LF**，人读报告与 `--json` 同此。
-- **转义面。** `"`、`&`、`'`、`+`、`<`、`>` 与反引号转义为 `\uXXXX`
-  （`\u0022` `\u0026` `\u0027` `\u002B` `\u003C` `\u003E` `\u0060`），反斜杠为 `\\`；
-  中文按原样输出，`/ ~ % @ = | !` 同样不转义。隐形字符也转义成 `\uXXXX`，但走另一条代码
-  路径：它是**小写**十六进制（`\u200b`），JSON 编码器则是大写（`\u002B`）——两者解析无差别。
-- **`Hits` 按 `(Line, Col)` 升序**，同一位置的命中保持引擎顺序（规则表顺序，再按 Pattern 顺序）。
-- **`Match` 与 `Snippet` 都是原文的连续切片。** 跨行命中的换行会保留：人读报告渲染为 `\u000a`，
-  JSON 文本里是 `\n`。读盘不做行尾归一化，因此 CRLF 输入下这两个字段还可能含 CR
-  （人读为 `\u000d`，JSON 文本为 `\r`）。
+有两条规则会故意报同一段文字：`repeated-punctuation` 与 `ellipsis-style` 都会在 `。。。。`
+上命中，给出的建议不同。想要一段只留一条的，由消费方自己去重。
 
-人读报告按规则分组，各组的出现顺序是各组首命中的位置顺序，不再等于规则表顺序。
+`update` 在 Linux 上只能查询：`texttool update --check` 看有没有新版，
+下载与覆盖目录要手动做。
 
-**启发式规则的边界。** `mixed-quote-style`（引号风格）、`mixed-bracket-width`（括号全半角）只看字符不看上下文：
-英文词里的 `'`（如 `don't`）会被当作一种引号风格，与文中别处的中文引号并列为「混用」；
-代码片段里写的 ASCII 括号同样计入括号混用。`statistics` 组（`paragraph-length-uniform`–`explicit-numbering`）是统计观察，不进退出码。
-`mixed-quote-style`/`mixed-bracket-width` 一律 `info` 级：默认只报，用 `--min-severity warn` 即可把它们排除在关卡之外。
+### 文件写在哪里
 
-**段落口径。** 口径按文件探测，只取首 4096 字符：其中空行占行数比例达到 10% 且非全空（末尾单个
-换行不算一行）即判为 Markdown——按空行分段，软换行并入同一段，列表项、引用行与编号行各自成段；
-否则每个非空行各成一段。实测样本：真实 Markdown 文件空行占比 7.7%–53%，行式文本为 0%；
-阈值取保守方向，漏判只退化成行式口径，不会误判行式文本。当次采用的口径随报告输出
-（`ParagraphMode` 字段与人读报告的 `[NOTE]` 行）。行式口径下软换行的段落被拆成多行，
-段落作用域的 `paragraph-ordinals`（段内序数词）与 `elevated-ending`（结尾升华）因此可能少报——属已知边界。
+配置、规则与方案都在程序目录里：
 
-**两条规则可能报同一跨度。** `。。。。` 会同时命中 `repeated-punctuation` 与 `ellipsis-style`，其它重叠规则同理。
-这是**有意行为**：两条规则给的建议不同，报告层去重会丢掉建议，也会破坏 `--only` 契约
-（去重后留下的 Id 决定该命中是否输出）。需要「一个跨度只留一条」的消费者请自行去重。
+| 文件 | 内容 |
+| --- | --- |
+| `app_config.json` | 界面语言与主题 |
+| `replace_rules.json` | 标点替换规则 |
+| `replace_schemes.json` | 命名的替换方案 |
+| `vn_schemes.json` | 角色与路线方案 |
+| `lint_rules.json` | 额外检查规则，按规则 Id 覆盖内置规则 |
+| `last_known_version.txt` | 最近安装的版本，用于拒绝回放的旧包 |
 
-**建议方案的一处副作用。** `引号括号统一` 会把全角括号转成半角，而半角括号紧邻中文正是 `mixed-punctuation-width`
-要报的（实测 `（中文）` 0 处命中、`(中文)` 2 处）。用完请重跑检查，它不是 `mixed-punctuation-width` 的解法。
+处理结果写在源文件旁边，名字是 `{原名}_Processed{扩展名}`。备份是 `{原名}.bak`，
+更早的副本轮换为 `.bak.1` 到 `.bak.3`。
+
+### 常见问题
+
+**用的是哪种编码？** 输入编码按这个顺序判断：BOM、合法 UTF-8、GBK 回退。头部像 UTF-8 时，
+会再全文核一遍才保留这个结论。输出一律写成 UTF-8 with BOM，与输入编码无关。
+
+**原文件去哪了？** 原地不动。结果写到新的 `*_Processed.*`，除非你勾了覆盖。勾了覆盖又勾了备份，
+原内容留作 `{原名}.bak`。
+
+**更新是怎么做的？** 图形界面在两个平台都只告诉你有没有新版本。命令行在 Windows 上能自己替换：
+下载新 zip、核对 SHA256 与发布者签名、在本进程退出后换掉安装目录里的文件。签名缺失或验签失败
+一律中止。Linux 上只有 `texttool update --check` 可用。
+
+**为什么更新说版本倒退了？** 更新器把最近安装的版本记在 `last_known_version.txt` 里，
+遇到版本号更低的发布包会拒绝。如果确实是有意回滚，删掉这个文件再试。
+
+**配置文件坏了怎么办？** 程序会报出是哪个文件，不会静默按空规则跑。用关于页导出的副本覆盖回来，
+或者删掉该文件回到默认值。
 
 ### 项目结构
 
 ```text
 TextTool/
-├── TextTool.sln                  # 解决方案文件
-├── TextTool.csproj               # .NET 8 WinForms, v3.0.0
-├── Directory.Build.props         # 统一版本号 (3.0.0)
-├── Program.cs                    # 入口，注册 GBK 编码支持
-├── MainForm.cs                   # 主窗口 (214 行，承载 6 个页签)
-│
-├── Controls/                     # 页签控件（从 MainForm 拆分）
-│   ├── MergeTabControl.cs        # Tab 1: 行合并（拖放、批量、预览）
-│   ├── JoinTabControl.cs         # Tab 2: 文件拼接（目录 + 匹配模式）
-│   ├── ReplaceTabControl.cs      # Tab 3: 标点替换（CRUD、批量处理）
-│   ├── VNTabControl.cs           # Tab 4: 视觉小说（排版、补标点、预设方案）
-│   ├── LintTabControl.cs         # Tab 5: AI 味检查（只报不改，与 CLI 共用引擎）
-│   ├── VNCharacterSchemeForm.cs  # 角色/路线预设方案勾选与编辑
-│   ├── SchemeSelectionForm.cs    # 标点替换方案勾选对话框
-│   ├── SchemeSelectionFormBase.cs# 两个方案对话框的共享基类
-│   ├── IThemedTab.cs             # 主题遍历所需的页签接口
-│   ├── AboutTabControl.cs        # Tab 6: 关于、语言切换、深色模式、配置导入导出
-│   └── PreviewForm.cs            # 预览对话框（合并结果保存前查看）
-│
-├── TextTool.Core/                 # 纯逻辑类库（无 UI 依赖）
-│   ├── EncodingDetector.cs        # BOM → UTF-8 → GBK 自动检测（含严格模式）
-│   ├── LineMerger.cs              # 阈值行合并核心算法
-│   ├── FileJoiner.cs              # 多文件拼接
-│   ├── CjkParagraphMerger.cs      # 中文截断修复 + 不合并规则
-│   ├── PunctTruncationMerger.cs   # 标点截断修复 + 不合并规则
-│   ├── PunctuationReplacer.cs     # 查找替换引擎 + ReplaceRuleStore
-│   ├── ProcessingPipeline.cs      # 流水线编排（单次遍历，一次写出）
-│   ├── VNReformatterService.cs    # VN 脚本排版引擎（行→段落）
-│   ├── PunctFixerService.cs       # 对话标点补齐
-│   ├── VNCharacterScheme.cs       # 角色/路线预设方案模型与存储
-│   ├── ReplaceScheme.cs           # 替换规则方案模型与存储
-│   ├── BackupHelper.cs            # 覆盖前备份 + 轮换（可选开关）
-│   ├── AtomicFile.cs              # 输出原子写入（临时文件 + 整体替换）
-│   ├── DialogueLine.cs            # 共享对话行正则检测
-│   ├── RegexGuard.cs              # 带 ReDoS 超时的正则构造入口
-│   ├── JsonFileStore.cs           # 泛型 JSON 文件持久化
-│   ├── PathHelper.cs              # 共享文件路径工具
-│   ├── TextUtils.cs               # 扩展方法（EndsWithAny 等）
-│   ├── LintRule.cs                # AI 味规则模型 + 存储（外部文件按 Id 合并覆盖）
-│   ├── LintReport.cs              # 检查报告模型与 JSON 契约
-│   ├── AiToneLintService.cs       # AI 味检查引擎（数据规则 + 算法检出器）
-│   ├── LintTextFormatter.cs       # 人读报告渲染（不可见字符转义）
-│   ├── LintRunner.cs              # CLI/GUI 共用检查编排（校验 + 扫描 + 过滤）
-│   ├── UpdateChecker.cs           # GitHub 最新 release 版本检查
-│   ├── UpdateClient.cs            # 自更新专用 HttpClient（固定根、禁重定向）
-│   ├── ReleaseVerifier.cs         # 发布包签名验签（ECDsa P-256）
-│   ├── ReleaseSigningPublicKey.cs # 发布者公钥常量（SPKI base64）
-│   ├── PinnedRoots.cs             # 公共根 CA 白名单（SPKI）
-│   ├── LastKnownVersion.cs        # 最近安装版本（降级重放检测）
-│   ├── SelfUpdater.cs             # CLI 自更新：下载、校验、延迟替换
-│   ├── default_schemes.json       # 内置默认替换方案
-│   ├── default_vn_schemes.json    # 内置默认 VN 方案
-│   ├── default_lint_rules.json    # 内置 AI 味规则
-│   └── pinned_roots.txt           # 内置根 CA 清单（certifi）
-│
-├── TextTool.Cli/                  # 命令行入口（texttool.exe）
-│   └── Program.cs                 # merge / replace / vn / join / lint / update 子命令
-│
-├── Services/                      # UI 相关服务
-│   ├── ThemeManager.cs            # 语义化色板（深色/浅色模式）
-│   ├── ThemedFlatButton.cs        # 扁平按钮 + 禁用状态 ForeColor 修复
-│   ├── ControlsHelper.cs          # 共享 UI 工厂（按钮、标签、对话框）
-│   └── IStatusSource.cs           # 页签状态事件接口
-│
-├── Localization/                 # 国际化
-│   ├── Strings.cs                # Loc 单例（自动检测、切换、持久化）
-│   ├── zh_CN.json                # 简体中文语言包
-│   ├── zh_TW.json                # 繁体中文语言包
-│   └── en_US.json                # 英文语言包
-│
-├── Resources/
-│   ├── icon.ico                  # 程序图标
-│   └── TwilightRain.jpg          # 关于页头像
-│
-├── TextTool.Tests/               # 单元测试（xUnit，245 个 [Fact]/[Theory]）
-│   ├── TextTool.Tests.csproj
-│   ├── TestHelpers.cs
-│   └── Services/                 # 每个服务对应一个测试文件
-│
-├── doc/                          # 发布说明的输入（仓库内仅留这一份文档）
-│   └── ReleaseNotes.md           # 手动升级提示，随发布说明出货
-│
+├── TextTool.sln
+├── Directory.Build.props         版本号唯一来源
+├── TextTool.Core/                引擎、配置读写、更新与签名校验
+│   ├── default_schemes.json      内置默认替换方案
+│   ├── default_vn_schemes.json   内置默认角色方案
+│   ├── default_lint_rules.json   内置默认检查规则
+│   └── pinned_roots.txt          更新链路用的公共根 CA 清单
+├── TextTool.Gui/                 图形界面（Avalonia）
+│   ├── App.axaml                 字号、字体、主题引用
+│   ├── Views/                    每个页签与弹窗一对 .axaml 与 .axaml.cs
+│   ├── Styles/                   Theme.axaml、Theme.Light.axaml、Theme.Dark.axaml、AppStyles.axaml
+│   ├── Localization/             Loc.cs、LintTextSource.cs
+│   └── Services/                 AppSettings.cs
+├── TextTool.Cli/                 命令行入口，程序集名 texttool
+├── TextTool.Tests/               xUnit 测试，覆盖 Core 与发布脚本
+├── Localization/                 zh_CN.json、zh_TW.json、en_US.json
+├── Resources/                    icon.ico 与关于页用的头像
+├── tools/
+│   ├── GuiSnapshot/              离屏界面验收工具
+│   └── ReleaseSigner/            发布包签名工具
 ├── scripts/
-│   ├── github-release.ps1        # GitHub REST 辅助（curl，不用 gh）
-│   ├── publish.ps1               # 给已有 Release 签名并上传 .sig
-│   └── release.ps1               # 打 tag、等 CI、再调 publish.ps1
-│
-├── .github/workflows/
-│   └── build-test.yml            # CI：构建 + 测试 + 格式 + 发布
-│
-├── replace_rules.json            # 运行时生成的替换规则文件（自动）
-├── app_config.json               # 语言与主题偏好（自动）
-├── LICENSE                       # MIT 许可证
-└── README.md                     # 本文件
+│   ├── release.ps1               打 tag、等 CI、再调 publish.ps1
+│   ├── publish.ps1               给发布资产签名并上传签名
+│   └── github-release.ps1        GitHub REST 公共函数
+├── doc/ReleaseNotes.md           升级提示，随每个 Release 正文发布
+└── .github/workflows/build-test.yml
 ```
-
-> 开发文档（架构指南、发布清单、更新安全、替换方案设计、ADR、规格）已移出仓库，
-> 放在工作区 [`Docs/Project/TextTool/`](Docs/Project/TextTool/)。`ReleaseNotes.md` 留在 `doc/` 里，
-> 因为 `scripts/publish.ps1` 要把它并进每个 Release 的发布说明。
 
 ### 技术栈
 
-| 组件 | 技术 |
-|------|------|
-| 框架 | .NET 8 WinForms |
-| UI 构建 | 纯 C# 代码（无 Designer 文件） |
-| 编码支持 | `System.Text.Encoding.CodePages`（.NET 8 共享框架内置，无需 NuGet 包） |
-| 输出编码 | UTF-8 with BOM |
-| 持久化 | JSON（`System.Text.Json`） |
-| 国际化 | 自定义 `Loc` 单例 + JSON 语言包 |
+| 部分 | 技术 |
+| --- | --- |
+| 运行时 | .NET 8 |
+| 图形界面 | Avalonia 11.2.3，手写 axaml，不上 MVVM |
+| 命令行 | 控制台入口，不引参数解析库 |
+| 持久化 | `System.Text.Json` 写 JSON 文件 |
+| 编码支持 | `System.Text.Encoding.CodePages`（GBK），随共享框架提供 |
+| 测试 | xUnit 2.4.2 |
+| 版本号 | `Directory.Build.props` 里单一 `<Version>` |
 
-### 版本历史
+### 约定
 
-逐版本变更由 git tag 与 GitHub Releases 承载，见
-[Tags](https://github.com/TwilightRainDev/TwilightRainTextTool/tags) 与
-[Releases](https://github.com/TwilightRainDev/TwilightRainTextTool/releases)
-（共 14 个 tag，最新 `v3.0.0`）。本文件不再重复维护。
-
-### 风格约定
-
-本项目**不使用 emoji** 作为代码、文档、提交信息的装饰。功能性字符除外：
-
-- VN 排版字符集（`★☆♪♭♯` 等）是业务数据，不属于装饰
-- 终端状态标记用纯文本 `[成功]` / `[失败]`，不使用 `✓` / `✗`
-- 文档中的分级/状态用纯文本表达（如 `4/5`、`完整`、`待改进`）
+代码、文档、提交信息里不用 emoji 做装饰。终端状态标记用纯文本。视觉小说排版用到的符号
+属于业务字符，不算装饰。
 
 ---
 
-© 2026 **TwilightRain**
+© 2026 TwilightRain
 
 ## 终端字符
 
-本仓的源码与文档只写 ASCII 与汉字、全角标点。这套东西要分发到还停在 Windows XP 那代的机器上，那代控制台用点阵字体，字形来自当时的代码页：别的符号画出来是问号或空格，宽度也对不上，整屏跟着错位。
+本仓的源码与文档只写 ASCII 与汉字、全角标点。这套东西要分发到还停在 Windows XP 那代的机器上，
+那代控制台用点阵字体，字形来自当时的代码页：别的符号画出来是问号或空格，宽度也对不上，
+整屏跟着错位。
 
-口径、面清单与逐字符的替代写法见工作区的 `AgentOps/ToolGate/bin/check-terminal-glyphs.mjs`。
+口径：业务字符之外的符号不写进源码与文档；状态标记用纯文本，宽度与字形不依赖控制台字体。

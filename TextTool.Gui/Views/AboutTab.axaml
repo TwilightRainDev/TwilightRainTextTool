@@ -4,27 +4,43 @@
              x:Class="TextTool.Gui.Views.AboutTab">
 
   <!--
-    关于页。自上而下一列，行高一律 Auto，不写任何固定尺寸。
+    关于页。自上而下一列，行高一律 Auto，文字内容一律居中排版。
     文字全部在代码里按当前语言赋（Loc.T），颜色全部来自主题资源：
     深浅切换只切 ThemeVariant，这里不写一种具体颜色。
     仓库链接用会换行的 TextBlock，窗口再窄也不会有半截网址露不出来。
+    外面套 ScrollViewer：窗口压到很矮时给出滚动条，不去挤掉下面几行。
   -->
-  <StackPanel Margin="16" Spacing="8" VerticalAlignment="Top">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+  <StackPanel Margin="16" Spacing="8" VerticalAlignment="Top"
+              HorizontalAlignment="Center">
 
-    <TextBlock x:Name="AboutTitle" FontWeight="Bold" TextWrapping="Wrap" />
+    <!-- 程序图标与作者头像，与旧界面同一组：图标在外，头像紧跟 -->
+    <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center"
+                Margin="0,0,0,8">
+      <Image x:Name="AppIconImage" Width="64" Height="64"
+             Source="avares://TextTool.Gui/Assets/icon.png" />
+      <Image x:Name="AvatarImage" Width="64" Height="64"
+             Source="avares://TextTool.Gui/Assets/avatar.jpg" />
+    </StackPanel>
 
-    <TextBlock x:Name="AboutVersion" Classes="muted" TextWrapping="Wrap" />
+    <TextBlock x:Name="AboutTitle" FontWeight="Bold" FontSize="20"
+               TextWrapping="Wrap" TextAlignment="Center" />
 
-    <TextBlock x:Name="AboutAuthor" TextWrapping="Wrap" Margin="0,4,0,0" />
+    <TextBlock x:Name="AboutVersion" Classes="muted" TextWrapping="Wrap"
+               TextAlignment="Center" />
 
-    <TextBlock x:Name="AboutRepositoryLink" TextWrapping="Wrap"
+    <TextBlock x:Name="AboutAuthor" TextWrapping="Wrap" TextAlignment="Center"
+               Margin="0,4,0,0" />
+
+    <TextBlock x:Name="AboutRepositoryLink" TextWrapping="Wrap" TextAlignment="Center"
                TextDecorations="Underline" Cursor="Hand"
                PointerPressed="OnOpenRepository" />
 
-    <TextBlock x:Name="AboutDescription" TextWrapping="Wrap" Margin="0,4,0,12" />
+    <TextBlock x:Name="AboutDescription" TextWrapping="Wrap" TextAlignment="Center"
+               Margin="0,4,0,12" />
 
     <!-- 语言与深浅切换 -->
-    <StackPanel Orientation="Horizontal" Spacing="12">
+    <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
       <TextBlock x:Name="LanguageLabel" VerticalAlignment="Center" />
       <ComboBox x:Name="LanguageCombo" MinWidth="140" VerticalAlignment="Center">
         <ComboBox.ItemTemplate>
@@ -37,15 +53,18 @@
     </StackPanel>
 
     <!-- 配置导入导出与检查更新 -->
-    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0"
+                HorizontalAlignment="Center">
       <Button x:Name="ExportConfigButton" Click="OnExportConfig" />
       <Button x:Name="ImportConfigButton" Click="OnImportConfig" />
       <Button x:Name="CheckUpdateButton" Click="OnCheckUpdate" />
     </StackPanel>
 
     <!-- 结果行：成功绿、失败橙，切主题后按新主题重取画刷 -->
-    <TextBlock x:Name="ResultLabel" TextWrapping="Wrap" Margin="0,4,0,0" />
+    <TextBlock x:Name="ResultLabel" TextWrapping="Wrap" TextAlignment="Center"
+               Margin="0,4,0,0" />
 
   </StackPanel>
+  </ScrollViewer>
 
 </UserControl>

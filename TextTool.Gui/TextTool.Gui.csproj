@@ -7,6 +7,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- exe 与任务栏图标沿用旧项目那张 ico，不另做一份 -->
+    <ApplicationIcon>..\Resources\icon.ico</ApplicationIcon>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <RootNamespace>TextTool.Gui</RootNamespace>
     <AssemblyName>TextTool.Gui</AssemblyName>
@@ -21,6 +23,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TextTool.Core\TextTool.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 关于页的两张图。头像直接链旧项目那份，不复制，两处只有一个真源。 -->
+    <AvaloniaResource Include="Assets\icon.png" />
+    <AvaloniaResource Include="..\Resources\TwilightRain.jpg" Link="Assets\avatar.jpg" />
   </ItemGroup>
 
   <ItemGroup>

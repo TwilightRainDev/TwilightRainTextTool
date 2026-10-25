@@ -3,6 +3,7 @@
         xmlns:views="using:TextTool.Gui.Views"
         x:Class="TextTool.Gui.Views.MainWindow"
         Title="{DynamicResource AppTitle}"
+        Icon="avares://TextTool.Gui/Assets/icon.png"
         Width="760" Height="560"
         MinWidth="700" MinHeight="520"
         WindowStartupLocation="CenterScreen">

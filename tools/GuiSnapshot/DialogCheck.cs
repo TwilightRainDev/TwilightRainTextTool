@@ -47,7 +47,9 @@ internal static class DialogCheck
                 app.RequestedThemeVariant = variant;
 
                 failures += Shot(
-                    new SchemeSelectionDialog(ReplaceSchemeStore.GetDefaultSchemes()),
+                    new SchemeSelectionDialog(
+                        new ReplaceSchemeAdapter(),
+                        ReplaceSchemeStore.GetDefaultSchemes().Cast<object>().ToList()),
                     $"schemes-{lang}-{themeName}.png", outDir, rows);
 
                 // 编辑窗只拍简体：它的布局与方案窗同源，翻一倍数量收益不高。
@@ -81,7 +83,9 @@ internal static class DialogCheck
         int failures = 0;
         Loc.SetLanguage("zh_CN");
 
-        var dialog = new SchemeSelectionDialog(ReplaceSchemeStore.GetDefaultSchemes());
+        var dialog = new SchemeSelectionDialog(
+            new ReplaceSchemeAdapter(),
+            ReplaceSchemeStore.GetDefaultSchemes().Cast<object>().ToList());
         dialog.Show();
         Dispatcher.UIThread.RunJobs();
 
@@ -151,7 +155,7 @@ internal static class DialogCheck
     }
 
     private static CheckBox? HeaderCheck(TreeViewItem item) =>
-        item.Header is StackPanel panel ? panel.Children.OfType<CheckBox>().FirstOrDefault() : null;
+        item.Header is Panel panel ? panel.Children.OfType<CheckBox>().FirstOrDefault() : null;
 
     /// <summary>摘要形如「已勾选 1 个方案，共 6 条规则」，取最后一个数字段。</summary>
     private static int ExtractRuleCount(string? text)

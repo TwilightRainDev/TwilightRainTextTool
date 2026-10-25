@@ -1,0 +1,62 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TextTool.Gui.Views.VNSchemeEditDialog"
+        Width="560" Height="540"
+        MinWidth="460" MinHeight="420"
+        WindowStartupLocation="CenterOwner">
+
+  <Window.Styles>
+    <!-- Avalonia 11.2 的 Grid 没有行间距属性，间距给在直接子控件上。 -->
+    <Style Selector="Grid > TextBlock, Grid > TextBox, Grid > StackPanel, Grid > Button">
+      <Setter Property="Margin" Value="0,0,10,8" />
+    </Style>
+  </Window.Styles>
+
+  <!--
+    角色方案编辑窗：名称、说明、场景正则、角色列表、路线名列表、取消与确定。
+    两个列表各占一星号行，长列表自己滚；其余行高一律 Auto。
+    名称为空写在底部那行行内文字里，不弹系统对话框。
+  -->
+  <Grid Margin="12" ColumnDefinitions="Auto,*"
+        RowDefinitions="Auto,Auto,Auto,Auto,*,Auto,*,Auto,Auto">
+
+    <TextBlock x:Name="NameLabel" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" />
+    <TextBox x:Name="NameBox" Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" />
+
+    <TextBlock x:Name="DescLabel" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" />
+    <TextBox x:Name="DescBox" Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" />
+
+    <TextBlock x:Name="SceneLabel" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" />
+    <TextBox x:Name="ScenePatternBox" Grid.Row="2" Grid.Column="1" VerticalAlignment="Center"
+             FontFamily="Consolas, monospace" />
+
+    <TextBlock x:Name="CharsLabel" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+               TextWrapping="Wrap" />
+
+    <TextBox x:Name="CharactersBox" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
+             AcceptsReturn="True" TextWrapping="NoWrap"
+             ScrollViewer.VerticalScrollBarVisibility="Auto"
+             ScrollViewer.HorizontalScrollBarVisibility="Auto" />
+
+    <TextBlock x:Name="RoutesLabel" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
+               TextWrapping="Wrap" />
+
+    <TextBox x:Name="RouteNamesBox" Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2"
+             AcceptsReturn="True" TextWrapping="NoWrap"
+             ScrollViewer.VerticalScrollBarVisibility="Auto"
+             ScrollViewer.HorizontalScrollBarVisibility="Auto" />
+
+    <!-- 行内提示：名称为空写在这里 -->
+    <TextBlock x:Name="WarningLabel" Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2"
+               TextWrapping="Wrap" IsVisible="False"
+               Foreground="{DynamicResource WarningFg}" />
+
+    <StackPanel Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal"
+                HorizontalAlignment="Right" Spacing="8" Margin="0,0,10,0">
+      <Button x:Name="CancelButton" Click="OnCancel" />
+      <Button x:Name="OkButton" Classes="primary" Click="OnOk" />
+    </StackPanel>
+
+  </Grid>
+
+</Window>

@@ -169,8 +169,13 @@ public partial class ReplaceTab : UserControl
             SelectFiles(paths);
     }
 
-    private static IBrush? TryBrush(string key) =>
-        Application.Current is { } app && app.TryFindResource(key, out object? value) && value is IBrush brush
+    /// <summary>
+    /// 取主题画刷。必须带当前主题变体：语义色放在 ThemeDictionaries 里，
+    /// 不带变体的重载会按默认变体查、查不到就静默返回 false，
+    /// 结果就是颜色悄悄退化成正文色，界面上看不出异常。
+    /// </summary>
+    private IBrush? TryBrush(string key) =>
+        this.TryFindResource(key, ActualThemeVariant, out object? value) && value is IBrush brush
             ? brush
             : null;
 
@@ -352,26 +357,28 @@ public partial class ReplaceTab : UserControl
             return;
         }
 
-        var result = await SchemeSelectionDialog.ShowAsync(owner, schemes);
+        var result = await SchemeSelectionDialog.ShowAsync(
+            owner, new ReplaceSchemeAdapter(), schemes.Cast<object>().ToList());
         if (result is null)
             return;
 
         // 方案本身的编辑结果先落盘，再谈应用；两件事失败互不牵连。
-        string? schemeError = TrySaveSchemes(result.Schemes);
+        string? schemeError = TrySaveSchemes(result.Schemes.Cast<ReplaceScheme>().ToList());
         if (schemeError is not null)
             ShowBanner("MsgSaveFailed", schemeError);
 
-        if (result.SelectedRules.Count == 0)
+        List<ReplaceRule> selectedRules = result.SelectedPayloads.Cast<ReplaceRule>().ToList();
+        if (selectedRules.Count == 0)
         {
             RefreshRules();
             return;
         }
 
         int before = _rules.Count;
-        _rules.AddRange(result.SelectedRules);
+        _rules.AddRange(selectedRules);
         CommitRules(
             _rules.Count - 1,
-            Loc.T("StatusSchemeApplied", result.SelectedRules.Count, before, _rules.Count));
+            Loc.T("StatusSchemeApplied", selectedRules.Count, before, _rules.Count));
     }
 
     private static string? TrySaveSchemes(List<ReplaceScheme> schemes)

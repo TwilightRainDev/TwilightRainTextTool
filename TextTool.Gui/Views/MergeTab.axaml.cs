@@ -212,7 +212,7 @@ public partial class MergeTab : UserControl
             if (string.IsNullOrEmpty(p.Error))
                 StatusChanged?.Invoke(Loc.T("StatusBatchProgress", p.Done, files.Length));
             else
-                ErrorOccurred?.Invoke(Loc.T("MsgProcessFailed", Path.GetFileName(files[p.Done - 1]), p.Error));
+                ErrorOccurred?.Invoke(Loc.T("MsgProcessFailed", $"{Path.GetFileName(files[p.Done - 1])}：{p.Error}"));
         });
 
         try

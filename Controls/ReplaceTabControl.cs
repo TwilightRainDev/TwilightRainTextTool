@@ -454,7 +454,7 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource, IThemedTab
                 if (string.IsNullOrEmpty(p.Error))
                     StatusChanged?.Invoke(Loc.T("StatusBatchProgress", p.Done, files.Length));
                 else
-                    ErrorOccurred?.Invoke(Loc.T("MsgReplaceFailed", Path.GetFileName(files[p.Done - 1]), p.Error));
+                    ErrorOccurred?.Invoke(Loc.T("MsgReplaceFailed", $"{Path.GetFileName(files[p.Done - 1])}：{p.Error}"));
             });
 
         var result = await ControlsHelper.RunBatchAsync(

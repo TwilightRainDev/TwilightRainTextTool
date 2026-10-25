@@ -20,7 +20,7 @@ public static class LintOutput
     /// <param name="reportSet">要输出的报告集合。</param>
     /// <param name="asJson">true 走 JSON 契约，false 走人读契约。</param>
     /// <returns>可直接写入 stdout 的文本。</returns>
-    public static string Render(LintReportSet reportSet, bool asJson)
+    public static string Render(LintReportSet reportSet, bool asJson, ILintText? text = null)
     {
         if (asJson)
             // ToJson 的正文已是 LF；末尾补一个 stdout 需要的换行，不再经 Console.WriteLine
@@ -33,7 +33,7 @@ public static class LintOutput
             // 报告之间空一行（多文件可读性）；Format 用 AppendLine，行尾在此统一归一为 LF
             if (i > 0)
                 sb.Append('\n');
-            sb.Append(LintTextFormatter.Format(reportSet.Reports[i]).Replace("\r\n", "\n"));
+            sb.Append(LintTextFormatter.Format(reportSet.Reports[i], text).Replace("\r\n", "\n"));
             sb.Append('\n');
         }
         return sb.ToString();

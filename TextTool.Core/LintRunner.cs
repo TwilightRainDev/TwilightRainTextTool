@@ -8,7 +8,8 @@ public static class LintRunner
     public static LintReportSet Run(
         IReadOnlyList<(string File, string Text)> inputs,
         IReadOnlyCollection<string>? onlyIds,
-        string? minSeverity)
+        string? minSeverity,
+        ILintText? lintText = null)
     {
         if (inputs is null || inputs.Count == 0)
             throw new ArgumentException("lint 需要至少一个输入");
@@ -27,7 +28,7 @@ public static class LintRunner
                 throw new ArgumentException($"未知规则 Id：{string.Join(", ", unknown)}");
         }
 
-        var service = new AiToneLintService(rules);
+        var service = new AiToneLintService(rules, lintText);
         var reportSet = new LintReportSet();
         foreach (var (file, text) in inputs)
             reportSet.Reports.Add(service.Scan(text, file).Filter(onlyIds, minSeverity));

@@ -10,8 +10,18 @@ public sealed class AiToneLintService
 {
     private readonly List<CompiledRule> _rules;
 
-    public AiToneLintService(IEnumerable<LintRule> rules)
-        => _rules = rules.Select(CompiledRule.Create).ToList();
+    /// <summary>报告文案出处。默认中文原样返回，界面可注入按当前语言取词的实现。</summary>
+    private readonly ILintText _text;
+
+    public AiToneLintService(IEnumerable<LintRule> rules, ILintText? text = null)
+    {
+        _rules = rules.Select(CompiledRule.Create).ToList();
+        _text = text ?? ChineseLintText.Instance;
+    }
+
+    /// <summary>按规则 Id 取译文，缺键时退回规则表里带的原文。</summary>
+    private string RuleText(string id, string field, string fallback) =>
+        _text.Get($"LintRule_{id}_{field}", fallback);
 
     public LintReport Scan(string text, string fileName)
     {
@@ -82,7 +92,7 @@ public sealed class AiToneLintService
     /// <summary>算法规则与内置数据规则的 Id 并集，即引擎实际可能产出的 Id 全集。</summary>
     public static IReadOnlyCollection<string> AllRuleIds() => AllRuleIds(LintRuleStore.Load());
 
-    private static void ScanDocumentScope(CompiledRule rule, string text, LintReport report,
+    private void ScanDocumentScope(CompiledRule rule, string text, LintReport report,
         LineStarts lineStarts)
     {
         foreach (var (regex, hint) in rule.Patterns)
@@ -94,7 +104,7 @@ public sealed class AiToneLintService
         }
     }
 
-    private static void ScanParagraphScope(CompiledRule rule, string text, LintReport report, string mode,
+    private void ScanParagraphScope(CompiledRule rule, string text, LintReport report, string mode,
         LineStarts lineStarts)
     {
         var paragraphs = Paragraphs(text, mode);
@@ -116,14 +126,14 @@ public sealed class AiToneLintService
         }
     }
 
-    private static readonly (string Name, Regex Pattern)[] QuoteStyles =
+    private static readonly (string Key, string Name, Regex Pattern)[] QuoteStyles =
     {
-        ("ASCII 直引号", RegexGuard.Create("\"")),
-        ("弯引号", RegexGuard.Create("[“”]")),
-        ("直角引号", RegexGuard.Create("[「」]")),
-        ("双直角引号", RegexGuard.Create("[『』]")),
-        ("ASCII 直单引号", RegexGuard.Create("'")),
-        ("弯单引号", RegexGuard.Create("[‘’]")),
+        ("ascii-double", "ASCII 直引号", RegexGuard.Create("\"")),
+        ("curly-double", "弯引号", RegexGuard.Create("[“”]")),
+        ("corner", "直角引号", RegexGuard.Create("[「」]")),
+        ("double-corner", "双直角引号", RegexGuard.Create("[『』]")),
+        ("ascii-single", "ASCII 直单引号", RegexGuard.Create("'")),
+        ("curly-single", "弯单引号", RegexGuard.Create("[‘’]")),
     };
 
     private static readonly Regex OrdinalSkeleton = RegexGuard.Create("首先|其次|再次|最后|其一|其二|其三");
@@ -138,25 +148,32 @@ public sealed class AiToneLintService
     private static readonly Regex ExplicitOrdinalMarker = RegexGuard.Create(
         @"(?m)^[ \t]*(?:[0-9]{1,2}[.、)]|[（(][0-9]{1,2}[)）]|[一二三四五六七八九十]+[.、])");
 
-    private static void ScanAlgorithmRules(string text, string mode, LintReport report,
+    private void ScanAlgorithmRules(string text, string mode, LintReport report,
         LineStarts lineStarts)
     {
         // mixed-quote-style 引号风格混用：命中定位到全文最早出现的引号字符，规模写进 Detail
         var used = QuoteStyles
-            .Select(s => (s.Name, Count: s.Pattern.Matches(text).Count, Index: s.Pattern.Match(text).Index))
+            .Select(s => (
+                Name: _text.Get($"LintQuote_{s.Key}", s.Name),
+                Count: s.Pattern.Matches(text).Count,
+                Index: s.Pattern.Match(text).Index))
             .Where(s => s.Count > 0)
             .ToList();
         if (used.Count > 1)
         {
             int first = used.Min(s => s.Index);
             var (line, col) = lineStarts.Locate(first);
-            string detail = string.Join(" / ", used.Select(s => $"{s.Name} {s.Count} 个"));
+            string detail = string.Join(
+                " / ",
+                used.Select(s => _text.Get("LintQuoteUsage", "{0} {1} 个", s.Name, s.Count)));
             report.Hits.Add(new LintHit
             {
-                Id = "mixed-quote-style", Group = "punctuation", Title = "引号风格混用", Severity = "info",
+                Id = "mixed-quote-style", Group = "punctuation", Severity = "info",
+                Title = _text.Get("LintRule_mixed-quote-style_Title", "引号风格混用"),
                 Line = line, Col = col, Length = 1,
                 Match = text[first].ToString(), Snippet = Snippet(text, first, 1),
-                Detail = detail, SuggestScheme = "引号括号统一",
+                Detail = detail,
+                SuggestScheme = _text.Get("LintRule_mixed-quote-style_Suggest", "引号括号统一"),
             });
         }
 
@@ -169,10 +186,13 @@ public sealed class AiToneLintService
             var (line, col) = lineStarts.Locate(m.Index);
             report.Hits.Add(new LintHit
             {
-                Id = "mixed-bracket-width", Group = "punctuation", Title = "括号全半角混用", Severity = "info",
+                Id = "mixed-bracket-width", Group = "punctuation", Severity = "info",
+                Title = _text.Get("LintRule_mixed-bracket-width_Title", "括号全半角混用"),
                 Line = line, Col = col, Length = 1,
                 Match = m.Value, Snippet = Snippet(text, m.Index, 1),
-                Detail = $"半角 {half} 个 / 全角 {full} 个", SuggestScheme = "引号括号统一",
+                Detail = _text.Get(
+                    "LintRule_mixed-bracket-width_Detail", "半角 {0} 个 / 全角 {1} 个", half, full),
+                SuggestScheme = _text.Get("LintRule_mixed-bracket-width_Suggest", "引号括号统一"),
             });
         }
 
@@ -187,7 +207,10 @@ public sealed class AiToneLintService
                 report.Notes.Add(new LintNote
                 {
                     Id = "paragraph-length-uniform",
-                    Text = $"段落长度过于均一（变异系数 {cv:0.00}，{paragraphs.Count} 段）——人写文本段落长短通常更参差",
+                    Text = _text.Get(
+                        "LintNote_paragraph-length-uniform",
+                        "段落长度过于均一（变异系数 {0}，{1} 段）——人写文本段落长短通常更参差",
+                        cv.ToString("0.00"), paragraphs.Count),
                 });
         }
 
@@ -202,7 +225,10 @@ public sealed class AiToneLintService
                 report.Notes.Add(new LintNote
                 {
                     Id = "sentence-length-uniform",
-                    Text = $"句长分布过于整齐（变异系数 {cv:0.00}，{sentences.Count} 句）",
+                    Text = _text.Get(
+                        "LintNote_sentence-length-uniform",
+                        "句长分布过于整齐（变异系数 {0}，{1} 句）",
+                        cv.ToString("0.00"), sentences.Count),
                 });
         }
 
@@ -215,14 +241,22 @@ public sealed class AiToneLintService
                 report.Notes.Add(new LintNote
                 {
                     Id = "repeated-paragraph-opening",
-                    Text = "段首两字高度重复：" + string.Join("、", dup.Select(g => $"「{g.Key}」×{g.Count()}")),
+                    Text = _text.Get(
+                        "LintNote_repeated-paragraph-opening",
+                        "段首两字高度重复：{0}",
+                        string.Join("、", dup.Select(g => $"「{g.Key}」×{g.Count()}"))),
                 });
         }
 
         // exclamation-density 叹号密度偏高
         int exclam = text.Count(c => c == '！');
         if (text.Length >= 400 && exclam * 1000.0 / text.Length > 3)
-            report.Notes.Add(new LintNote { Id = "exclamation-density", Text = $"叹号密度偏高：{exclam} 个 / {text.Length} 字" });
+            report.Notes.Add(new LintNote
+            {
+                Id = "exclamation-density",
+                Text = _text.Get(
+                    "LintNote_exclamation-density", "叹号密度偏高：{0} 个 / {1} 字", exclam, text.Length),
+            });
 
         // ordinal-skeleton 序数词骨架密度
         int ordinals = OrdinalSkeleton.Matches(text).Count;
@@ -230,7 +264,10 @@ public sealed class AiToneLintService
             report.Notes.Add(new LintNote
             {
                 Id = "ordinal-skeleton",
-                Text = $"序数词骨架「首先/其次/最后」出现 {ordinals} 次——结构化排版的典型痕迹",
+                Text = _text.Get(
+                    "LintNote_ordinal-skeleton",
+                    "序数词骨架「首先/其次/最后」出现 {0} 次——结构化排版的典型痕迹",
+                    ordinals),
             });
 
         // explicit-numbering 显式序号标记：手写文本很少通篇硬编号，密度高是排版痕迹
@@ -239,7 +276,10 @@ public sealed class AiToneLintService
             report.Notes.Add(new LintNote
             {
                 Id = "explicit-numbering",
-                Text = $"显式序号标记 {markers} 处——结构化排版的典型痕迹",
+                Text = _text.Get(
+                    "LintNote_explicit-numbering",
+                    "显式序号标记 {0} 处——结构化排版的典型痕迹",
+                    markers),
             });
     }
 
@@ -326,16 +366,20 @@ public sealed class AiToneLintService
             result.Add((start + (slice.Length - slice.TrimStart().Length), trimmed));
     }
 
-    internal static LintHit Hit(LintRule rule, LineStarts lineStarts, string text, int index, int length,
+    internal LintHit Hit(LintRule rule, LineStarts lineStarts, string text, int index, int length,
         string match, string? hint)
     {
         var (line, col) = lineStarts.Locate(index);
         return new LintHit
         {
-            Id = rule.Id, Group = rule.Group, Title = rule.Title, Severity = rule.Severity,
+            Id = rule.Id, Group = rule.Group, Severity = rule.Severity,
+            Title = RuleText(rule.Id, "Title", rule.Title),
             Line = line, Col = col, Length = length, Match = match,
             Snippet = Snippet(text, index, length),
-            Detail = rule.Detail, Hint = hint, SuggestScheme = rule.SuggestScheme,
+            Detail = RuleText(rule.Id, "Detail", rule.Detail), Hint = hint,
+            SuggestScheme = rule.SuggestScheme is null
+                ? null
+                : RuleText(rule.Id, "Suggest", rule.SuggestScheme),
         };
     }
 

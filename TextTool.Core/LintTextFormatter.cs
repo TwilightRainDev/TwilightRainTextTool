@@ -25,41 +25,50 @@ public static class LintTextFormatter
         return sb.ToString();
     }
 
-    public static string Format(LintReport report)
+    /// <summary>
+    /// 渲染人读报告。text 为 null 时用中文原文，命令行走这条；
+    /// 界面传入按当前语言取词的实现。
+    /// </summary>
+    public static string Format(LintReport report, ILintText? text = null)
     {
+        ILintText t = text ?? ChineseLintText.Instance;
         var sb = new StringBuilder();
 
         if (report.Hits.Count > 0)
         {
             foreach (var group in report.Hits.GroupBy(h => $"{h.Id} {h.Title}"))
             {
-                sb.AppendLine($"[命中] {group.Key}（{group.Count()} 处）");
+                sb.AppendLine(t.Get("LintGroupHeader", "[命中] {0}（{1} 处）", group.Key, group.Count()));
                 // 组内按 (行, 列) 升序：命中在引擎里的顺序是 规则→Pattern→位置，
                 // 同一规则的多条 Pattern 会让行号来回跳，人读报告需要单调
                 foreach (var hit in group.OrderBy(h => h.Line).ThenBy(h => h.Col))
                 {
                     string hint = string.IsNullOrEmpty(hit.Hint) ? "" : $"  <- {hit.Hint}";
                     string detail = string.IsNullOrEmpty(hit.Detail) ? "" : $"  <- {hit.Detail}";
-                    string scheme = string.IsNullOrEmpty(hit.SuggestScheme) ? "" : $"  <- 方案：{hit.SuggestScheme}";
-                    sb.AppendLine($"       第 {hit.Line} 行 第 {hit.Col} 列  {Visible(hit.Snippet)}{hint}{detail}{scheme}");
+                    string scheme = string.IsNullOrEmpty(hit.SuggestScheme)
+                        ? ""
+                        : $"  <- {t.Get("LintSchemeTag", "方案：{0}", hit.SuggestScheme)}";
+                    string where = t.Get("LintLocation", "第 {0} 行 第 {1} 列", hit.Line, hit.Col);
+                    sb.AppendLine($"       {where}  {Visible(hit.Snippet)}{hint}{detail}{scheme}");
                 }
             }
         }
         else
         {
-            sb.AppendLine("[OK] 未发现可疑特征");
+            sb.AppendLine(t.Get("LintNoHits", "[OK] 未发现可疑特征"));
         }
 
         if (report.Notes.Count > 0)
         {
-            sb.AppendLine("[统计]");
+            sb.AppendLine(t.Get("LintNotesHeader", "[统计]"));
             foreach (var note in report.Notes)
                 sb.AppendLine($"       - {note.Id} {note.Text}");
         }
 
-        sb.Append($"[NOTE] 全文 {report.Chars} 字，命中 {report.Hits.Count} 处，" +
-                  $"统计项 {report.Notes.Count} 条，段落口径 {report.ParagraphMode}；" +
-                  "本命令只报位置，改写由判断层完成");
+        sb.Append(t.Get(
+            "LintSummary",
+            "[NOTE] 全文 {0} 字，命中 {1} 处，统计项 {2} 条，段落口径 {3}；本命令只报位置，改写由判断层完成",
+            report.Chars, report.Hits.Count, report.Notes.Count, report.ParagraphMode));
         return sb.ToString();
     }
 

@@ -10,13 +10,14 @@ namespace TextTool.Tools.GuiSnapshot;
 ///
 /// 用法：dotnet run --project tools/GuiSnapshot -- &lt;输出目录&gt;
 ///
-/// 做的四件事：
+/// 做的六件事：
 ///   1. 主题键体检：Light / Dark 下逐个键查 ThemeDictionaries 有没有漏。
-///   2. 截图矩阵：3 个语言 x 2 个主题，共六张 语言-主题.png，同时量页签会不会折行，
+///   2. 配色对比度体检：关键配对的 WCAG 对比度是否达到正文 4.5:1、提示 3:1。
+///   3. 截图矩阵：3 个语言 x 2 个主题，共六张 语言-主题.png，同时量页签会不会折行，
 ///      并对同一个窗口查一遍文字裁切（控件的真实需要尺寸比实际 Bounds 大就是被裁）。
-///   3. 换语言热切换体检：同一个窗口连着换语言，看 DynamicResource 有没有跟着重取。
+///   4. 换语言热切换体检：同一个窗口连着换语言，看 DynamicResource 有没有跟着重取。
 ///   5. 交互体检：驱动标点替换页按按钮，读回磁盘上的结果比对。
-///   4. 文案键体检：.axaml 里的 {DynamicResource 键名} 和 .cs 里的 Loc.T("键名") 合并后，
+///   6. 文案键体检：.axaml 里的 {DynamicResource 键名} 和 .cs 里的 Loc.T("键名") 合并后，
 ///      每个文案键三种语言都得给得出值。
 ///
 /// 退出码 0 表示全部通过，非 0 表示有失败项。
@@ -55,6 +56,7 @@ internal static class Program
             Loc.Init(null);
 
             failures += ThemeCheck.Run();
+            failures += ContrastCheck.Run();
             failures += SnapshotCheck.Run(outDir, tabIndex);
             failures += SnapshotCheck.HotSwitch();
             failures += DialogCheck.Run(outDir);

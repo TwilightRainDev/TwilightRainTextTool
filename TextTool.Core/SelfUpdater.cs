@@ -36,10 +36,22 @@ public static class SelfUpdater
 
     /// <summary>
     /// 指定平台的 CLI 安装包资产名，如 TextTool-CLI-2.4.0-linux-x64.zip。
-    /// 这个命名同时被 CI 的打包步骤和 scripts 里两个发布脚本引用，改名要三处一起改。
+    /// 名单的唯一维护点是 scripts/github-release.ps1 的 Get-TextToolReleaseAssetNames，
+    /// CI 与两个发布脚本都从那里取；这里改名要和那份名单同时改。
     /// </summary>
     public static string GetCliAssetName(string version, string rid) =>
         $"TextTool-CLI-{version.TrimStart('v')}-{rid}.zip";
+
+    /// <summary>GUI 安装包资产名（当前平台），如 TextTool-GUI-3.0.0-win-x64.zip。</summary>
+    public static string GetGuiAssetName(string version) => GetGuiAssetName(version, CurrentRid);
+
+    /// <summary>
+    /// 指定平台的 GUI 安装包资产名，如 TextTool-GUI-3.0.0-linux-x64.zip。
+    /// GUI 目前只在关于页查是否有新版本，既不下载也不替换；这里先把命名钉住，
+    /// 免得 CI 产出的包名和脚本名单哪天各走一边。
+    /// </summary>
+    public static string GetGuiAssetName(string version, string rid) =>
+        $"TextTool-GUI-{version.TrimStart('v')}-{rid}.zip";
 
     /// <summary>在 release JSON 的 assets 中查找 CLI zip 下载地址；找不到返回 null。</summary>
     public static string? FindCliAssetUrl(JsonDocument releaseDoc, string version)

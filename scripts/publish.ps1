@@ -41,22 +41,19 @@ try {
         exit 1
     }
 
-    $assetNames = Get-TextToolReleaseAssetNames -Raw $raw
-    $zips = @(Get-ChildItem -Path $work -File | Where-Object {
-        $assetNames -contains $_.Name
-    })
-    if ($zips.Count -eq 0) {
-        [Console]::Error.WriteLine("未找到 zip")
+    # 两个 RID 的 GUI 与 CLI 四份产物必须齐活：缺任何一份（或它的 .sha256）都直接退出，
+    # 不签一半、也不把只签了 win 当成发完了。
+    $assetNames = @(Get-TextToolReleaseAssetNames -Raw $raw)
+    $present = @(Get-ChildItem -Path $work -File | ForEach-Object { $_.Name })
+    $missing = @(Get-TextToolMissingReleaseAssets -Raw $raw -Present $present)
+    if ($missing.Count -gt 0) {
+        [Console]::Error.WriteLine("产物不齐，缺少：" + ($missing -join ", "))
         exit 1
     }
 
-    foreach ($zip in $zips) {
-        $shaPath = $zip.FullName + ".sha256"
-        if (-not (Test-Path -LiteralPath $shaPath)) {
-            [Console]::Error.WriteLine("缺少 $($zip.Name).sha256")
-            exit 1
-        }
-    }
+    $zips = @(Get-ChildItem -Path $work -File | Where-Object {
+        $assetNames -contains $_.Name
+    })
 
     $signerProj = Join-Path $repoRoot "tools\ReleaseSigner"
     Write-Host "构建 ReleaseSigner"

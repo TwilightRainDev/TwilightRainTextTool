@@ -49,27 +49,39 @@ jobs:
           name: coverage-${{ github.ref_name }}
           path: TextTool.Tests/TestResults/**/coverage.cobertura.xml
 
-      - name: Publish GUI
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          dotnet publish TextTool.csproj -c Release -r win-x64 -o publish/TextTool
-          echo "::notice::Published GUI to publish/TextTool"
+  # 发布：win-x64 与 linux-x64 各一套 GUI + CLI。GUI 走框架依赖发布
+  # （--self-contained false），否则下载包远超 10MB；Linux 用户需自装 .NET 8 运行时。
+  # 资产名一律从 scripts/github-release.ps1 的 Get-TextToolReleaseAssetNames 取，
+  # 这里不另写一份名单。
+  package:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rid: [win-x64, linux-x64]
 
-      - name: Publish CLI
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          dotnet publish TextTool.Cli/TextTool.Cli.csproj -c Release -r win-x64 -o publish/TextTool.Cli
-          echo "::notice::Published CLI to publish/TextTool.Cli"
+    steps:
+      - uses: actions/checkout@v4
 
-      # 命令行版是 net8.0，Linux 直接能跑；图形界面还是 WinForms，只出 win-x64。
-      - name: Publish CLI (linux-x64)
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          dotnet publish TextTool.Cli/TextTool.Cli.csproj -c Release -r linux-x64 -o publish/TextTool.Cli.linux-x64
-          echo "::notice::Published CLI to publish/TextTool.Cli.linux-x64"
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish GUI (${{ matrix.rid }})
+        run: >-
+          dotnet publish TextTool.Gui/TextTool.Gui.csproj -c Release -r ${{ matrix.rid }}
+          --self-contained false -o publish/TextTool.Gui/${{ matrix.rid }}
+
+      - name: Publish CLI (${{ matrix.rid }})
+        run: >-
+          dotnet publish TextTool.Cli/TextTool.Cli.csproj -c Release -r ${{ matrix.rid }}
+          -o publish/TextTool.Cli/${{ matrix.rid }}
 
       - name: Sign binaries
-        if: startsWith(github.ref, 'refs/tags/v') && env.CODE_SIGN_CERT != ''
+        if: env.CODE_SIGN_CERT != ''
         env:
           CODE_SIGN_CERT: ${{ secrets.CODE_SIGN_CERT }}
           CODE_SIGN_PASSWORD: ${{ secrets.CODE_SIGN_PASSWORD }}
@@ -87,34 +99,76 @@ jobs:
             }
 
       - name: Package zip
-        if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}".TrimStart('v')
-          Compress-Archive -Path publish/TextTool/* -DestinationPath "TextTool-GUI-$version-win-x64.zip"
-          Compress-Archive -Path publish/TextTool.Cli/* -DestinationPath "TextTool-CLI-$version-win-x64.zip"
-          Compress-Archive -Path publish/TextTool.Cli.linux-x64/* -DestinationPath "TextTool-CLI-$version-linux-x64.zip"
+          $rid = "${{ matrix.rid }}"
+          . ./scripts/github-release.ps1
+          $names = @(Get-TextToolReleaseAssetNames -Raw $version | Where-Object { $_ -like "*-$rid.zip" })
+          if ($names.Count -ne 2) {
+            Write-Error "名单里 $rid 应有 GUI 与 CLI 两份产物，实际 $($names.Count) 份"
+            exit 1
+          }
+          New-Item -ItemType Directory -Path artifacts -Force | Out-Null
+          foreach ($name in $names) {
+            $product = if ($name -like "TextTool-GUI-*") { "TextTool.Gui" } else { "TextTool.Cli" }
+            $src = "publish/$product/$rid"
+            if (-not (Test-Path -LiteralPath $src)) {
+              Write-Error "缺少发布目录 $src"
+              exit 1
+            }
+            Compress-Archive -Path "$src/*" -DestinationPath "artifacts/$name"
+            Write-Host "Packaged $name"
+          }
 
       - name: Generate checksums
-        if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
         run: |
-          Get-ChildItem *.zip | ForEach-Object {
+          Get-ChildItem artifacts/*.zip | ForEach-Object {
             $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
             Set-Content "$($_.FullName).sha256" "$hash  $($_.Name)"
             Write-Host "SHA256: $($_.Name) = $hash"
           }
 
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.rid }}
+          path: artifacts/*
+
+  # 两个 RID 的产物到齐才发 release；缺一套直接失败，不发只带 win 的版本。
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: packages-*
+          merge-multiple: true
+
+      - name: Check all RID packages present
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          . ./scripts/github-release.ps1
+          $present = @(Get-ChildItem dist -File | ForEach-Object { $_.Name })
+          $missing = @(Get-TextToolMissingReleaseAssets -Raw $version -Present $present)
+          if ($missing.Count -gt 0) {
+            Write-Error ("产物不齐，缺少：" + ($missing -join ", "))
+            exit 1
+          }
+
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-          files: |
-            TextTool-GUI-*.zip
-            TextTool-GUI-*.zip.sha256
-            TextTool-CLI-*.zip
-            TextTool-CLI-*.zip.sha256
+          files: dist/*
 
   # 代码质量门禁：格式合规 + 分析器警告
   code-quality:

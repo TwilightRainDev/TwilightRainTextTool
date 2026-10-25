@@ -136,6 +136,7 @@ try {
 
     Write-Host "等待 Release 资产"
     $release = $null
+    $missing = @()
     while ((Get-Date) -lt $deadline) {
         try {
             $release = Get-GithubReleaseByTag -Repo $Repo -Tag $tag
@@ -143,16 +144,8 @@ try {
             if ($null -ne $release.assets) {
                 $names = @($release.assets | ForEach-Object { $_.name })
             }
-            $need = @()
-            foreach ($name in Get-TextToolReleaseAssetNames -Raw $raw) {
-                $need += $name
-                $need += "$name.sha256"
-            }
-            $ok = $true
-            foreach ($n in $need) {
-                if ($names -notcontains $n) { $ok = $false }
-            }
-            if ($ok) { break }
+            $missing = @(Get-TextToolMissingReleaseAssets -Raw $raw -Present $names)
+            if ($missing.Count -eq 0) { break }
         }
         catch {
             $release = $null
@@ -160,8 +153,9 @@ try {
         Start-Sleep -Seconds 20
     }
 
-    if ($null -eq $release) {
-        [Console]::Error.WriteLine("未等到 $tag 的 GitHub Release 资产")
+    if ($null -eq $release -or $missing.Count -gt 0) {
+        $hint = if ($missing.Count -gt 0) { "，缺少：" + ($missing -join ", ") } else { "" }
+        [Console]::Error.WriteLine("未等到 $tag 的 GitHub Release 资产$hint")
         exit 1
     }
 

@@ -110,17 +110,38 @@ function Get-GithubWorkflowRuns {
 }
 
 function Get-TextToolReleaseAssetNames {
-    # 发布产物名单。命名必须与 TextTool.Core/SelfUpdater.GetCliAssetName 和
-    # .github/workflows/build-test.yml 的打包步骤一致，否则客户端找得到的包和
-    # 签名脚本管得到的包会对不上。
+    # 发布产物名单，也是这份名单的唯一来源：CI 的打包步骤、release.ps1 的等待清单、
+    # publish.ps1 的签名清单都从这里取，别处不许再抄一份。
+    # 命名必须与 TextTool.Core/SelfUpdater.GetGuiAssetName 和 GetCliAssetName 一致，
+    # 否则客户端找得到的包和签名脚本管得到的包会对不上。
     param(
         [Parameter(Mandatory = $true)][string]$Raw
     )
     return @(
         "TextTool-GUI-$Raw-win-x64.zip",
+        "TextTool-GUI-$Raw-linux-x64.zip",
         "TextTool-CLI-$Raw-win-x64.zip",
         "TextTool-CLI-$Raw-linux-x64.zip"
     )
+}
+
+function Get-TextToolMissingReleaseAssets {
+    # 产物齐活判据：名单里每个 zip 都要在，且各自带一份 .sha256。
+    # 返回缺失的名字（含 .sha256 后缀）；空数组表示齐活。缺一套就点名，不静默放过。
+    param(
+        [Parameter(Mandatory = $true)][string]$Raw,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]]$Present
+    )
+    $missing = @()
+    foreach ($name in @(Get-TextToolReleaseAssetNames -Raw $Raw)) {
+        if ($Present -notcontains $name) {
+            $missing += $name
+        }
+        elseif ($Present -notcontains "$name.sha256") {
+            $missing += "$name.sha256"
+        }
+    }
+    return $missing
 }
 
 function Save-GithubReleaseAssets {

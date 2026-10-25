@@ -134,6 +134,15 @@ internal static class ReplaceTabDriveCheck
         Expect(list.ItemCount == 1, "查找框为空时点添加不会新增规则");
         Expect(warning.IsVisible, "查找框为空时给出行内提示");
 
+        // 提示色必须真的是警告色。语义色在 ThemeDictionaries 里，用不带主题变体的
+        // TryFindResource 查会静默返回 false，文字就还是正文色，界面上看不出异常。
+        var warningBrush = tab.TryFindResource("WarningFg", tab.ActualThemeVariant, out object? rawBrush)
+            ? rawBrush as Avalonia.Media.IBrush
+            : null;
+        Expect(
+            warningBrush is not null && Equals(warning.Foreground, warningBrush),
+            "行内提示用的是警告色，不是正文色");
+
         // 5. 真实跑一次替换：读、替换、写成 _Processed 文件。
         // 上一步删掉了句号那一条，这里补回来，两条规则一起验。
         AddRule(add, find, replace, "。", ".");

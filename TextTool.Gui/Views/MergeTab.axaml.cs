@@ -136,8 +136,13 @@ public partial class MergeTab : UserControl
     /// 取资源里的画刷。资源缺席时 FindResource 返回的是 UnsetValue 而不是 null，
     /// 直接强转会在控件构造阶段就抛出来，所以统一走 TryFindResource。
     /// </summary>
-    private static IBrush? TryBrush(string key) =>
-        Application.Current is { } app && app.TryFindResource(key, out object? value) && value is IBrush brush
+    /// <summary>
+    /// 取主题画刷。必须带当前主题变体：语义色放在 ThemeDictionaries 里，
+    /// 不带变体的重载会按默认变体查、查不到就静默返回 false，
+    /// 结果就是颜色悄悄退化成正文色，界面上看不出异常。
+    /// </summary>
+    private IBrush? TryBrush(string key) =>
+        this.TryFindResource(key, ActualThemeVariant, out object? value) && value is IBrush brush
             ? brush
             : null;
 

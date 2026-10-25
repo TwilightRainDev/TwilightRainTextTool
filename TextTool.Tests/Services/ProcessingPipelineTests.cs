@@ -89,7 +89,7 @@ public class ProcessingPipelineTests
     }
 
     [Fact]
-    public void Run_OverwriteMode_CreatesBackup()
+    public void Run_OverwriteWithBackup_CreatesBackup()
     {
         using var tf = new TempFile();
         File.WriteAllText(tf.Path, "original content", Encoding.UTF8);
@@ -97,12 +97,30 @@ public class ProcessingPipelineTests
         var encoding = EncodingDetector.Detect(tf.Path);
         var result = ProcessingPipeline.Run(tf.Path, encoding.Encoding,
             new MergeOptions { Threshold = 100, Mode = MergeMode.CharCount },
-            NoOps(), overwrite: true);
+            NoOps(), WriteMode.OverwriteWithBackup);
 
-        // 覆盖模式写回原文件 + 自动备份
+        // 覆盖模式写回原文件 + 备份
         Assert.Equal(tf.Path, result.OutputPath);
         Assert.True(File.Exists(tf.Path + ".bak"));
         Assert.Equal("original content", File.ReadAllText(tf.Path + ".bak"));
+    }
+
+    [Fact]
+    public void Run_OverwriteWithoutBackup_LeavesNoExtraFile()
+    {
+        using var tf = new TempFile();
+        File.WriteAllText(tf.Path, "original content", Encoding.UTF8);
+
+        var encoding = EncodingDetector.Detect(tf.Path);
+        var result = ProcessingPipeline.Run(tf.Path, encoding.Encoding,
+            new MergeOptions { Threshold = 100, Mode = MergeMode.CharCount },
+            NoOps(), WriteMode.Overwrite);
+
+        // 只改原文件：既不留 _Processed，也不留 .bak
+        Assert.Equal(tf.Path, result.OutputPath);
+        Assert.Contains("original content", string.Join("\n", result.Lines));
+        Assert.False(File.Exists(tf.Path + ".bak"));
+        Assert.False(File.Exists(Path.ChangeExtension(tf.Path, null) + "_Processed.txt"));
     }
 
     // ================================================================

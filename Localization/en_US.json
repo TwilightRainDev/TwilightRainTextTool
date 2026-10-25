@@ -43,14 +43,15 @@
   "RadioByte": "By Bytes",
   "RadioChar": "By Characters",
 
-  "ChkFixCjk": "Fix CJK truncation (merge next line if current line ends with a CJK character, e.g. \"Hello\\nWorld\" → \"HelloWorld\")",
+  "ChkFixCjk": "Fix CJK truncation (merge next line if it ends with a CJK char)",
   "ChkFixPunct": "Fix punct. truncation",
   "LabelPunctChars": "Custom punct.:",
-  "ChkApplyReplace": "Apply punctuation replacement rules (configured in \"Punct. Replace\" tab)",
+  "ChkApplyReplace": "Apply punct. replace rules (set in Punct. Replace tab)",
   "ChkNoMerge": "Line-ending punct. no-merge",
   "LabelNoMergeChars": "Custom punct.:",
   "ChkTrimLeadingComma": "Trim leading comma",
-  "ChkOverwrite": "Dangerous Overwrite Mode (overwrite original)",
+  "ChkOverwrite": "Dangerous overwrite (writes back to original)",
+  "ChkBackupBeforeOverwrite": "Back up as .bak",
 
   "EncodingNotSelected": "(No file selected)",
   "EncodingUtf8Bom": "UTF-8 (BOM)",
@@ -107,7 +108,7 @@
   "MsgReplaceFailed": "Replace failed: {0}",
 
   "MsgOverwriteTitle": "Dangerous Operation",
-  "MsgOverwriteBody": "This will overwrite the original file directly. Original data cannot be recovered. Continue?",
+  "MsgOverwriteBody": "This will write directly back to the original file. Unless \"Back up as .bak\" is checked, the original content cannot be recovered. Continue?",
 
   "SchemeWinTitle": "Preset Replacement Schemes",
   "SchemeNew": "New Scheme",

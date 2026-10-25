@@ -12,6 +12,8 @@ public sealed class PreviewForm : Form
     private readonly TextBox _txtPreview;
     private readonly Button _btnSave;
     private readonly Button _btnClose;
+    private readonly Label _topHint;
+    private readonly FlowLayoutPanel _btnPanel;
     private readonly string _outputPath;
     private readonly List<string> _lines;
 
@@ -40,13 +42,12 @@ public sealed class PreviewForm : Form
             BackColor = Color.WhiteSmoke
         };
 
-        var btnPanel = new FlowLayoutPanel
+        _btnPanel = new FlowLayoutPanel
         {
             Dock = DockStyle.Bottom,
             FlowDirection = FlowDirection.RightToLeft,
             Height = 44,
-            Padding = new Padding(8),
-            BackColor = SystemColors.Control
+            Padding = new Padding(8)
         };
 
         _btnClose = new Button
@@ -68,23 +69,22 @@ public sealed class PreviewForm : Form
         _btnSave.FlatAppearance.BorderSize = 0;
         _btnSave.Click += OnSave;
 
-        btnPanel.Controls.Add(_btnClose);
-        btnPanel.Controls.Add(_btnSave);
+        _btnPanel.Controls.Add(_btnClose);
+        _btnPanel.Controls.Add(_btnSave);
 
-        var topHint = new Label
+        _topHint = new Label
         {
             Text = Loc.T("PreviewHint"),
             Dock = DockStyle.Top,
             Height = 24,
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(8, 0, 0, 0),
-            BackColor = Color.LightYellow,
             Font = new Font("Microsoft YaHei UI", 9f)
         };
 
         Controls.Add(_txtPreview);
-        Controls.Add(topHint);
-        Controls.Add(btnPanel);
+        Controls.Add(_topHint);
+        Controls.Add(_btnPanel);
 
         CancelButton = _btnClose;
 
@@ -123,5 +123,11 @@ public sealed class PreviewForm : Form
 
         _txtPreview.BackColor = ThemeManager.ControlBg;
         _txtPreview.ForeColor = ThemeManager.Fg;
+
+        // 提示条在白天是浅黄底黑字，深色模式沿用暗色底 + 正文色，
+        // 否则整条亮黄/亮灰会把深色窗口劈成两半。
+        _topHint.BackColor = ThemeManager.IsDarkMode ? ThemeManager.DarkControlBg : Color.LightYellow;
+        _topHint.ForeColor = ThemeManager.IsDarkMode ? ThemeManager.Fg : Color.Black;
+        _btnPanel.BackColor = ThemeManager.IsDarkMode ? ThemeManager.DarkControlBg : SystemColors.Control;
     }
 }

@@ -51,6 +51,7 @@
   "LabelNoMergeChars": "自定义标点：",
   "ChkTrimLeadingComma": "去除位于行首逗号",
   "ChkOverwrite": "危险覆盖模式（直接写回原文件）",
+  "ChkBackupBeforeOverwrite": "覆盖前备份为 .bak",
 
   "EncodingNotSelected": "（尚未选择文件）",
   "EncodingUtf8Bom": "UTF-8（BOM）",
@@ -107,7 +108,7 @@
   "MsgReplaceFailed": "替换失败：{0}",
 
   "MsgOverwriteTitle": "危险操作",
-  "MsgOverwriteBody": "开启后将直接覆盖原文件，原数据将无法恢复。是否继续？",
+  "MsgOverwriteBody": "开启后将直接覆盖原文件。未勾选「覆盖前备份为 .bak」时，原内容将无法恢复。是否继续？",
 
   "SchemeWinTitle": "预设替换方案勾选",
   "SchemeNew": "新建方案",

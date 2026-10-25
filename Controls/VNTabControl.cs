@@ -74,7 +74,8 @@ public sealed class VNTabControl : UserControl, IStatusSource, IThemedTab
         _txtFilePath.DragDrop += OnFileDragDrop;
         layout.Controls.Add(_txtFilePath, 1, 0);
 
-        _btnBrowse = new Button { Text = "Browse...", AutoSize = true };
+        // Anchor 只给 Left：和同一行的文件框一样在行内垂直居中（默认 Top|Left 会贴行顶）。
+        _btnBrowse = new Button { Text = "Browse...", AutoSize = true, Anchor = AnchorStyles.Left };
         _btnBrowse.Click += OnBrowseFile;
         layout.Controls.Add(_btnBrowse, 2, 0);
 
@@ -82,10 +83,12 @@ public sealed class VNTabControl : UserControl, IStatusSource, IThemedTab
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
         _lblEncodingTag = MakeLabel("Encoding:");
         layout.Controls.Add(_lblEncodingTag, 0, 1);
+        // AutoSize 必须显式打开：Label 默认宽 100px，「（尚未选择文件）」约 107px，右括号会被切掉。
         _lblEncoding = new Label
         {
             Text = "(No file selected)",
             ForeColor = Color.Gray,
+            AutoSize = true,
             Anchor = AnchorStyles.Left
         };
         layout.SetColumnSpan(_lblEncoding, 2);
@@ -170,7 +173,8 @@ public sealed class VNTabControl : UserControl, IStatusSource, IThemedTab
 
         // Row 6 — Output status
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        _lblOutput = new Label { Text = "", ForeColor = Color.Green, Anchor = AnchorStyles.Left };
+        // 同上：AutoSize=false 时宽 100px，批处理结果只会露出前几个字。
+        _lblOutput = new Label { Text = "", ForeColor = ThemeManager.SuccessFg, AutoSize = true, Anchor = AnchorStyles.Left };
         layout.SetColumnSpan(_lblOutput, 3);
         layout.Controls.Add(_lblOutput, 1, 6);
 
@@ -211,7 +215,7 @@ public sealed class VNTabControl : UserControl, IStatusSource, IThemedTab
     public void ApplyTheme()
     {
         ControlsHelper.ApplyTheme(this);
-        _lblEncoding.ForeColor = ThemeManager.MutedFg;
+        _lblEncoding.ForeColor = _lastDetection == null ? ThemeManager.MutedFg : ThemeManager.Fg;
         _lblSelectedPresets.ForeColor = ThemeManager.MutedFg;
     }
 
@@ -236,7 +240,8 @@ public sealed class VNTabControl : UserControl, IStatusSource, IThemedTab
 
     private void OnFileDragDrop(object? sender, DragEventArgs e)
     {
-        _txtFilePath.BackColor = Color.White;
+        // 拖放结束后恢复主题底色；写死白色会在深色模式下留下一个白框 + 浅灰字
+        _txtFilePath.BackColor = ThemeManager.ControlBg;
         if (e.Data?.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0)
             SelectFiles(files);
     }
@@ -260,7 +265,8 @@ public sealed class VNTabControl : UserControl, IStatusSource, IThemedTab
         {
             _lastDetection = EncodingDetector.Detect(valid[0]);
             _lblEncoding.Text = Loc.T(_lastDetection.LocKey);
-            _lblEncoding.ForeColor = SystemColors.ControlText;
+            // SystemColors.ControlText 是黑色，深色模式下等于隐形
+            _lblEncoding.ForeColor = ThemeManager.Fg;
         }
         catch
         {
@@ -448,14 +454,14 @@ public sealed class VNTabControl : UserControl, IStatusSource, IThemedTab
             if (cancelled)
             {
                 msg = Loc.T("StatusBatchCancelled", result.Success);
-                _lblOutput.ForeColor = Color.DarkOrange;
+                _lblOutput.ForeColor = ThemeManager.WarningFg;
             }
             else
             {
                 msg = result.Success == files.Length
                     ? Loc.T("StatusVNComplete", $"{result.Success} file(s)")
                     : Loc.T("StatusVNFailed", $"{result.Success}/{files.Length}");
-                _lblOutput.ForeColor = result.Success == files.Length ? Color.Green : Color.DarkOrange;
+                _lblOutput.ForeColor = result.Success == files.Length ? ThemeManager.SuccessFg : ThemeManager.WarningFg;
             }
             _lblOutput.Text = msg;
             StatusChanged?.Invoke(msg);

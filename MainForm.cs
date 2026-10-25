@@ -52,6 +52,9 @@ public sealed class MainForm : Form
         // ---- Form 属性 ----
         Text = "TwilightRain's Text Tool";
         Size = new Size(700, 560);
+        // 各页签的列宽是按 700px 排的：再窄就会把长勾选项文字裁掉，
+        // 高度留 520 给行合并页（内容约 400px + 页签/状态栏）。
+        MinimumSize = new Size(700, 520);
         StartPosition = FormStartPosition.CenterScreen;
         Font = new Font("Microsoft YaHei UI", 10f);
         AllowDrop = true;

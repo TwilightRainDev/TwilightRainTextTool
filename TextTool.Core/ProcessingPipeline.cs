@@ -18,6 +18,21 @@ public record PostProcessOptions(
 );
 
 /// <summary>
+/// 写盘策略：结果写到哪里、覆盖前是否留备份。
+/// </summary>
+public enum WriteMode
+{
+    /// <summary>写入 `*_Processed.*`，源文件不动。</summary>
+    NewFile,
+
+    /// <summary>覆盖源文件，覆盖前备份为 `.bak`（含轮换）。</summary>
+    OverwriteWithBackup,
+
+    /// <summary>直接覆盖源文件，不产生任何额外文件。</summary>
+    Overwrite,
+}
+
+/// <summary>
 /// 处理流水线：将行合并 → CJK 修复 → 标点截断修复 → 标点替换串联为一次性内存操作，
 /// 仅在最后一步写入文件，消除旧版多步各写一次/读回一次的 I/O 开销。
 ///
@@ -36,12 +51,12 @@ public static class ProcessingPipeline
     /// <param name="mergeOpts">行合并配置</param>
     /// <param name="postProcess">后处理选项</param>
     /// <returns>处理结果记录</returns>
-    /// <param name="overwrite">若为 true 则直接覆盖原文件（危险模式）</param>
+    /// <param name="writeMode">写盘策略，默认写新文件、不动源文件</param>
     public static ProcessingResult Run(
         string inputPath, Encoding encoding,
         MergeOptions mergeOpts,
         PostProcessOptions postProcess,
-        bool overwrite = false)
+        WriteMode writeMode = WriteMode.NewFile)
     {
         // 预编译 set（一次性构造，所有 Merger 共享，需在 Step 1 前准备好供 LineMerger 使用）
         HashSet<char>? noMergeSet = postProcess.NoMerge && !string.IsNullOrEmpty(postProcess.NoMergeChars)
@@ -92,10 +107,10 @@ public static class ProcessingPipeline
             replaceApplied = true;
         }
 
-        // 一次性原子写入 UTF-8 with BOM（先写临时文件再整体替换，崩溃不留半写文件；
-        // 危险模式直接覆盖原文件，写前自动备份）
-        string finalPath = overwrite ? inputPath : outputPath;
-        if (overwrite && File.Exists(inputPath))
+        // 一次性原子写入 UTF-8 with BOM（先写临时文件再整体替换，崩溃不留半写文件）。
+        // 覆盖原文件时是否留备份由调用方选择：Overwrite 不留任何额外文件。
+        string finalPath = writeMode == WriteMode.NewFile ? outputPath : inputPath;
+        if (writeMode == WriteMode.OverwriteWithBackup && File.Exists(inputPath))
             BackupHelper.CreateBackup(inputPath);
         AtomicFile.WriteAllLines(finalPath, lines, Utf8Bom);
 

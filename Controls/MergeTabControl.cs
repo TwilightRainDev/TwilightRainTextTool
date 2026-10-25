@@ -39,6 +39,7 @@ public sealed class MergeTabControl : UserControl, IStatusSource, IThemedTab
     private TextBox _txtNoMergeChars = null!;
     private CheckBox _chkTrimLeadingComma = null!;
     private CheckBox _chkOverwrite = null!;   // 危险覆盖模式
+    private CheckBox _chkBackup = null!;      // 覆盖前是否备份（仅危险模式下可选）
 
     private readonly List<string> _selectedFiles = new();
     private DetectionResult? _lastDetection;
@@ -80,7 +81,9 @@ public sealed class MergeTabControl : UserControl, IStatusSource, IThemedTab
         _txtFilePath.DragDrop += OnFileDragDrop;
         layout.Controls.Add(_txtFilePath, 1, 0);
 
-        _btnBrowse = new Button { Text = "Browse...", AutoSize = true };
+        // Anchor 只给 Left：让按钮和同一行的文件框一样在行内垂直居中，
+        // 默认的 Top|Left 会把按钮贴到行顶，比文件框高出几个像素。
+        _btnBrowse = new Button { Text = "Browse...", AutoSize = true, Anchor = AnchorStyles.Left };
         _btnBrowse.Click += OnBrowseFile;
         layout.Controls.Add(_btnBrowse, 2, 0);
 
@@ -111,7 +114,9 @@ public sealed class MergeTabControl : UserControl, IStatusSource, IThemedTab
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
         _lblEncodingTag = MakeLabel("Encoding:");
         layout.Controls.Add(_lblEncodingTag, 0, 2);
-        _lblEncoding = new Label { Text = "(No file selected)", ForeColor = Color.Gray, Anchor = AnchorStyles.Left };
+        // AutoSize 必须显式打开：Label 默认 AutoSize=false、宽 100px，
+        // 「（尚未选择文件）」在 10pt 下约 107px，会连同右括号一起被截掉。
+        _lblEncoding = new Label { Text = "(No file selected)", ForeColor = Color.Gray, AutoSize = true, Anchor = AnchorStyles.Left };
         layout.Controls.Add(_lblEncoding, 1, 2);
 
         // Row 3 — Post: Fix CJK truncation
@@ -158,12 +163,27 @@ public sealed class MergeTabControl : UserControl, IStatusSource, IThemedTab
         layout.SetColumnSpan(_chkTrimLeadingComma, 2);
         layout.Controls.Add(_chkTrimLeadingComma, 1, 7);
 
-        // Row 8 — Dangerous overwrite mode
+        // Row 8 — Dangerous overwrite mode（备份与否交给用户）
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
         _chkOverwrite = new CheckBox { Text = Loc.T("ChkOverwrite"), Checked = false, AutoSize = true, Anchor = AnchorStyles.Left, ForeColor = Color.OrangeRed };
         _chkOverwrite.CheckedChanged += OnOverwriteChecked;
-        layout.SetColumnSpan(_chkOverwrite, 2);
-        layout.Controls.Add(_chkOverwrite, 1, 8);
+        // 不能用 Enabled=false：WinForms 的禁用勾选框不认 ForeColor，
+        // 在深色底上会把文字画成几乎看不见的暗浮雕（只剩一个空方框）。
+        // 改为常时可用 + 次要色；它只在危险覆盖开启时参与写盘决策。
+        _chkBackup = new CheckBox
+        {
+            Text = Loc.T("ChkBackupBeforeOverwrite"),
+            Checked = false,
+            AutoSize = true,
+            Anchor = AnchorStyles.Left,
+            ForeColor = ThemeManager.MutedFg,
+            Margin = new Padding(16, 0, 0, 0)
+        };
+        var overwriteRow = new FlowLayoutPanel { Anchor = AnchorStyles.Left, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, AutoSize = true };
+        overwriteRow.Controls.Add(_chkOverwrite);
+        overwriteRow.Controls.Add(_chkBackup);
+        layout.SetColumnSpan(overwriteRow, 2);
+        layout.Controls.Add(overwriteRow, 1, 8);
 
         // Row 9 — Buttons (Process + Preview)
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
@@ -196,7 +216,8 @@ public sealed class MergeTabControl : UserControl, IStatusSource, IThemedTab
 
         // Row 10 — Output
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        _lblOutput = new Label { Text = "", ForeColor = Color.Green, Anchor = AnchorStyles.Left };
+        // 同上：AutoSize=false 时宽 100px，批处理结果（中英文都超过 100px）只会露出前几个字。
+        _lblOutput = new Label { Text = "", ForeColor = ThemeManager.SuccessFg, AutoSize = true, Anchor = AnchorStyles.Left };
         layout.SetColumnSpan(_lblOutput, 2);
         layout.Controls.Add(_lblOutput, 1, 10);
 
@@ -224,6 +245,7 @@ public sealed class MergeTabControl : UserControl, IStatusSource, IThemedTab
         _lblNoMergeChars.Text = Loc.T("LabelNoMergeChars");
         _chkTrimLeadingComma.Text = Loc.T("ChkTrimLeadingComma");
         _chkOverwrite.Text = Loc.T("ChkOverwrite");
+        _chkBackup.Text = Loc.T("ChkBackupBeforeOverwrite");
         _btnProcess.Text = Loc.T("BtnProcess");
         _btnPreview.Text = Loc.T("BtnPreview");
     }
@@ -235,7 +257,9 @@ public sealed class MergeTabControl : UserControl, IStatusSource, IThemedTab
 
         // 特殊覆盖（统一遍历器无法处理的逻辑）
         _chkOverwrite.ForeColor = Color.OrangeRed;
-        _lblEncoding.ForeColor = ThemeManager.MutedFg;
+        _chkBackup.ForeColor = ThemeManager.MutedFg;
+        // 有文件时才用正文色，否则回到次要色——否则切一次主题就把「已检测」状态抹成灰色
+        _lblEncoding.ForeColor = _lastDetection == null ? ThemeManager.MutedFg : ThemeManager.Fg;
     }
 
     // ================================================================
@@ -259,7 +283,8 @@ public sealed class MergeTabControl : UserControl, IStatusSource, IThemedTab
 
     private void OnFileDragDrop(object? sender, DragEventArgs e)
     {
-        _txtFilePath.BackColor = Color.White;
+        // 拖放结束后恢复主题底色；写死白色会在深色模式下留下一个白框 + 浅灰字
+        _txtFilePath.BackColor = ThemeManager.ControlBg;
         if (e.Data?.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0)
             SelectFiles(files);
     }
@@ -284,7 +309,8 @@ public sealed class MergeTabControl : UserControl, IStatusSource, IThemedTab
         {
             _lastDetection = EncodingDetector.Detect(valid[0]);
             _lblEncoding.Text = Loc.T(_lastDetection.LocKey);
-            _lblEncoding.ForeColor = SystemColors.ControlText;
+            // SystemColors.ControlText 是黑色，深色模式下等于隐形
+            _lblEncoding.ForeColor = ThemeManager.Fg;
         }
         catch
         {
@@ -334,7 +360,7 @@ public sealed class MergeTabControl : UserControl, IStatusSource, IThemedTab
         try
         {
             // 预览始终不覆盖原文件（即使危险模式已勾选）
-            var result = await Task.Run(() => RunPipeline(path, options, postProcess, overwrite: false));
+            var result = await Task.Run(() => RunPipeline(path, options, postProcess, WriteMode.NewFile));
             using var preview = new PreviewForm(result.Lines, result.OutputPath);
             preview.ShowDialog(this);
         }
@@ -384,6 +410,9 @@ public sealed class MergeTabControl : UserControl, IStatusSource, IThemedTab
             TrimLeadingComma: _chkTrimLeadingComma.Checked,
             Rules: ReplaceRules ?? new List<ReplaceRule>());
         bool overwrite = _chkOverwrite.Checked;
+        var writeMode = overwrite
+            ? (_chkBackup.Checked ? WriteMode.OverwriteWithBackup : WriteMode.Overwrite)
+            : WriteMode.NewFile;
         var files = _selectedFiles.ToArray();
 
         _cts = new CancellationTokenSource();
@@ -402,7 +431,7 @@ public sealed class MergeTabControl : UserControl, IStatusSource, IThemedTab
 
         var result = await ControlsHelper.RunBatchAsync(
             files,
-            (path, _) => RunPipeline(path, options, postProcess, overwrite),
+            (path, _) => RunPipeline(path, options, postProcess, writeMode),
             progress,
             token);
 
@@ -414,7 +443,7 @@ public sealed class MergeTabControl : UserControl, IStatusSource, IThemedTab
                 _btnProcess.Text = Loc.T("BtnProcess");
                 string cmsg = Loc.T("StatusBatchCancelled", result.Success);
                 _lblOutput.Text = cmsg;
-                _lblOutput.ForeColor = Color.DarkOrange;
+                _lblOutput.ForeColor = ThemeManager.WarningFg;
                 StatusChanged?.Invoke(cmsg);
             }
             else
@@ -425,7 +454,7 @@ public sealed class MergeTabControl : UserControl, IStatusSource, IThemedTab
                     ? Loc.T("StatusBatchComplete", result.Success)
                     : Loc.T("StatusBatchPartial", result.Success, files.Length);
                 _lblOutput.Text = msg;
-                _lblOutput.ForeColor = result.Success == files.Length ? Color.Green : Color.DarkOrange;
+                _lblOutput.ForeColor = result.Success == files.Length ? ThemeManager.SuccessFg : ThemeManager.WarningFg;
                 StatusChanged?.Invoke(msg);
 
                 if (result.Success > 0 && MessageBox.Show(this,
@@ -450,10 +479,10 @@ public sealed class MergeTabControl : UserControl, IStatusSource, IThemedTab
         }
     }
 
-    private ProcessingResult RunPipeline(string path, MergeOptions options, PostProcessOptions postProcess, bool overwrite)
+    private ProcessingResult RunPipeline(string path, MergeOptions options, PostProcessOptions postProcess, WriteMode writeMode)
     {
         var encoding = EncodingDetector.DetectStrict(path);
-        return ProcessingPipeline.Run(path, encoding.Encoding, options, postProcess, overwrite);
+        return ProcessingPipeline.Run(path, encoding.Encoding, options, postProcess, writeMode);
     }
 
     // ================================================================

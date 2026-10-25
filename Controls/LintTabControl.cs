@@ -48,7 +48,7 @@ public sealed class LintTabControl : UserControl, IStatusSource, IThemedTab
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
         _lblSourceFile = ControlsHelper.MakeLabel("Source:");
         _txtFilePath = new TextBox { Anchor = AnchorStyles.Left | AnchorStyles.Right, ReadOnly = true };
-        _btnBrowse = new Button { Text = "Browse...", AutoSize = true };
+        _btnBrowse = new Button { Text = "Browse...", AutoSize = true, Anchor = AnchorStyles.Left };
         _btnBrowse.Click += OnBrowse;
         layout.Controls.Add(_lblSourceFile, 0, 0);
         layout.Controls.Add(_txtFilePath, 1, 0);

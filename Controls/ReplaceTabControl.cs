@@ -82,7 +82,8 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource, IThemedTab
         _txtReplaceFile.DragDrop += OnReplaceFileDragDrop;
         layout.Controls.Add(_txtReplaceFile, 1, 0);
 
-        _btnBrowseReplaceFile = new Button { Text = "Browse...", AutoSize = true };
+        // Anchor 只给 Left：和同一行的文件框一样在行内垂直居中（默认 Top|Left 会贴行顶）。
+        _btnBrowseReplaceFile = new Button { Text = "Browse...", AutoSize = true, Anchor = AnchorStyles.Left };
         _btnBrowseReplaceFile.Click += OnBrowseReplaceFile;
         layout.Controls.Add(_btnBrowseReplaceFile, 2, 0);
 
@@ -90,10 +91,12 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource, IThemedTab
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
         _lblReplaceEncodingTag = MakeLabel("Encoding:");
         layout.Controls.Add(_lblReplaceEncodingTag, 0, 1);
+        // AutoSize 必须显式打开：Label 默认宽 100px，「（尚未选择文件）」约 107px，右括号会被切掉。
         _lblReplaceEncoding = new Label
         {
             Text = "(No file selected)",
             ForeColor = Color.Gray,
+            AutoSize = true,
             Anchor = AnchorStyles.Left
         };
         layout.SetColumnSpan(_lblReplaceEncoding, 2);
@@ -102,9 +105,12 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource, IThemedTab
         // Row 2 — Rule list + editor
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
+        // Size 必须先给够：SplitterDistance 会按当前宽度钳制，默认宽 150 会把 220 压成 ~120，
+        // 左侧规则列表就会被挤到只剩一百多像素。Dock 之后尺寸由表格接管，值不会再变。
         var ruleSplit = new SplitContainer
         {
             Orientation = Orientation.Vertical,
+            Size = new Size(720, 320),
             SplitterDistance = 220,
             FixedPanel = FixedPanel.Panel1,
             Dock = DockStyle.Fill
@@ -231,7 +237,8 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource, IThemedTab
 
         // Row 5 — Output
         layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
-        _lblReplaceOutput = new Label { Text = "", ForeColor = Color.Green, Anchor = AnchorStyles.Left };
+        // 同上：AutoSize=false 时宽 100px，批处理结果只会露出前几个字。
+        _lblReplaceOutput = new Label { Text = "", ForeColor = ThemeManager.SuccessFg, AutoSize = true, Anchor = AnchorStyles.Left };
         layout.SetColumnSpan(_lblReplaceOutput, 2);
         layout.Controls.Add(_lblReplaceOutput, 1, 5);
 
@@ -267,7 +274,7 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource, IThemedTab
         ControlsHelper.ApplyTheme(this);
 
         // 特殊覆盖（暗淡提示文字）
-        _lblReplaceEncoding.ForeColor = ThemeManager.MutedFg;
+        _lblReplaceEncoding.ForeColor = _lastDetection == null ? ThemeManager.MutedFg : ThemeManager.Fg;
         _lblHint.ForeColor = ThemeManager.MutedFg;
     }
 
@@ -292,7 +299,8 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource, IThemedTab
 
     private void OnReplaceFileDragDrop(object? sender, DragEventArgs e)
     {
-        _txtReplaceFile.BackColor = Color.White;
+        // 拖放结束后恢复主题底色；写死白色会在深色模式下留下一个白框 + 浅灰字
+        _txtReplaceFile.BackColor = ThemeManager.ControlBg;
         if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
         {
             var files = (string[])e.Data!.GetData(DataFormats.FileDrop)!;
@@ -320,7 +328,8 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource, IThemedTab
                 var detection = EncodingDetector.Detect(valid[0]);
                 _lastDetection = detection;
                 _lblReplaceEncoding.Text = Loc.T(detection.LocKey);
-                _lblReplaceEncoding.ForeColor = SystemColors.ControlText;
+                // SystemColors.ControlText 是黑色，深色模式下等于隐形
+                _lblReplaceEncoding.ForeColor = ThemeManager.Fg;
             }
             catch
             {
@@ -335,7 +344,7 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource, IThemedTab
             _txtReplaceFile.Text = $"[{valid.Count} files selected]";
             _lastDetection = null;
             _lblReplaceEncoding.Text = Loc.T("StatusFilesSelected", valid.Count);
-            _lblReplaceEncoding.ForeColor = SystemColors.ControlText;
+            _lblReplaceEncoding.ForeColor = ThemeManager.Fg;
         }
 
         _btnReplaceProcess.Enabled = true;
@@ -469,7 +478,7 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource, IThemedTab
                 _btnReplaceProcess.Text = Loc.T("BtnExecuteReplace");
                 string cmsg = Loc.T("StatusBatchCancelled", result.Success);
                 _lblReplaceOutput.Text = cmsg;
-                _lblReplaceOutput.ForeColor = Color.DarkOrange;
+                _lblReplaceOutput.ForeColor = ThemeManager.WarningFg;
                 StatusChanged?.Invoke(cmsg);
             }
             else
@@ -480,7 +489,7 @@ public sealed class ReplaceTabControl : UserControl, IStatusSource, IThemedTab
                     ? Loc.T("StatusBatchComplete", result.Success)
                     : Loc.T("StatusBatchPartial", result.Success, files.Length);
                 _lblReplaceOutput.Text = msg;
-                _lblReplaceOutput.ForeColor = result.Success == files.Length ? Color.Green : Color.DarkOrange;
+                _lblReplaceOutput.ForeColor = result.Success == files.Length ? ThemeManager.SuccessFg : ThemeManager.WarningFg;
                 StatusChanged?.Invoke(msg);
 
                 if (result.Success > 0 && MessageBox.Show(this,

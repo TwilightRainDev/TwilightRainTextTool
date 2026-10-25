@@ -51,6 +51,7 @@
   "LabelNoMergeChars": "自定義標點：",
   "ChkTrimLeadingComma": "去除位於行首逗號",
   "ChkOverwrite": "危險覆蓋模式（直接寫回原始檔案）",
+  "ChkBackupBeforeOverwrite": "覆寫前備份為 .bak",
 
   "EncodingNotSelected": "（尚未選擇檔案）",
   "EncodingUtf8Bom": "UTF-8（BOM）",
@@ -107,7 +108,7 @@
   "MsgReplaceFailed": "替換失敗：{0}",
 
   "MsgOverwriteTitle": "危險操作",
-  "MsgOverwriteBody": "開啟後將直接覆蓋原始檔案，原始資料將無法復原。是否繼續？",
+  "MsgOverwriteBody": "開啟後將直接覆寫原始檔案。未勾選「覆寫前備份為 .bak」時，原始內容將無法復原。是否繼續？",
 
   "SchemeWinTitle": "預設替換方案勾選",
   "SchemeNew": "新建方案",

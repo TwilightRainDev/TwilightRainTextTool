@@ -1,7 +1,8 @@
 namespace TextTool.Services;
 
 /// <summary>
-/// 文件备份辅助 —— 覆盖写前自动备份原文件，防止误操作导致数据丢失。
+/// 文件备份辅助 —— 覆盖写前备份原文件，防止误操作导致数据丢失。
+/// 是否备份由调用方（`WriteMode.OverwriteWithBackup`）决定，不是覆盖的强制副作用。
 /// 备份命名：`{name}.bak`（最新），历史轮换为 `{name}.bak.1` / `.bak.2` ...
 /// </summary>
 public static class BackupHelper

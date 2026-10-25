@@ -47,7 +47,8 @@ public sealed class JoinTabControl : UserControl, IStatusSource, IThemedTab
             Text = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
         };
         layout.Controls.Add(_txtFolder, 1, 0);
-        _btnBrowseFolder = new Button { Text = "Browse...", AutoSize = true };
+        // Anchor 只给 Left：和同一行的输入框一样在行内垂直居中。
+        _btnBrowseFolder = new Button { Text = "Browse...", AutoSize = true, Anchor = AnchorStyles.Left };
         _btnBrowseFolder.Click += OnBrowseFolder;
         layout.Controls.Add(_btnBrowseFolder, 2, 0);
 

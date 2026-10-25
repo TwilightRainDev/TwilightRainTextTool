@@ -10,7 +10,7 @@ namespace TextTool.Cli;
 /// TextTool 命令行入口 — 供脚本化批处理/CI 集成使用。
 ///
 /// 用法：
-///   texttool merge &lt;file...&gt; [--threshold N] [--chars|--bytes] [--overwrite] [--no-cjk] [--no-punct] [--punct-chars &quot;，&quot;]
+///   texttool merge &lt;file...&gt; [--threshold N] [--chars|--bytes] [--overwrite] [--backup] [--no-cjk] [--no-punct] [--punct-chars &quot;，&quot;]
 ///   texttool replace &lt;file...&gt; [--scheme &lt;name&gt;]
 ///   texttool vn &lt;file...&gt; [--scheme &lt;name...&gt;] [--max-para N] [--reformat-only|--punct-only]
 ///   texttool join &lt;directory&gt; [--pattern &quot;*.txt&quot;] [--output &lt;name&gt;]
@@ -64,7 +64,7 @@ public static class Program
     private static int RunMerge(string[] args)
     {
         var options = new MergeOptions { Mode = MergeMode.CharCount };
-        bool fixCjk = true, fixPunct = false, trimComma = true, overwrite = false;
+        bool fixCjk = true, fixPunct = false, trimComma = true, overwrite = false, backup = false;
         string punctChars = "，";
         var files = new List<string>();
 
@@ -76,6 +76,7 @@ public static class Program
                 case "--chars": options.Mode = MergeMode.CharCount; break;
                 case "--bytes": options.Mode = MergeMode.ByteCount; break;
                 case "--overwrite": overwrite = true; break;
+                case "--backup": backup = true; break; // 隐含 --overwrite
                 case "--no-cjk": fixCjk = false; break;
                 case "--fix-punct": fixPunct = true; break;
                 case "--punct-chars": punctChars = ParseValue(args, ref i, "--punct-chars"); break;
@@ -94,10 +95,12 @@ public static class Program
             Rules: rules);
 
         int success = 0;
+        var writeMode = !overwrite && !backup ? WriteMode.NewFile
+            : backup ? WriteMode.OverwriteWithBackup : WriteMode.Overwrite;
         foreach (var file in files)
         {
             var encoding = EncodingDetector.DetectStrict(file);
-            var result = ProcessingPipeline.Run(file, encoding.Encoding, options, post, overwrite);
+            var result = ProcessingPipeline.Run(file, encoding.Encoding, options, post, writeMode);
             Console.WriteLine($"[成功] {Path.GetFileName(file)} → {result.OutputPath}");
             success++;
         }
@@ -462,7 +465,8 @@ public static class Program
             merge 选项：
               --threshold <N>      行合并阈值（默认 20）
               --chars / --bytes    按字符数 / 字节数（默认字符数）
-              --overwrite          直接覆盖原文件（危险，写前自动备份）
+              --overwrite          直接覆盖原文件，不留备份（危险）
+              --backup             覆盖原文件，覆盖前备份为 .bak（隐含 --overwrite）
               --no-cjk             禁用中文截断修复
               --fix-punct          启用标点截断修复
               --punct-chars <s>    标点截断字符集（默认 "，"）

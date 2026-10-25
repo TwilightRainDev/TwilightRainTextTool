@@ -11,6 +11,8 @@ namespace TextTool.Services;
 ///   Bg/Fg         — 主背景/前景
 ///   ControlBg     — 输入控件背景（文本框、下拉框、列表等）
 ///   MutedFg       — 次要文字（提示、状态说明等）
+///   SuccessFg     — 成功类结果文字
+///   WarningFg     — 警告/部分失败类结果文字
 ///
 /// 按钮的反转配色（白天黑底白字，深色白底黑字）由 ControlsHelper 提供，
 /// 属于渲染层决策，ThemeManager 只提供基础色板。
@@ -37,6 +39,10 @@ public static class ThemeManager
     public static Color ControlBg => IsDarkMode ? DarkControlBg : LightControlBg;
     /// <summary>次要文字色（提示、状态说明等）</summary>
     public static Color MutedFg => IsDarkMode ? Color.FromArgb(180, 180, 180) : Color.Gray;
+    /// <summary>成功结果文字色（深色背景上 Color.Green 对比度不足 4.5:1）</summary>
+    public static Color SuccessFg => IsDarkMode ? Color.FromArgb(150, 235, 150) : Color.Green;
+    /// <summary>警告/部分失败结果文字色（两种底色上都保持 4.5:1 以上）</summary>
+    public static Color WarningFg => IsDarkMode ? Color.FromArgb(255, 170, 60) : Color.FromArgb(170, 85, 0);
 
     /// <summary>主题切换时触发</summary>
     public static event Action<bool>? ThemeChanged;

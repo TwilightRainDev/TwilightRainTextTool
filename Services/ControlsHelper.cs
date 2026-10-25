@@ -107,13 +107,16 @@ internal static class ControlsHelper
     //  统一拖放事件处理（H2-1）
     // ================================================================
 
+    /// <summary>拖放高亮色：白天用柠檬绸，深色模式换成同色系的暗色，避免整块亮黄上叠浅灰字看不见</summary>
+    private static Color DragHighlightBg => ThemeManager.IsDarkMode ? Color.FromArgb(72, 66, 40) : Color.LemonChiffon;
+
     /// <summary>拖放进入：判断是否为文件拖放，高亮控件</summary>
     public static void SetupFileDragEnter(DragEventArgs e, Control target)
     {
         e.Effect = e.Data?.GetDataPresent(DataFormats.FileDrop) == true
             ? DragDropEffects.Copy : DragDropEffects.None;
         if (e.Effect == DragDropEffects.Copy)
-            target.BackColor = Color.LemonChiffon;
+            target.BackColor = DragHighlightBg;
     }
 
     /// <summary>拖放悬浮：保持复制光标</summary>

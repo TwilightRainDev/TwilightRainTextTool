@@ -44,20 +44,12 @@ internal static class LocCallScanner
         new(@"\bLoc\s*\.\s*T\s*\(", RegexOptions.Compiled);
 
     /// <summary>
-    /// 扫仓库里调用 Loc.T 的那几处源码：Controls/*.cs、MainForm.cs、TextTool.Gui/**/*.cs（排除 bin、obj）。
+    /// 扫仓库里调用 Loc.T 的源码：TextTool.Gui/**/*.cs（排除 bin、obj）。
     /// 路径按相对仓库根目录的显示，方便失败信息直接抄进编辑器。
     /// </summary>
     public static LocScanResult ScanRepository(string repoRoot)
     {
         var paths = new List<string>();
-
-        string controls = Path.Combine(repoRoot, "Controls");
-        if (Directory.Exists(controls))
-            paths.AddRange(Directory.EnumerateFiles(controls, "*.cs", SearchOption.TopDirectoryOnly));
-
-        string mainForm = Path.Combine(repoRoot, "MainForm.cs");
-        if (File.Exists(mainForm))
-            paths.Add(mainForm);
 
         string gui = Path.Combine(repoRoot, "TextTool.Gui");
         if (Directory.Exists(gui))

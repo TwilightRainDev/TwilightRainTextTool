@@ -88,7 +88,7 @@ public class LocalizationCallSiteTests
         // 扫描器一旦失灵（路径变了、正则式样退化），下面的逐条比较会变成「空集合里挑不出错」，
         // 恒绿。留个下限兜住它。
         Assert.True(scan.Files.Count >= 10,
-            $"只扫到 {scan.Files.Count} 个源文件，扫描范围可能已经不对了（Controls/*.cs、MainForm.cs、TextTool.Gui/**/*.cs）");
+            $"只扫到 {scan.Files.Count} 个源文件，扫描范围可能已经不对了（TextTool.Gui/**/*.cs）");
         Assert.True(scan.Calls.Count >= 150,
             $"只认出 {scan.Calls.Count} 处字面量键名的 Loc.T 调用，扫描器可能已失效，本测试的断言会失去意义");
         Assert.True(strings.Count > 0, $"{Lang}.json 是空表");

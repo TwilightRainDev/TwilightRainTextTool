@@ -22,6 +22,8 @@ public class GenreTierTests
     private const string 万能比喻 = "fiction-vague-simile";
     private const string 暴力动词 = "violent-verbs";
     private const string 碎片短句 = "short-sentence-run";
+    private const string 段末兜底 = "hedging-ending";
+    private const string 非活物主语 = "anthropomorphic-subject";
 
     private static List<LintHit> Hits(string text, string? genre, string id) =>
         LintRunner.Run(new[] { ("样本.txt", text) }, null, null, genre)
@@ -71,6 +73,37 @@ public class GenreTierTests
     public void 暴力动词的术语护标挡住正常用法(string text)
     {
         Assert.Empty(Hits(text, "doc", 暴力动词));
+    }
+
+    [Theory]
+    [InlineData("若故障持续，还是要检查或更换设备。")]
+    [InlineData("开会员买时间才可能划算，但总支出也未必更低。")]
+    [InlineData("这些做法因人而异。")]
+    public void 段末兜底报出(string text)
+    {
+        Assert.NotEmpty(Hits(text, null, 段末兜底));
+    }
+
+    [Fact]
+    public void 兜底词不在段末就不报()
+    {
+        // 截取的是段末三十字：句中一句「未必」不是免责收尾，是正常论述
+        var text = "未必所有方案都适用，这一点开场就该说清楚。接下来按步骤讲三段：先备料，再调色，最后合成导出并检查首尾帧。";
+        Assert.Empty(Hits(text, null, 段末兜底));
+    }
+
+    [Theory]
+    [InlineData("微观经济学里的希克斯需求问的是怎样用尽量少的支出达到给定的项目水平。")]
+    [InlineData("这份报告告诉我们，效率提升了三成。")]
+    public void 非活物做人的动作在文档档报出(string text)
+    {
+        Assert.NotEmpty(Hits(text, "doc", 非活物主语));
+    }
+
+    [Fact]
+    public void 非活物做人的动作不掺进小说档()
+    {
+        Assert.Empty(Hits("这份报告告诉我们，效率提升了三成。", "fiction", 非活物主语));
     }
 
     [Fact]

@@ -87,7 +87,7 @@ public class LintRuleStoreTests
     }
 
     [Fact]
-    public void GetDefaultRules_数据规则29条且顺序完整()
+    public void GetDefaultRules_数据规则31条且顺序完整()
     {
         var ids = LintRuleStore.GetDefaultRules().Select(r => r.Id).ToArray();
 
@@ -96,7 +96,7 @@ public class LintRuleStoreTests
             new[] { "repeated-punctuation", "ellipsis-style", "mixed-punctuation-width", "dash-and-tilde", "invisible-characters", "emoji-and-symbols",
                     "cliche-words", "ai-frequent-words", "vague-attribution", "training-cutoff-disclaimer", "chatbot-artifacts", "sycophancy", "filler-phrases",
                     "parallel-contrast", "paragraph-ordinals", "elevated-ending", "stacked-modifiers", "copula-avoidance", "inline-title-list", "forced-reversal", "accounting-cliche",
-                    "adverb-overuse", "violent-verbs",
+                    "adverb-overuse", "violent-verbs", "hedging-ending", "anthropomorphic-subject",
                     "fiction-body-tics", "fiction-filler-modifiers", "fiction-dead-metaphor", "fiction-emotion-telling", "fiction-vague-nominalization", "fiction-vague-simile" },
             ids);
     }
@@ -129,6 +129,11 @@ public class LintRuleStoreTests
         Assert.Equal(new[] { "fiction" }, rules["fiction-body-tics"].Genres);
         Assert.Equal(new[] { "fiction" }, rules["fiction-emotion-telling"].Genres);
         Assert.Equal(new[] { "fiction" }, rules["fiction-vague-nominalization"].Genres);
+        Assert.Equal(new[] { "doc" }, rules["anthropomorphic-subject"].Genres);
+
+        // 段末兜底与段末升华是同一条赛道的两端：同一 Scope、同一截取长度
+        Assert.Equal("paragraph", rules["hedging-ending"].Scope);
+        Assert.Equal(30, rules["hedging-ending"].TailChars);
 
         // 两条重复判定都靠「同段凑够次数」，阈值钉在数据上
         Assert.Equal("paragraph", rules["adverb-overuse"].Scope);

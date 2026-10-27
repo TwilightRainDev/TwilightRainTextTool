@@ -8,3 +8,6 @@ obj/
 # IDE user config / shortcuts
 *.user
 *.lnk
+
+# 自购电子书：只作本机语料，版权不外流
+NovelEdit/

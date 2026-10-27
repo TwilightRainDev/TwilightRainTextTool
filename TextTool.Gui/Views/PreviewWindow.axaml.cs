@@ -11,11 +11,11 @@ namespace TextTool.Gui.Views;
 /// 预览窗：只读显示处理结果，点「保存」才写盘。
 ///
 /// 保存后不关窗，结果行报出路径，用户可以接着点保存；关窗就是放弃，一个字节都不写。
-/// 编码与旧版一致：UTF-8 带 BOM，原子写盘。所有提示都是行内文字，不弹系统对话框。
+/// 编码与 WinForms 版一致：UTF-8 带 BOM，原子写盘。所有提示都是行内文字，不弹系统对话框。
 /// </summary>
 public partial class PreviewWindow : Window
 {
-    /// <summary>与旧版同编码：UTF-8 带 BOM。</summary>
+    /// <summary>与 WinForms 版同编码：UTF-8 带 BOM。</summary>
     private static readonly UTF8Encoding Utf8Bom = new(encoderShouldEmitUTF8Identifier: true);
 
     private string _outputPath = string.Empty;

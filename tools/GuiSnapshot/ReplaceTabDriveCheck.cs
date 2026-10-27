@@ -123,7 +123,7 @@ internal static class ReplaceTabDriveCheck
         Expect(saved[0].Find == "。" && saved[1].Find == "，", "上移后落盘顺序互换");
         Expect(list.SelectedIndex == 0, "上移后选中跟着走到第一行");
 
-        // 4. 删除后编辑框清空，此时点添加什么都不该发生（旧版在这里会多出一条重复规则）。
+        // 4. 删除后编辑框清空，此时点添加什么都不该发生（留着旧内容就会多出一条重复规则）。
         Click(delete);
         Dispatcher.UIThread.RunJobs();
         Expect(list.ItemCount == 1, "删除后列表剩 1 条");

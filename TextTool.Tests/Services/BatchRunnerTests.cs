@@ -107,10 +107,10 @@ public class BatchRunnerTests
         Assert.Equal(new[] { "a.txt", "b.txt" }, calls);
     }
 
-    // 这条曾经是红的：BatchRunner 把 token 也传给了 Task.Run，令牌在委托开始前取消时
-    // 任务直接进取消态、委托不执行，await 抛 TaskCanceledException，走不到循环里的
-    // IsCancellationRequested 判断。调用方把异常当"处理失败"报给用户，主动取消会变成
-    // 一条错误提示。现在 Task.Run 不再接 token，本条锁定"取消返回 (0,true) 而不是抛"。
+    // Task.Run 不接 token：令牌在委托开始前取消，任务会直接进取消态、委托不执行，
+    // await 抛 TaskCanceledException，走不到循环里的 IsCancellationRequested 判断；
+    // 调用方会把异常当「处理失败」报给用户，主动取消就变成一条错误提示。
+    // 本条锁定「取消返回 (0,true) 而不是抛」。
     [Fact]
     public async Task RunAsync_外部令牌已取消_不处理任何文件并报取消()
     {

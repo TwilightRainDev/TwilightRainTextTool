@@ -235,6 +235,15 @@ public class GenreTierTests
     }
 
     [Fact]
+    public void 小说里段末的总之不报_文档里报()
+    {
+        // 真人译制小说里「总之」是自然用法（实测 394 处），AI 小说 0 处
+        var text = "他把话咽了回去，摆摆手走了。总之，这件事就这么算了。";
+        Assert.Empty(Hits(text, "fiction", "elevated-ending"));
+        Assert.NotEmpty(Hits(text, "doc", "elevated-ending"));
+    }
+
+    [Fact]
     public void 连续碎片短句作为统计项报出()
     {
         var notes = LintRunner.Run(

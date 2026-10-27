@@ -334,7 +334,10 @@
     "Scope": "paragraph",
     "TailChars": 30,
     "Severity": "warn",
-    "Detail": "段末拔高收尾"
+    "Detail": "段末拔高收尾",
+    "Genres": [
+      "doc"
+    ]
   },
   {
     "Id": "stacked-modifiers",

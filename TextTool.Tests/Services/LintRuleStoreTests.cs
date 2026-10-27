@@ -127,6 +127,8 @@ public class LintRuleStoreTests
         // 这两条在真实小说里 85% 以上命中是正常用词（获得、展示、文学定语），收回文档档
         Assert.Equal(new[] { "doc" }, rules["ai-frequent-words"].Genres);
         Assert.Equal(new[] { "doc" }, rules["stacked-modifiers"].Genres);
+        // 真人小说每万字 2.1 处、AI 小说 0 处：段末升华在小说档只制造噪声
+        Assert.Equal(new[] { "doc" }, rules["elevated-ending"].Genres);
         Assert.Empty(rules["adverb-overuse"].Genres);
         Assert.Empty(rules["violent-verbs"].Genres);
         Assert.Equal(new[] { "fiction" }, rules["fiction-body-tics"].Genres);

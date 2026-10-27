@@ -249,6 +249,8 @@ public class GenreTierTests
     [InlineData("直到那天，他偶然发现了一种神秘的力量。")]
     [InlineData("主角叶轩，是一个身处都市中的普通年轻人。")]
     [InlineData("从此，他开始了他的冒险之旅。")]
+    [InlineData("他结识了一群志同道合的朋友。")]
+    [InlineData("他遇到了各种危险，也来到了一个完全陌生的世界。")]
     public void 简介模板骨架报出(string text)
     {
         Assert.NotEmpty(Hits(text, "fiction", 简介模板));

@@ -45,9 +45,10 @@
     "Title": "破折号与波浪号",
     "Kind": "regex",
     "Patterns": [
-      "--+",
+      "[\\u4e00-\\u9fff] ?--+ ?[\\u4e00-\\u9fff]",
       "(?<!—)—(?!—)",
-      "[\\u3400-\\u4DBF\\u4E00-\\u9FFF] ?- ?[\\u3400-\\u4DBF\\u4E00-\\u9FFF]"
+      "[\\u4e00-\\u9fff] ?- ?[\\u4e00-\\u9fff]",
+      "~{2,}|[～]"
     ],
     "Severity": "info",
     "Detail": "破折号/波浪号写法不规范",
@@ -376,7 +377,8 @@
       "(?m)^[-*]\\s+\\*\\*[^*\\n]{1,20}\\*\\*[：:]"
     ],
     "Severity": "info",
-    "Detail": "粗体标题 + 冒号的清单项"
+    "Detail": "粗体标题 + 冒号的清单项",
+    "SkipInMarkdown": true
   },
   {
     "Id": "forced-reversal",

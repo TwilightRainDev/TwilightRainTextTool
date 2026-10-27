@@ -32,6 +32,8 @@ public sealed class AiToneLintService
 
         foreach (var rule in _rules)
         {
+            if (rule.Rule.SkipInMarkdown && mode == "markdown")
+                continue;
             if (rule.Rule.Scope == "paragraph")
                 ScanParagraphScope(rule, text, report, mode, lineStarts);
             else

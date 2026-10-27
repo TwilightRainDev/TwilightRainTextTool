@@ -16,6 +16,11 @@ public class LintRule
     public string Kind { get; set; } = "regex";
     /// <summary>多条模式——repeated-punctuation 有 2 条正则、cliche-words 有 26 条词，单串装不下。</summary>
     public List<string> Patterns { get; set; } = new();
+    /// <summary>
+    /// 段落在 markdown 语境下跳过本规则。行内标题列表这类判据只对纯文本文档成立，
+    /// markdown 的「- **要点**：」是标准写法，不是 AI 痕迹。
+    /// </summary>
+    public bool SkipInMarkdown { get; set; }
     /// <summary>document 或 paragraph。</summary>
     public string Scope { get; set; } = "document";
     /// <summary>
@@ -159,6 +164,7 @@ public static class LintRuleStore
         Patterns = new List<string>(r.Patterns), Scope = r.Scope,
         Genres = new List<string>(r.Genres),
         TailChars = r.TailChars, MinCount = r.MinCount, Severity = r.Severity,
+        SkipInMarkdown = r.SkipInMarkdown,
         Detail = r.Detail, Hints = r.Hints is null ? null : new List<string>(r.Hints),
         SuggestScheme = r.SuggestScheme,
     };

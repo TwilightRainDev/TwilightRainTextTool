@@ -24,6 +24,7 @@ public class GenreTierTests
     private const string 碎片短句 = "short-sentence-run";
     private const string 段末兜底 = "hedging-ending";
     private const string 非活物主语 = "anthropomorphic-subject";
+    private const string 过程残留 = "doc-process-residue";
 
     private static List<LintHit> Hits(string text, string? genre, string id) =>
         LintRunner.Run(new[] { ("样本.txt", text) }, null, null, genre)
@@ -104,6 +105,30 @@ public class GenreTierTests
     public void 非活物做人的动作不掺进小说档()
     {
         Assert.Empty(Hits("这份报告告诉我们，效率提升了三成。", "fiction", 非活物主语));
+    }
+
+    [Theory]
+    [InlineData("阶段一加了登录模块。第二阶段补齐导出。")]
+    [InlineData("本轮已完成，剩余能力留到未来再展开。")]
+    [InlineData("该功能原先是同步实现，某个时间点改成了异步。")]
+    public void 文档里的过程残留报出(string text)
+    {
+        Assert.NotEmpty(Hits(text, "doc", 过程残留));
+    }
+
+    [Theory]
+    [InlineData("本模块只负责导出，不管渲染。")]
+    [InlineData("同步改成异步之后，接口保持不变。")]
+    [InlineData("本阶段的目标是把导出链路打通。")]
+    public void 只讲现状的句子不报(string text)
+    {
+        Assert.Empty(Hits(text, "doc", 过程残留));
+    }
+
+    [Fact]
+    public void 过程残留不掺进小说档()
+    {
+        Assert.Empty(Hits("阶段一加了登录模块。", "fiction", 过程残留));
     }
 
     [Fact]

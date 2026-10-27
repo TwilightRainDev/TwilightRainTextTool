@@ -43,7 +43,7 @@ public class SelfUpdaterTests
         Assert.Equal(sha.ToLowerInvariant(), hash);
     }
 
-    [Fact]
+    [WindowsFact]
     public void FindCliAssetUrl_FindsMatchingAsset()
     {
         string json = $$"""
@@ -261,7 +261,7 @@ public class SelfUpdaterTests
         return (install, staging);
     }
 
-    [Fact]
+    [WindowsFact]
     public void BuildUpdateScript_ParentPidStillAlive_StillAppliesUpdate()
     {
         // Windows 复用 PID：父进程退出后该 PID 若被别的进程占用，无次数上限的
@@ -284,7 +284,7 @@ public class SelfUpdaterTests
             $"父 PID 存活时替换从未发生——wait-loop 缺少次数上限。stdout=[{run.Output}] stderr=[{run.Error}]");
     }
 
-    [Fact]
+    [WindowsFact]
     public void BuildUpdateScript_ShadowedTimeoutOnPath_IsNotInvoked()
     {
         // 裸 `timeout` 会被 PATH 靠前的同名命令遮蔽（本机 Git 的 GNU timeout 即在列）：
@@ -375,7 +375,7 @@ public class SelfUpdaterTests
         }
     }
 
-    [Fact]
+    [WindowsFact]
     public async Task UpdateAsync_AssetSlowerThanCallerTimeout_StillDownloads()
     {
         // 调用方 client 是"查询用"的短超时（无网时要秒级失败），而资产下载耗时超过它。

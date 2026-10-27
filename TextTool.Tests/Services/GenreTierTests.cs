@@ -25,6 +25,7 @@ public class GenreTierTests
     private const string 段末兜底 = "hedging-ending";
     private const string 非活物主语 = "anthropomorphic-subject";
     private const string 过程残留 = "doc-process-residue";
+    private const string 助手号腔 = "assistant-persona";
 
     private static List<LintHit> Hits(string text, string? genre, string id) =>
         LintRunner.Run(new[] { ("样本.txt", text) }, null, null, genre)
@@ -129,6 +130,28 @@ public class GenreTierTests
     public void 过程残留不掺进小说档()
     {
         Assert.Empty(Hits("阶段一加了登录模块。", "fiction", 过程残留));
+    }
+
+    [Theory]
+    [InlineData("每一步都摊开给你们看。")]
+    [InlineData("先立三条规矩：日更打卡绝不摸鱼。")]
+    [InlineData("评论区就是我的会议室。")]
+    [InlineData("本鲸服务器一颤（深度思考中）。")]
+    [InlineData("花的都是主人的钱，别白烧。")]
+    public void 助手号腔报出(string text)
+    {
+        Assert.NotEmpty(Hits(text, null, 助手号腔));
+    }
+
+    [Theory]
+    [InlineData("遇到服务器繁忙，重试三次即可。")]
+    [InlineData("这个流程公开之后，审核快了不少。")]
+    [InlineData("立规矩容易，守规矩难。")]
+    [InlineData("评论区里有不少好问题。")]
+    public void 同一批词的正常用法不报(string text)
+    {
+        // 单收单词会把「流程公开」「立规矩」「服务器繁忙」全判成 AI 腔，那些都是正常中文
+        Assert.Empty(Hits(text, null, 助手号腔));
     }
 
     [Fact]

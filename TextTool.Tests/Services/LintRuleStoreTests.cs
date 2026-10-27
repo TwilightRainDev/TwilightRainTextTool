@@ -87,7 +87,7 @@ public class LintRuleStoreTests
     }
 
     [Fact]
-    public void GetDefaultRules_数据规则32条且顺序完整()
+    public void GetDefaultRules_数据规则33条且顺序完整()
     {
         var ids = LintRuleStore.GetDefaultRules().Select(r => r.Id).ToArray();
 
@@ -96,7 +96,7 @@ public class LintRuleStoreTests
             new[] { "repeated-punctuation", "ellipsis-style", "mixed-punctuation-width", "dash-and-tilde", "invisible-characters", "emoji-and-symbols",
                     "cliche-words", "ai-frequent-words", "vague-attribution", "training-cutoff-disclaimer", "chatbot-artifacts", "sycophancy", "filler-phrases",
                     "parallel-contrast", "paragraph-ordinals", "elevated-ending", "stacked-modifiers", "copula-avoidance", "inline-title-list", "forced-reversal", "accounting-cliche",
-                    "adverb-overuse", "violent-verbs", "hedging-ending", "anthropomorphic-subject", "doc-process-residue",
+                    "adverb-overuse", "violent-verbs", "hedging-ending", "anthropomorphic-subject", "doc-process-residue", "assistant-persona",
                     "fiction-body-tics", "fiction-filler-modifiers", "fiction-dead-metaphor", "fiction-emotion-telling", "fiction-vague-nominalization", "fiction-vague-simile" },
             ids);
     }

@@ -78,7 +78,7 @@ public sealed class AiToneLintService
 
     /// <summary>代码内算法规则的 Id 全集（数据规则之外的 mixed-quote-style/mixed-bracket-width 与 paragraph-length-uniform-explicit-numbering）。</summary>
     public static readonly IReadOnlyList<string> AlgorithmRuleIds =
-        new[] { "mixed-quote-style", "mixed-bracket-width", "paragraph-length-uniform", "sentence-length-uniform", "repeated-paragraph-opening", "exclamation-density", "ordinal-skeleton", "explicit-numbering" };
+        new[] { "mixed-quote-style", "mixed-bracket-width", "paragraph-length-uniform", "sentence-length-uniform", "repeated-paragraph-opening", "exclamation-density", "ordinal-skeleton", "explicit-numbering", "short-sentence-run" };
 
     /// <summary>算法规则与给定数据规则的 Id 并集（--only 的校验集）。</summary>
     public static IReadOnlyCollection<string> AllRuleIds(IEnumerable<LintRule> rules)
@@ -143,6 +143,10 @@ public sealed class AiToneLintService
     private static readonly Regex FullWidthBracket = RegexGuard.Create("[（）]");
     private static readonly Regex AnyBracket = RegexGuard.Create("[()（）]");
     private static readonly Regex SentenceEnd = RegexGuard.Create("(?<=[。！？…])");
+
+    /// <summary>短句阈值：连着这么多句、每句不超过这么多字，就算节拍化碎片。</summary>
+    internal const int ShortSentenceMaxChars = 10;
+    internal const int ShortSentenceMinRun = 4;
 
     /// <summary>显式序号标记：行首的 1. / 1、/ 1) / （1）/ 一、 之类硬编号。</summary>
     private static readonly Regex ExplicitOrdinalMarker = RegexGuard.Create(
@@ -231,6 +235,26 @@ public sealed class AiToneLintService
                         cv.ToString("0.00"), sentences.Count),
                 });
         }
+
+        // short-sentence-run 连续短句：一句十来字正常，连着四句以上就是节拍化——
+        // 每句都在表演「克制」，读起来像按模板在填。与 sentence-length-uniform 查的不是同一件事：
+        // 那条看句长是否过于整齐（方差小），这条看是否连着短。
+        var rawSentences = SentenceEnd.Split(text).Select(s => s.Trim()).Where(s => s.Length > 0).ToList();
+        int run = 0, maxRun = 0;
+        foreach (var sentence in rawSentences)
+        {
+            run = sentence.Length <= ShortSentenceMaxChars ? run + 1 : 0;
+            if (run > maxRun) maxRun = run;
+        }
+        if (maxRun >= ShortSentenceMinRun)
+            report.Notes.Add(new LintNote
+            {
+                Id = "short-sentence-run",
+                Text = _text.Get(
+                    "LintNote_short-sentence-run",
+                    "连续 {0} 句都在 {1} 字以内——节拍化的碎片句，像在逐条填写动作与情绪",
+                    maxRun, ShortSentenceMaxChars),
+            });
 
         // repeated-paragraph-opening 段首两字高度重复
         if (paragraphs.Count >= 4)

@@ -1,116 +1,500 @@
 [
-  { "Id": "repeated-punctuation", "Group": "punctuation", "Title": "重复标点", "Kind": "regex",
-    "Patterns": ["([。，、？！；：～])\\1+", "([!?])\\1+"],
-    "Severity": "warn", "Detail": "连续重复的标点",
-    "SuggestScheme": "重复矛盾标点整理" },
-
-  { "Id": "ellipsis-style", "Group": "punctuation", "Title": "省略号风格", "Kind": "regex",
-    "Patterns": ["\\.{3,}", "。{3,}", "(?<!…)…(?!…)"],
-    "Severity": "warn", "Detail": "非标准省略号写法（标准为 ……）",
-    "SuggestScheme": "横线省略号→逗号" },
-
-  { "Id": "mixed-punctuation-width", "Group": "punctuation", "Title": "全半角混用", "Kind": "regex",
+  {
+    "Id": "repeated-punctuation",
+    "Group": "punctuation",
+    "Title": "重复标点",
+    "Kind": "regex",
+    "Patterns": [
+      "([。，、？！；：～])\\1+",
+      "([!?])\\1+"
+    ],
+    "Severity": "warn",
+    "Detail": "连续重复的标点",
+    "SuggestScheme": "重复矛盾标点整理"
+  },
+  {
+    "Id": "ellipsis-style",
+    "Group": "punctuation",
+    "Title": "省略号风格",
+    "Kind": "regex",
+    "Patterns": [
+      "\\.{3,}",
+      "。{3,}",
+      "(?<!…)…(?!…)"
+    ],
+    "Severity": "warn",
+    "Detail": "非标准省略号写法（标准为 ……）",
+    "SuggestScheme": "横线省略号→逗号"
+  },
+  {
+    "Id": "mixed-punctuation-width",
+    "Group": "punctuation",
+    "Title": "全半角混用",
+    "Kind": "regex",
     "Patterns": [
       "[,;:?!()\"'][\\u3400-\\u4DBF\\u4E00-\\u9FFF\\uF900-\\uFAFF\\u3000-\\u303F\\uFF00-\\uFFEF]",
       "[\\u3400-\\u4DBF\\u4E00-\\u9FFF\\uF900-\\uFAFF\\u3000-\\u303F\\uFF00-\\uFFEF][,;:?!()\"']"
     ],
-    "Severity": "warn", "Detail": "半角标点与中文或全角字符相邻",
-    "SuggestScheme": "标点符号转换" },
-
-  { "Id": "dash-and-tilde", "Group": "punctuation", "Title": "破折号与波浪号", "Kind": "regex",
-    "Patterns": ["--+", "(?<!—)—(?!—)",
-      "[\\u3400-\\u4DBF\\u4E00-\\u9FFF] ?- ?[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "~{2,}|[～]"],
-    "Severity": "info", "Detail": "破折号/波浪号写法不规范",
-    "SuggestScheme": "横线省略号→逗号" },
-
-  { "Id": "invisible-characters", "Group": "punctuation", "Title": "隐形字符", "Kind": "regex",
-    "Patterns": ["\\u200B", "\\u200C", "\\u200D", "\\u200E", "\\u200F", "\\u2060", "\\u00AD", "\\u00A0"],
-    "Severity": "warn", "Detail": "隐形字符（零宽/软连字符/不换行空格）",
-    "SuggestScheme": "特殊符号清除" },
-
-  { "Id": "emoji-and-symbols", "Group": "punctuation", "Title": "表情与装饰符号", "Kind": "regex",
-    "Patterns": ["[\\uFE0F]", "\\uD83C[\\uDF00-\\uDFFF]", "\\uD83D[\\uDC00-\\uDEFF]",
-      "\\uD83E[\\uDD00-\\uDDFF]", "[\\u2600-\\u27BF\\u2B00-\\u2BFF]"],
-    "Severity": "info", "Detail": "表情符号或装饰性符号",
-    "SuggestScheme": "特殊符号清除" },
-
-  { "Id": "cliche-words", "Group": "lexis", "Title": "套话词", "Kind": "regex",
-    "Patterns": ["赋能", "抓手", "闭环", "生态位", "护城河", "降本增效", "提质增效",
-      "不可否认", "毋庸置疑", "值得注意的是", "众所周知", "在当今社会",
-      "随着.{0,10}的发展", "极大地", "深入地", "全方位", "多维度", "深层次",
-      "带来.{0,6}的.{0,6}体验", "具有重要意义", "发挥着重要作用", "起到了关键作用",
-      "在.{0,10}的背景下", "从某种意义上说", "换句话说", "简而言之"],
-    "Severity": "info", "Detail": "套话/空词" },
-
-  { "Id": "ai-frequent-words", "Group": "lexis", "Title": "AI 高频词", "Kind": "literal", "MinCount": 3,
-    "Patterns": ["此外", "至关重要", "深入探讨", "持久的", "增强", "培养", "相互作用",
-      "复杂性", "格局", "织锦", "宝贵的", "充满活力的", "获得", "展示", "与……保持一致"],
-    "Severity": "info", "Detail": "AI 高频词密度偏高" },
-
-  { "Id": "vague-attribution", "Group": "lexis", "Title": "模糊归因", "Kind": "regex",
-    "Patterns": ["行业报告显示", "观察者指出", "专家认为", "一些批评者认为", "多个来源",
-      "有观点认为", "业内人士指出"],
-    "Severity": "warn", "Detail": "观点归因于模糊来源" },
-
-  { "Id": "training-cutoff-disclaimer", "Group": "lexis", "Title": "知识截止免责", "Kind": "regex",
-    "Patterns": ["截至\\s*\\d{4}\\s*年", "根据我最后的训练更新", "根据我的训练数据",
-      "虽然具体细节(?:有限|稀缺)", "基于(?:我)?(?:现有|可用)的?信息", "我的知识截止"],
-    "Severity": "warn", "Detail": "模型免责声明残留" },
-
-  { "Id": "chatbot-artifacts", "Group": "lexis", "Title": "协作交流痕迹", "Kind": "regex",
-    "Patterns": ["希望这对您有(?:所)?帮助", "当然！", "一定！", "您说得(?:完全)?正确",
-      "请(?:随时)?告诉我", "这是一个很好的?问题"],
-    "Severity": "warn", "Detail": "聊天对话痕迹残留" },
-
-  { "Id": "sycophancy", "Group": "lexis", "Title": "谄媚语气", "Kind": "regex",
-    "Patterns": ["好问题[！!]", "您说得完全正确", "这是一个(?:很好的|非常棒的)观点",
-      "非常抱歉", "感谢您的耐心"],
-    "Severity": "warn", "Detail": "过度讨好或客套" },
-
-  { "Id": "filler-phrases", "Group": "lexis", "Title": "填充短语", "Kind": "literal",
-    "Patterns": ["为了实现这一目标", "由于下雨的事实", "在这个时间点",
-      "在您需要帮助的情况下", "系统具有处理的能力", "值得注意的是数据显示"],
-    "Hints": ["为了实现这一点", "因为下雨", "现在", "如果您需要帮助",
-      "系统可以处理", "数据显示"],
-    "Severity": "info", "Detail": "填充短语，可直接替换" },
-
-  { "Id": "parallel-contrast", "Group": "syntax", "Title": "对举句式", "Kind": "regex",
-    "Patterns": ["不是[^。！？\\n]{1,25}?而是", "并非[^。！？\\n]{1,25}?而是",
-      "与其说[^。！？\\n]{1,25}?不如说", "不只是[^。！？\\n]{1,25}?更是",
-      "不在于[^。！？\\n]{1,25}?而在于", "既[^。！？\\n]{1,15}?又[^。！？\\n]{1,15}?又"],
-    "Severity": "warn", "Detail": "对举句式（AI 骨架）" },
-
-  { "Id": "paragraph-ordinals", "Group": "syntax", "Title": "段内序数词", "Kind": "regex",
-    "Patterns": ["首先|其次|再次|最后|其一|其二|其三"],
-    "Scope": "paragraph", "MinCount": 2,
-    "Severity": "warn", "Detail": "段内序数词骨架" },
-
-  { "Id": "elevated-ending", "Group": "syntax", "Title": "结尾升华", "Kind": "regex",
-    "Patterns": ["不仅仅", "总而言之", "总之", "综上", "由此可见", "值得我们", "让我们",
-      "这正是", "在这个.{0,12}的时代", "不仅.{0,10}更是", "未来可期", "值得期待",
-      "方能", "唯有", "方得", "行稳致远"],
-    "Scope": "paragraph", "TailChars": 30,
-    "Severity": "warn", "Detail": "段末拔高收尾" },
-
-  { "Id": "stacked-modifiers", "Group": "syntax", "Title": "定语堆叠", "Kind": "regex",
-    "Patterns": ["的[^。，、\\n]{0,8}的[^。，、\\n]{0,8}的"],
-    "Severity": "info", "Detail": "短距离内三个「的」" },
-
-  { "Id": "copula-avoidance", "Group": "syntax", "Title": "系动词回避", "Kind": "regex",
-    "Patterns": ["作为.{0,10}的?(?:象征|标志|证明|体现|代表)", "代表着.{0,10}",
-      "标志着.{0,10}", "充当着?.{0,10}"],
-    "Severity": "info", "Detail": "用复杂结构替代「是/有」" },
-
-  { "Id": "inline-title-list", "Group": "syntax", "Title": "内联标题列表", "Kind": "regex",
-    "Patterns": ["(?m)^[-*]\\s+\\*\\*[^*\\n]{1,20}\\*\\*[：:]"],
-    "Severity": "info", "Detail": "粗体标题 + 冒号的清单项" },
-
-  { "Id": "forced-reversal", "Group": "syntax", "Title": "强加反转", "Kind": "literal",
-    "Patterns": ["反而"],
-    "Severity": "info", "Detail": "「反而」裸词——无让步前提的强加反转；命中是候选，读语境再判" },
-
-  { "Id": "accounting-cliche", "Group": "syntax", "Title": "算账式引出数据", "Kind": "regex",
-    "Patterns": ["(?<![结清核对分])算[^。！？\\n]{0,8}账(?![户单号簿面款项目])",
-      "这[一二]?笔账", "账[^。！？\\n]{0,6}要[^。！？\\n]{0,6}算"],
-    "Severity": "info", "Detail": "「算一笔账」式陈词滥调：用虚构动作引出数据" }
+    "Severity": "warn",
+    "Detail": "半角标点与中文或全角字符相邻",
+    "SuggestScheme": "标点符号转换"
+  },
+  {
+    "Id": "dash-and-tilde",
+    "Group": "punctuation",
+    "Title": "破折号与波浪号",
+    "Kind": "regex",
+    "Patterns": [
+      "--+",
+      "(?<!—)—(?!—)",
+      "[\\u3400-\\u4DBF\\u4E00-\\u9FFF] ?- ?[\\u3400-\\u4DBF\\u4E00-\\u9FFF]",
+      "~{2,}|[～]"
+    ],
+    "Severity": "info",
+    "Detail": "破折号/波浪号写法不规范",
+    "SuggestScheme": "横线省略号→逗号"
+  },
+  {
+    "Id": "invisible-characters",
+    "Group": "punctuation",
+    "Title": "隐形字符",
+    "Kind": "regex",
+    "Patterns": [
+      "\\u200B",
+      "\\u200C",
+      "\\u200D",
+      "\\u200E",
+      "\\u200F",
+      "\\u2060",
+      "\\u00AD",
+      "\\u00A0"
+    ],
+    "Severity": "warn",
+    "Detail": "隐形字符（零宽/软连字符/不换行空格）",
+    "SuggestScheme": "特殊符号清除"
+  },
+  {
+    "Id": "emoji-and-symbols",
+    "Group": "punctuation",
+    "Title": "表情与装饰符号",
+    "Kind": "regex",
+    "Patterns": [
+      "[\\uFE0F]",
+      "\\uD83C[\\uDF00-\\uDFFF]",
+      "\\uD83D[\\uDC00-\\uDEFF]",
+      "\\uD83E[\\uDD00-\\uDDFF]",
+      "[\\u2600-\\u27BF\\u2B00-\\u2BFF]"
+    ],
+    "Severity": "info",
+    "Detail": "表情符号或装饰性符号",
+    "SuggestScheme": "特殊符号清除"
+  },
+  {
+    "Id": "cliche-words",
+    "Group": "lexis",
+    "Title": "套话词",
+    "Kind": "regex",
+    "Patterns": [
+      "赋能",
+      "抓手",
+      "闭环",
+      "生态位",
+      "护城河",
+      "降本增效",
+      "提质增效",
+      "不可否认",
+      "毋庸置疑",
+      "值得注意的是",
+      "众所周知",
+      "在当今社会",
+      "随着.{0,10}的发展",
+      "极大地",
+      "深入地",
+      "全方位",
+      "多维度",
+      "深层次",
+      "带来.{0,6}的.{0,6}体验",
+      "具有重要意义",
+      "发挥着重要作用",
+      "起到了关键作用",
+      "在.{0,10}的背景下",
+      "从某种意义上说",
+      "换句话说",
+      "简而言之",
+      "说白了",
+      "本质上",
+      "换言之",
+      "不难发现",
+      "需要指出的是",
+      "基于以上分析",
+      "一方面.{0,20}另一方面",
+      "这意味着",
+      "意义重大",
+      "影响深远",
+      "引发了.{0,8}的讨论",
+      "随着.{0,12}的(?:进步|演进|普及|兴起)"
+    ],
+    "Severity": "info",
+    "Detail": "套话/空词"
+  },
+  {
+    "Id": "ai-frequent-words",
+    "Group": "lexis",
+    "Title": "AI 高频词",
+    "Kind": "literal",
+    "MinCount": 3,
+    "Patterns": [
+      "此外",
+      "至关重要",
+      "深入探讨",
+      "持久的",
+      "增强",
+      "培养",
+      "相互作用",
+      "复杂性",
+      "格局",
+      "织锦",
+      "宝贵的",
+      "充满活力的",
+      "获得",
+      "展示",
+      "与……保持一致"
+    ],
+    "Severity": "info",
+    "Detail": "AI 高频词密度偏高"
+  },
+  {
+    "Id": "vague-attribution",
+    "Group": "lexis",
+    "Title": "模糊归因",
+    "Kind": "regex",
+    "Patterns": [
+      "行业报告显示",
+      "观察者指出",
+      "专家认为",
+      "一些批评者认为",
+      "多个来源",
+      "有观点认为",
+      "业内人士指出"
+    ],
+    "Severity": "warn",
+    "Detail": "观点归因于模糊来源"
+  },
+  {
+    "Id": "training-cutoff-disclaimer",
+    "Group": "lexis",
+    "Title": "知识截止免责",
+    "Kind": "regex",
+    "Patterns": [
+      "截至\\s*\\d{4}\\s*年",
+      "根据我最后的训练更新",
+      "根据我的训练数据",
+      "虽然具体细节(?:有限|稀缺)",
+      "基于(?:我)?(?:现有|可用)的?信息",
+      "我的知识截止"
+    ],
+    "Severity": "warn",
+    "Detail": "模型免责声明残留"
+  },
+  {
+    "Id": "chatbot-artifacts",
+    "Group": "lexis",
+    "Title": "协作交流痕迹",
+    "Kind": "regex",
+    "Patterns": [
+      "希望这对您有(?:所)?帮助",
+      "当然！",
+      "一定！",
+      "您说得(?:完全)?正确",
+      "请(?:随时)?告诉我",
+      "这是一个很好的?问题"
+    ],
+    "Severity": "warn",
+    "Detail": "聊天对话痕迹残留"
+  },
+  {
+    "Id": "sycophancy",
+    "Group": "lexis",
+    "Title": "谄媚语气",
+    "Kind": "regex",
+    "Patterns": [
+      "好问题[！!]",
+      "您说得完全正确",
+      "这是一个(?:很好的|非常棒的)观点",
+      "非常抱歉",
+      "感谢您的耐心"
+    ],
+    "Severity": "warn",
+    "Detail": "过度讨好或客套"
+  },
+  {
+    "Id": "filler-phrases",
+    "Group": "lexis",
+    "Title": "填充短语",
+    "Kind": "literal",
+    "Patterns": [
+      "为了实现这一目标",
+      "由于下雨的事实",
+      "在这个时间点",
+      "在您需要帮助的情况下",
+      "系统具有处理的能力",
+      "值得注意的是数据显示"
+    ],
+    "Hints": [
+      "为了实现这一点",
+      "因为下雨",
+      "现在",
+      "如果您需要帮助",
+      "系统可以处理",
+      "数据显示"
+    ],
+    "Severity": "info",
+    "Detail": "填充短语，可直接替换"
+  },
+  {
+    "Id": "parallel-contrast",
+    "Group": "syntax",
+    "Title": "对举句式",
+    "Kind": "regex",
+    "Patterns": [
+      "不是[^。！？\\n]{1,25}?而是",
+      "并非[^。！？\\n]{1,25}?而是",
+      "与其说[^。！？\\n]{1,25}?不如说",
+      "不只是[^。！？\\n]{1,25}?更是",
+      "不在于[^。！？\\n]{1,25}?而在于",
+      "既[^。！？\\n]{1,15}?又[^。！？\\n]{1,15}?又",
+      "不是[^。！？\\n]{1,15}?问题[，,][^。！？\\n]{1,15}?才是",
+      "答案不是[^。！？\\n]{1,20}?[，,]是",
+      "感觉像[^。！？\\n]{1,20}?其实是",
+      "不再是[^。！？\\n]{1,20}?开始(?:成为|变成)",
+      "不是[^。！？\\n]{1,15}?[，,](?:也)?不是[^。！？\\n]{1,15}?[，,](?:只)?是",
+      "没有[^。！？\\n]{1,15}?[，,]没有[^。！？\\n]{1,15}?[，,]只有"
+    ],
+    "Severity": "warn",
+    "Detail": "对举句式（AI 骨架）"
+  },
+  {
+    "Id": "paragraph-ordinals",
+    "Group": "syntax",
+    "Title": "段内序数词",
+    "Kind": "regex",
+    "Patterns": [
+      "首先|其次|再次|最后|其一|其二|其三"
+    ],
+    "Scope": "paragraph",
+    "MinCount": 2,
+    "Severity": "warn",
+    "Detail": "段内序数词骨架"
+  },
+  {
+    "Id": "elevated-ending",
+    "Group": "syntax",
+    "Title": "结尾升华",
+    "Kind": "regex",
+    "Patterns": [
+      "不仅仅",
+      "总而言之",
+      "总之",
+      "综上",
+      "由此可见",
+      "值得我们",
+      "让我们",
+      "这正是",
+      "在这个.{0,12}的时代",
+      "不仅.{0,10}更是",
+      "未来可期",
+      "值得期待",
+      "方能",
+      "唯有",
+      "方得",
+      "行稳致远"
+    ],
+    "Scope": "paragraph",
+    "TailChars": 30,
+    "Severity": "warn",
+    "Detail": "段末拔高收尾"
+  },
+  {
+    "Id": "stacked-modifiers",
+    "Group": "syntax",
+    "Title": "定语堆叠",
+    "Kind": "regex",
+    "Patterns": [
+      "的[^。，、\\n]{0,8}的[^。，、\\n]{0,8}的"
+    ],
+    "Severity": "info",
+    "Detail": "短距离内三个「的」"
+  },
+  {
+    "Id": "copula-avoidance",
+    "Group": "syntax",
+    "Title": "系动词回避",
+    "Kind": "regex",
+    "Patterns": [
+      "作为.{0,10}的?(?:象征|标志|证明|体现|代表)",
+      "代表着.{0,10}",
+      "标志着.{0,10}",
+      "充当着?.{0,10}"
+    ],
+    "Severity": "info",
+    "Detail": "用复杂结构替代「是/有」"
+  },
+  {
+    "Id": "inline-title-list",
+    "Group": "syntax",
+    "Title": "内联标题列表",
+    "Kind": "regex",
+    "Patterns": [
+      "(?m)^[-*]\\s+\\*\\*[^*\\n]{1,20}\\*\\*[：:]"
+    ],
+    "Severity": "info",
+    "Detail": "粗体标题 + 冒号的清单项"
+  },
+  {
+    "Id": "forced-reversal",
+    "Group": "syntax",
+    "Title": "强加反转",
+    "Kind": "literal",
+    "Patterns": [
+      "反而"
+    ],
+    "Severity": "info",
+    "Detail": "「反而」裸词——无让步前提的强加反转；命中是候选，读语境再判"
+  },
+  {
+    "Id": "accounting-cliche",
+    "Group": "syntax",
+    "Title": "算账式引出数据",
+    "Kind": "regex",
+    "Patterns": [
+      "(?<![结清核对分])算[^。！？\\n]{0,8}账(?![户单号簿面款项目])",
+      "这[一二]?笔账",
+      "账[^。！？\\n]{0,6}要[^。！？\\n]{0,6}算"
+    ],
+    "Severity": "info",
+    "Detail": "「算一笔账」式陈词滥调：用虚构动作引出数据"
+  },
+  {
+    "Id": "adverb-overuse",
+    "Group": "statistics",
+    "Title": "副词同段堆叠",
+    "Kind": "regex",
+    "Patterns": [
+      "猛地|死死|狠狠|骤然|瞬间|下一秒|立刻|此刻|极其|极度"
+    ],
+    "Scope": "paragraph",
+    "MinCount": 2,
+    "Severity": "info",
+    "Detail": "同一段里副词反复出现（凑够两处才报）——一次是正常写法，连着用是在使劲"
+  },
+  {
+    "Id": "violent-verbs",
+    "Group": "lexis",
+    "Title": "暴力动词套话",
+    "Kind": "regex",
+    "Patterns": [
+      "砍一刀|切一刀|补一刀|这一刀",
+      "狠狠(?:干|地|砍)|更狠|狠一点",
+      "打坏|拍脑门(?:决定|定)",
+      "(?<![一])咬(?![定合])[了住人]"
+    ],
+    "Severity": "info",
+    "Detail": "把改代码写成砍、切、咬——攻击性口癖顶替了具体动作；护栏挡「一刀切」「咬定」「咬合」"
+  },
+  {
+    "Id": "fiction-body-tics",
+    "Group": "syntax",
+    "Title": "网文脸固定搭配",
+    "Kind": "regex",
+    "Patterns": [
+      "眼中闪过|眼底闪过|嘴角勾起|嘴角(?:扯|扬)出.{0,4}(?:弧度|笑)|瞳孔微缩|眉头微皱|心头一震|心中一动|深吸一口气|垂下眼睑",
+      "拍了拍[^。！？\\n]{0,4}肩|张了张嘴[^。！？\\n]{0,8}咽了[^。！？\\n]{0,2}|只是一个点头",
+      "(?:声音|语气)很(?:轻|平静|淡|冷)"
+    ],
+    "Genres": [
+      "fiction"
+    ],
+    "Severity": "warn",
+    "Detail": "表情、动作、语气的固定搭配——写情绪最省事的一批词，换任何角色都成立"
+  },
+  {
+    "Id": "fiction-filler-modifiers",
+    "Group": "lexis",
+    "Title": "程度词堆叠",
+    "Kind": "regex",
+    "Patterns": [
+      "一丝|一抹|些许|几分|微微|轻轻|淡淡|缓缓|隐约"
+    ],
+    "Scope": "paragraph",
+    "MinCount": 3,
+    "Genres": [
+      "fiction"
+    ],
+    "Severity": "info",
+    "Detail": "段内程度词凑够三处——单用是分寸，连用是虚"
+  },
+  {
+    "Id": "fiction-dead-metaphor",
+    "Group": "syntax",
+    "Title": "陈词比喻",
+    "Kind": "regex",
+    "Patterns": [
+      "仿佛[^。！？\\n]{0,20}一般",
+      "犹如|宛若",
+      "梨花带雨|如沐春风",
+      "命运的齿轮|如潮水般涌来"
+    ],
+    "Genres": [
+      "fiction"
+    ],
+    "Severity": "info",
+    "Detail": "早被用旧的比喻——读到就知道后面要说什么，等于没写"
+  },
+  {
+    "Id": "fiction-emotion-telling",
+    "Group": "syntax",
+    "Title": "心理告知与预告",
+    "Kind": "regex",
+    "Patterns": [
+      "(?:他|她)这才(?:明白|意识到|知道)",
+      "(?:他|她)终于(?:明白|意识到)",
+      "(?:他|她)不知道的是",
+      "(?m)^(?:此刻|这一刻|那一瞬间)[，,]"
+    ],
+    "Genres": [
+      "fiction"
+    ],
+    "Severity": "info",
+    "Detail": "直接说出人物心里明白了什么，或替读者预告——用动作与场景顶替"
+  },
+  {
+    "Id": "fiction-vague-nominalization",
+    "Group": "syntax",
+    "Title": "抽象名词化",
+    "Kind": "regex",
+    "Patterns": [
+      "(?:有一种|有种|某种)[^。！？\\n]{0,12}的(?:东西|感觉|情绪)"
+    ],
+    "Genres": [
+      "fiction"
+    ],
+    "Severity": "warn",
+    "Detail": "「有一种……的东西」——谁读不懂、读不懂什么都不说，朦胧感是省出来的"
+  },
+  {
+    "Id": "fiction-vague-simile",
+    "Group": "syntax",
+    "Title": "万能比喻",
+    "Kind": "regex",
+    "Patterns": [
+      "像是[^。！？\\n]{0,15}的(?:感觉|样子)",
+      "像是在说[^。！？\\n]{0,12}",
+      "像[^。！？\\n]{0,10}(?:一样|一般)的(?:人生|命运|世界)"
+    ],
+    "Genres": [
+      "fiction"
+    ],
+    "Severity": "info",
+    "Detail": "能搬到任何场景的比喻——不承担叙事功能，只提供氛围"
+  }
 ]

@@ -367,7 +367,9 @@ public partial class LintTab : UserControl
     private static Scan Render(
         List<(string File, string Text)> inputs, string? minSeverity, IReadOnlyCollection<string>? onlyIds)
     {
-        var reportSet = LintRunner.Run(inputs, onlyIds, minSeverity, LintTextSource.Instance);
+        // 第四个参数是档位（doc/fiction）：界面暂不暴露选择器，发 null 就跑全部规则，
+        // 与命令行不给 --genre 时一致。要加选择器时，把它接在这里。
+        var reportSet = LintRunner.Run(inputs, onlyIds, minSeverity, genre: null, LintTextSource.Instance);
         string text = LintOutput.Render(reportSet, asJson: false, LintTextSource.Instance);
 
         int hits = 0, notes = 0;

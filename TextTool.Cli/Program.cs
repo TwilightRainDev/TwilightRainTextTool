@@ -14,7 +14,7 @@ namespace TextTool.Cli;
 ///   texttool replace &lt;file...&gt; [--scheme &lt;name&gt;]
 ///   texttool vn &lt;file...&gt; [--scheme &lt;name...&gt;] [--max-para N] [--reformat-only|--punct-only]
 ///   texttool join &lt;directory&gt; [--pattern &quot;*.txt&quot;] [--output &lt;name&gt;]
-///   texttool lint &lt;file...&gt; [--only &lt;id...&gt;] [--min-severity warn] [--json]
+///   texttool lint &lt;file...&gt; [--only &lt;id...&gt;] [--min-severity warn] [--genre doc|fiction] [--json]
 ///   texttool update [--check]
 /// </summary>
 public static class Program
@@ -341,7 +341,7 @@ public static class Program
 
             var files = new List<string>();
             bool json = false;
-            string? only = null, minSeverity = null;
+            string? only = null, minSeverity = null, genre = null;
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -350,6 +350,7 @@ public static class Program
                     case "--json": json = true; break;
                     case "--only": only = ParseValue(args, ref i, "--only"); break;
                     case "--min-severity": minSeverity = ParseValue(args, ref i, "--min-severity"); break;
+                    case "--genre": genre = ParseValue(args, ref i, "--genre"); break;
                     case "--help" or "-h": PrintLintHelp(); return 0;
                     default: files.Add(args[i]); break;
                 }
@@ -369,7 +370,7 @@ public static class Program
                 inputs.Add((file == "-" ? "(stdin)" : Path.GetFileName(file), text));
             }
 
-            var reportSet = LintRunner.Run(inputs, onlyIds, minSeverity);
+            var reportSet = LintRunner.Run(inputs, onlyIds, minSeverity, genre);
 
             // 两条分支共用同一个纯函数，行尾/报告间隔/尾换行的契约只在 LintOutput 里维护
             Console.Write(LintOutput.Render(reportSet, json));
@@ -406,6 +407,8 @@ public static class Program
               --json                以 JSON 输出（契约见 README.md 的「命令行（CLI）」节）
               --only <Id,...>       只跑指定规则，如 --only parallel-contrast,cliche-words
               --min-severity <info|warn>  只输出 warn 及以上（统计项不受影响）
+              --genre <doc|fiction> 按文本类型选规则：doc = 编程文档，fiction = 小说；
+                                    不给则跑全部规则（与加档位之前一致）
 
             输入：文件路径可多个；传 - 表示从 stdin 读。
 

@@ -18,6 +18,11 @@ public class LintRule
     public List<string> Patterns { get; set; } = new();
     /// <summary>document 或 paragraph。</summary>
     public string Scope { get; set; } = "document";
+    /// <summary>
+    /// 适用档位：doc（编程文档）或 fiction（小说）。留空 = 两档通用。
+    /// 留空不是「不适用」：写成 ["doc"] 的规则在小说里会静默消失。
+    /// </summary>
+    public List<string> Genres { get; set; } = new();
     /// <summary>仅 Scope=paragraph 有效：只检查段末 N 字。</summary>
     public int? TailChars { get; set; }
     /// <summary>每条 Pattern 各自的出现次数达到本值才报。</summary>
@@ -116,6 +121,12 @@ public static class LintRuleStore
                 throw new ArgumentException($"规则 {rule.Id} 的 Kind 非法：{rule.Kind}");
             if (rule.Scope is not ("document" or "paragraph"))
                 throw new ArgumentException($"规则 {rule.Id} 的 Scope 非法：{rule.Scope}");
+            if (rule.Genres is null)
+                throw new ArgumentException($"规则 {rule.Id} 的 Genres 为 null");
+            // 拼错的档位（novel、Doc）会让规则在任何 --genre 下都不跑，与 Id 撞码同类：加载即报
+            foreach (var genre in rule.Genres)
+                if (genre is not ("doc" or "fiction"))
+                    throw new ArgumentException($"规则 {rule.Id} 的档位非法：{genre}");
             if (rule.Severity is not ("info" or "warn"))
                 throw new ArgumentException($"规则 {rule.Id} 的 Severity 非法：{rule.Severity}");
             // 显式 null 会被 System.Text.Json 写回属性，模型上的 = new() 默认值挡不住，
@@ -146,6 +157,7 @@ public static class LintRuleStore
     {
         Id = r.Id, Group = r.Group, Title = r.Title, Kind = r.Kind,
         Patterns = new List<string>(r.Patterns), Scope = r.Scope,
+        Genres = new List<string>(r.Genres),
         TailChars = r.TailChars, MinCount = r.MinCount, Severity = r.Severity,
         Detail = r.Detail, Hints = r.Hints is null ? null : new List<string>(r.Hints),
         SuggestScheme = r.SuggestScheme,

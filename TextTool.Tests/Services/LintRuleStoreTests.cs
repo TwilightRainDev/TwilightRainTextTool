@@ -87,14 +87,17 @@ public class LintRuleStoreTests
     }
 
     [Fact]
-    public void GetDefaultRules_数据规则21条且顺序完整()
+    public void GetDefaultRules_数据规则29条且顺序完整()
     {
         var ids = LintRuleStore.GetDefaultRules().Select(r => r.Id).ToArray();
 
+        // 顺序即分组：通用规则在前，小说档六条垫后。档位是过滤器，规则全表只有这一份。
         Assert.Equal(
             new[] { "repeated-punctuation", "ellipsis-style", "mixed-punctuation-width", "dash-and-tilde", "invisible-characters", "emoji-and-symbols",
                     "cliche-words", "ai-frequent-words", "vague-attribution", "training-cutoff-disclaimer", "chatbot-artifacts", "sycophancy", "filler-phrases",
-                    "parallel-contrast", "paragraph-ordinals", "elevated-ending", "stacked-modifiers", "copula-avoidance", "inline-title-list", "forced-reversal", "accounting-cliche" },
+                    "parallel-contrast", "paragraph-ordinals", "elevated-ending", "stacked-modifiers", "copula-avoidance", "inline-title-list", "forced-reversal", "accounting-cliche",
+                    "adverb-overuse", "violent-verbs",
+                    "fiction-body-tics", "fiction-filler-modifiers", "fiction-dead-metaphor", "fiction-emotion-telling", "fiction-vague-nominalization", "fiction-vague-simile" },
             ids);
     }
 
@@ -117,6 +120,32 @@ public class LintRuleStoreTests
         Assert.Equal(
             new[] { "为了实现这一点", "因为下雨", "现在", "如果您需要帮助", "系统可以处理", "数据显示" },
             rules["filler-phrases"].Hints!.ToArray());
+
+        // 档位：通用规则留空，小说规则只属于小说档。留空是「两档都跑」的意思，
+        // 写成 ["doc"] 会让它在小说里静默消失。
+        Assert.Empty(rules["cliche-words"].Genres);
+        Assert.Empty(rules["adverb-overuse"].Genres);
+        Assert.Empty(rules["violent-verbs"].Genres);
+        Assert.Equal(new[] { "fiction" }, rules["fiction-body-tics"].Genres);
+        Assert.Equal(new[] { "fiction" }, rules["fiction-emotion-telling"].Genres);
+        Assert.Equal(new[] { "fiction" }, rules["fiction-vague-nominalization"].Genres);
+
+        // 两条重复判定都靠「同段凑够次数」，阈值钉在数据上
+        Assert.Equal("paragraph", rules["adverb-overuse"].Scope);
+        Assert.Equal(2, rules["adverb-overuse"].MinCount);
+        Assert.Equal("paragraph", rules["fiction-filler-modifiers"].Scope);
+        Assert.Equal(3, rules["fiction-filler-modifiers"].MinCount);
+    }
+
+    [Fact]
+    public void Validate_Genres取值非法即抛()
+    {
+        // 档位拼错（doc\uaced 之类）会让规则在所有档位下静默不跑，与 Id 撞码同类，必须在加载期报错
+        var rule = Rule("fiction-body-tics");
+        rule.Genres = new List<string> { "novel" };
+
+        var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
+        Assert.Contains("novel", ex.Message);
     }
 
     [Fact]

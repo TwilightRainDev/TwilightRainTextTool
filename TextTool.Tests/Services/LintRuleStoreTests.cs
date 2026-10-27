@@ -87,7 +87,7 @@ public class LintRuleStoreTests
     }
 
     [Fact]
-    public void GetDefaultRules_数据规则38条且顺序完整()
+    public void GetDefaultRules_数据规则40条且顺序完整()
     {
         var ids = LintRuleStore.GetDefaultRules().Select(r => r.Id).ToArray();
 
@@ -98,7 +98,7 @@ public class LintRuleStoreTests
                     "parallel-contrast", "paragraph-ordinals", "elevated-ending", "stacked-modifiers", "copula-avoidance", "inline-title-list", "forced-reversal", "accounting-cliche",
                     "adverb-overuse", "violent-verbs", "hedging-ending", "anthropomorphic-subject", "doc-process-residue", "assistant-persona", "meta-commentary-marker",
                     "fiction-body-tics", "fiction-filler-modifiers", "fiction-dead-metaphor", "fiction-emotion-telling", "fiction-vague-nominalization", "fiction-vague-simile", "synopsis-formula",
-                    "trailer-ending", "outline-residue" },
+                    "trailer-ending", "outline-residue", "synopsis-register", "connective-scene-shift" },
             ids);
     }
 
@@ -121,6 +121,9 @@ public class LintRuleStoreTests
         // 预告句只在段末 120 字里判：预警要的是收尾那几句，段中偶尔出现不算。
         Assert.Equal("paragraph", rules["trailer-ending"].Scope);
         Assert.Equal(120, rules["trailer-ending"].TailChars);
+        // 摘要动词与连接词按次数判：单次「探索」是正常用词，凑够两次才是骨架。
+        Assert.Equal(2, rules["synopsis-register"].MinCount);
+        Assert.Equal(2, rules["connective-scene-shift"].MinCount);
 
         Assert.Equal(
             new[] { "为了实现这一点", "因为下雨", "现在", "如果您需要帮助", "系统可以处理", "数据显示" },

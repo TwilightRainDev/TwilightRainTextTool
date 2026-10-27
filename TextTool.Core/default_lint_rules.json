@@ -664,5 +664,39 @@
     ],
     "Severity": "warn",
     "Detail": "正文里出现编号的悬念与伏笔栏（悬念1：／伏笔：）——提问模板里的栏目被当成正文输出了；真人小说正文不会这么写"
+  },
+  {
+    "Id": "synopsis-register",
+    "Group": "lexis",
+    "Title": "摘要动词",
+    "Kind": "regex",
+    "Patterns": [
+      "探索",
+      "隐藏着|暗藏着",
+      "之旅",
+      "充满了?[^。！？\\n]{0,6}(?:危险|未知|可能)"
+    ],
+    "MinCount": 2,
+    "Genres": [
+      "fiction"
+    ],
+    "Severity": "info",
+    "Detail": "探索、隐藏着、之旅、充满危险——概述动作代替具体动作，把场景写成内容简介；同一句话换个题材照样成立，读者看不到这一部独有的东西"
+  },
+  {
+    "Id": "connective-scene-shift",
+    "Group": "syntax",
+    "Title": "连接词切场景",
+    "Kind": "regex",
+    "Patterns": [
+      "然而，在",
+      "然而，这"
+    ],
+    "MinCount": 2,
+    "Genres": [
+      "fiction"
+    ],
+    "Severity": "info",
+    "Detail": "用论证连接词承担场景切换（然而，在一次偶然的机会下……），叙事被压成分段说明。真人小说每十万字 0.48 次，这批 AI 稿 36.6 次"
   }
 ]

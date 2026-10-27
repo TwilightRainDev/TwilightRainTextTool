@@ -1,10 +1,10 @@
 namespace TextTool.Tests.Services;
 
 /// <summary>
-/// 小说档的两条结构判据：结尾预告句、大纲残留。
+/// 小说档的四条叙事层判据：结尾预告句、大纲残留、摘要动词、连接词切场景。
 ///
-/// 出处是一次数语料差分：AI 短篇 2592 万字对真人小说 4816 万字，两条在两侧的密度差
-
+/// 出处是一次数语料差分：AI 短篇 2592 万字对真人小说 4816 万字，四条在两侧的密度差
+/// 分别是 317 倍、真人侧零命中、172 倍、76 倍。样本全部摘自那批语料的原句。
 ///
 /// 每条钉两件事：AI 稿里的真原句要报出来；真人小说里的同类句子不许报。
 /// 少了后半边，判据会在真人的正常句式上刷屏——那正是这批规则从文档档挪到小说档的理由。
@@ -14,6 +14,8 @@ public class FictionRegisterRuleTests
     // 规则 Id 只在这里各出现一次，用例正文一律按现象名引用。
     private const string 预告句 = "trailer-ending";
     private const string 大纲残留 = "outline-residue";
+    private const string 摘要动词 = "synopsis-register";
+    private const string 切场景 = "connective-scene-shift";
 
     private static List<LintHit> Hits(string text, string? genre, string id) =>
         LintRunner.Run(new[] { ("样本.txt", text) }, null, null, genre)
@@ -57,11 +59,40 @@ public class FictionRegisterRuleTests
     }
 
     [Theory]
+    [InlineData("他要去探索那座遗迹，也要探索自己走过的路。")]
+    [InlineData("那是一段漫长的追光之旅，也是他唯一的救赎之旅。")]
+    public void 摘要动词成对出现时报出(string text)
+    {
+        Assert.NotEmpty(Hits(text, "fiction", 摘要动词));
+    }
+
+    [Fact]
+    public void 单个摘要动词不报()
+    {
+        // 只出现一次的「探索」是正常用词；凑够两次才说明在用概述动作写场景
+        Assert.Empty(Hits("他探索了很久，才找到那扇门。", "fiction", 摘要动词));
+    }
+
+    [Fact]
+    public void 连接词连续切场景报出()
+    {
+        Assert.NotEmpty(Hits("然而，在一个雨夜，他离开了。然而，在一个清早，他又回来了。", "fiction", 切场景));
+    }
+
+    [Fact]
+    public void 单次连接词不报()
+    {
+        Assert.Empty(Hits("然而，在这一点上他并没有错。", "fiction", 切场景));
+    }
+
+    [Theory]
     [InlineData("所有的答案都将在接下来的探险中揭晓。", 预告句)]
     [InlineData("悬念1：法师公会的真正目的是什么？", 大纲残留)]
+    [InlineData("他要去探索那座遗迹，也要探索自己走过的路。", 摘要动词)]
+    [InlineData("然而，在一个雨夜，他离开了。然而，在一个清早，他又回来了。", 切场景)]
     public void 文档档一条都不报(string text, string id)
     {
-        // 这两条量的是叙事口吻，编程文档里出现同样的字是正常写法
+        // 这四条量的是叙事口吻，编程文档里出现同样的字是正常写法
         Assert.Empty(Hits(text, "doc", id));
     }
 }

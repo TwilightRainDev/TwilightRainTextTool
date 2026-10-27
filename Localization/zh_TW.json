@@ -6,7 +6,6 @@
   "TabVN": "視覺小說",
   "TabLint": "AI 味檢查",
   "TabAbout": "關於",
-
   "LabelSourceFile": "來源檔案：",
   "LabelThreshold": "閾值：",
   "LabelEncoding": "偵測編碼：",
@@ -18,7 +17,6 @@
   "LabelFind": "尋找：",
   "LabelReplaceWith": "取代為：",
   "LabelLanguage": "語言：",
-
   "BtnBrowse": "瀏覽...",
   "BtnProcess": "處理",
   "BtnPreview": "預覽",
@@ -39,10 +37,8 @@
   "UpdateCheckFailed": "無法檢查更新（無網路或倉庫無 release）。",
   "UpdateAvailable": "發現新版本 {1}（目前 {0}）。\n\n是否開啟下載頁面？",
   "UpdateUpToDate": "目前已是最新版本（{0}）。",
-
   "RadioByte": "位元組數",
   "RadioChar": "字元數",
-
   "ChkFixCjk": "修復中文截斷斷段（行末為漢字時拼接下行，如 \"你好\\n嗎？\" → \"你好嗎？\"）",
   "ChkFixPunct": "修復標點截斷斷段",
   "LabelPunctChars": "自定義標點：",
@@ -52,21 +48,17 @@
   "ChkTrimLeadingComma": "去除位於行首逗號",
   "ChkOverwrite": "危險覆蓋模式（直接寫回原始檔案）",
   "ChkBackupBeforeOverwrite": "覆寫前備份為 .bak",
-
   "EncodingNotSelected": "（尚未選擇檔案）",
   "EncodingUtf8Bom": "UTF-8（BOM）",
   "EncodingUtf8": "UTF-8",
   "EncodingUtf16Le": "UTF-16 小端",
   "EncodingUtf16Be": "UTF-16 大端",
   "EncodingGbk": "GBK（ANSI）",
-
   "HintRuleEdit": "提示：選擇列表中規則可編輯；修改「尋找」/「取代為」後點選「新增/更新」儲存修改",
-
   "StatusReady": "就緒 — 請拖放或選擇檔案開始",
   "StatusProcessing": "正在處理...",
   "StatusJoining": "正在拼接檔案...",
   "StatusReplacing": "正在執行標點替換...",
-
   "StatusSelected": "已選擇：{0}  |  編碼：{1}",
   "StatusFilesSelected": "已選擇 {0} 個檔案準備批次處理",
   "StatusFilesSelectedShort": "[{0} 個檔案]",
@@ -82,13 +74,11 @@
   "StatusReplaceComplete": "標點替換完成！輸出：{0}",
   "StatusRulesSaved": "已儲存 {0} 條替換規則",
   "StatusRuleDeleted": "已刪除，目前 {0} 條規則",
-
   "LabelOutput": "輸出檔案：{0}",
   "ExtraCjk": "中文截斷修復",
   "ExtraPunct": "標點截斷修復",
   "ExtraTrimLeadingComma": "去除行首逗號",
   "ExtraReplace": "標點替換",
-
   "MsgProcessTitle": "處理完成",
   "MsgProcessBody": "處理完成！{0}\n\n輸出檔案：\n{1}\n\n是否開啟輸出檔案所在的目錄？",
   "MsgBatchBody": "已處理 {0} 個檔案。\n\n開啟輸出資料夾？",
@@ -98,7 +88,6 @@
   "MsgReplaceBody": "替換完成！\n\n輸出檔案：\n{0}\n\n是否開啟輸出檔案所在的目錄？",
   "MsgErrorTitle": "錯誤",
   "MsgSuccessTitle": "成功",
-
   "MsgFileNotFound": "檔案不存在：{0}",
   "MsgReadFailed": "無法讀取檔案：{0}",
   "MsgProcessFailed": "處理失敗：{0}",
@@ -109,10 +98,8 @@
   "MsgEnterFind": "請輸入「尋找」內容。",
   "MsgAddRule": "請至少新增一條替換規則。",
   "MsgReplaceFailed": "替換失敗：{0}",
-
   "MsgOverwriteTitle": "危險操作",
   "MsgOverwriteBody": "開啟後將直接覆寫原始檔案。未勾選「覆寫前備份為 .bak」時，原始內容將無法復原。是否繼續？",
-
   "SchemeWinTitle": "預設替換方案勾選",
   "SchemeNew": "新建方案",
   "SchemeEdit": "編輯方案",
@@ -140,7 +127,6 @@
   "SchemeEditDelete": "刪除所選",
   "SchemeEditNameEmpty": "請輸入方案名稱",
   "StatusSchemeApplied": "已套用方案：新增 {0} 條規則（原 {1} 條 → 現 {2} 條）",
-
   "MsgSavedTo": "已儲存到：\n{0}",
   "MsgSaveTitle": "已儲存",
   "MsgSaveFailed": "儲存失敗：{0}",
@@ -153,20 +139,16 @@
   "ConfigImportTitle": "選擇要匯入的設定檔（app_config.json / replace_rules.json）",
   "ConfigExported": "設定已匯出到 {0}",
   "ConfigImported": "設定匯入成功",
-
   "PreviewTitle": "預覽 — 處理結果",
   "PreviewHint": "此為預覽 — 點擊儲存寫入檔案，或關閉放棄。",
-
   "AboutTitle": "TwilightRain 的文字工具",
   "AboutVersion": "版本 {0}",
   "AboutAuthor": "作者：TwilightRain",
   "AboutDescription": "集行合併、檔案拼接、中文截斷修復、\n標點替換、視覺小說排版、AI 味檢查於一體的文字處理工具。",
   "AboutLanguage": "語言：",
-
   "LangZhCN": "简体中文",
   "LangZhTW": "繁體中文",
   "LangEnUS": "English",
-
   "LabelVNFile": "來源檔案：",
   "LabelVNEncoding": "偵測編碼：",
   "LabelVNMode": "處理模式：",
@@ -184,7 +166,6 @@
   "StatusVNPresetApplied": "已套用 {0} 個角色方案，共 {1} 個角色",
   "MsgVNDoneTitle": "排版完成",
   "MsgVNDoneBody": "排版完成！\n\n輸出檔案：\n{0}\n\n是否開啟輸出資料夾？",
-
   "VnSchemeWinTitle": "預設角色方案勾選",
   "VnSchemeNew": "新建方案",
   "VnSchemeEdit": "編輯方案",
@@ -209,14 +190,12 @@
   "VnSchemeEditRoutes": "路線標題（可選，每行一個）：",
   "VnSchemeEditNameEmpty": "請輸入方案名稱",
   "VnSchemeEditCharsEmpty": "請至少輸入一個角色名",
-
   "VnSchemeCharCount": "{0} 個角色",
   "VnSchemeCharNone": "無角色",
   "VnSchemeRouteCount": "，{0} 條路線",
   "VnSchemeRoutePrefix": "[路線] ",
   "VnSchemeEditScenePattern": "場景標記正則（可選）：",
   "VnSchemeEditPatternInvalid": "正則無效：{0}",
-
   "LabelLintOnly": "只跑規則：",
   "LabelLintMinSeverity": "最低嚴重度：",
   "LintSeverityAll": "全部",
@@ -228,7 +207,6 @@
   "StatusLintRunning": "正在檢查...",
   "StatusLintDone": "檢查完成：命中 {0} 處，統計項 {1} 條",
   "MsgLintNeedInput": "請選擇至少一個檔案，或貼上文字。",
-
   "LintGroupHeader": "[命中] {0}（{1} 處）",
   "LintLocation": "第 {0} 行 第 {1} 列",
   "LintSchemeTag": "方案：{0}",
@@ -300,5 +278,9 @@
   "LintNote_repeated-paragraph-opening": "段首兩字高度重複：{0}",
   "LintNote_exclamation-density": "嘆號密度偏高：{0} 個 / {1} 字",
   "LintNote_ordinal-skeleton": "序數詞骨架「首先/其次/最後」出現 {0} 次，是結構化排版的典型痕跡",
-  "LintNote_explicit-numbering": "顯式序號標記 {0} 處，是結構化排版的典型痕跡"
+  "LintNote_explicit-numbering": "顯式序號標記 {0} 處，是結構化排版的典型痕跡",
+  "LabelLintGenre": "文本類型",
+  "LintGenreAll": "全部規則",
+  "LintGenreDoc": "程式文件",
+  "LintGenreFiction": "小說"
 }

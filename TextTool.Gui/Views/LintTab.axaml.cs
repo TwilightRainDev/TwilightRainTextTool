@@ -32,6 +32,7 @@ public partial class LintTab : UserControl
     /// <summary>上一次扫过的输入与选项。换语言时拿它重扫，不重新读盘、不重新取选中项。</summary>
     private List<(string File, string Text)>? _lastInputs;
     private string? _lastMinSeverity;
+    private string? _lastGenre;
     private IReadOnlyCollection<string>? _lastOnlyIds;
 
     /// <summary>本页正在改列表选中状态时为真，避免 SelectionChanged 回头再改一遍。</summary>
@@ -95,6 +96,10 @@ public partial class LintTab : UserControl
         SeverityLabel.Text = Loc.T("LabelLintMinSeverity");
         SeverityAllItem.Content = Loc.T("LintSeverityAll");
         SeverityWarnItem.Content = Loc.T("LintSeverityWarn");
+        GenreLabel.Text = Loc.T("LabelLintGenre");
+        GenreAllItem.Content = Loc.T("LintGenreAll");
+        GenreDocItem.Content = Loc.T("LintGenreDoc");
+        GenreFictionItem.Content = Loc.T("LintGenreFiction");
         BtnLint.Content = _running ? Loc.T("StatusLintRunning") : Loc.T("BtnLint");
         HintLabel.Text = Loc.T("HintLint");
 
@@ -163,6 +168,49 @@ public partial class LintTab : UserControl
             _ruleChecks.Add((rule, box));
             RuleItems.Children.Add(box);
         }
+
+        ApplyGenreToRuleChecks();
+    }
+
+    /// <summary>
+    /// 切档位：不适用的规则置灰并取消勾选。
+    /// 勾着一条小说规则又要跑文档档，引擎会直接报错——那是对的（两种沉默必须分开），
+    /// 但界面不该让这种组合先被选出来。
+    /// </summary>
+    private async void OnGenreChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        ApplyGenreToRuleChecks();
+        if (_ruleChecks.Count == 0 || _running || string.IsNullOrEmpty(ReportBox.Text))
+            return;
+
+        // 报告是上一次档位算的，换了档就得按新档重放，留着旧结果等于骗人
+        _lastGenre = SelectedGenre();
+        await RerenderReportAsync();
+    }
+
+    private void ApplyGenreToRuleChecks()
+    {
+        if (_ruleChecks.Count == 0)
+            return;
+
+        string? genre = SelectedGenre();
+        _syncingRules = true;
+        try
+        {
+            foreach (var (rule, box) in _ruleChecks)
+            {
+                bool applies = genre is null
+                    || rule.Genres.Count == 0
+                    || rule.Genres.Contains(genre, StringComparer.OrdinalIgnoreCase);
+                box.IsEnabled = applies;
+                if (!applies)
+                    box.IsChecked = false;
+            }
+        }
+        finally
+        {
+            _syncingRules = false;
+        }
     }
 
     /// <summary>
@@ -202,6 +250,17 @@ public partial class LintTab : UserControl
 
         return selected.Count == 0 || selected.Count == _rules.Count ? null : selected;
     }
+
+    /// <summary>
+    /// 下拉选中项 → <see cref="LintRunner.Run"/> 的档位参数。
+    /// 选「全部规则」时传 null：档位是过滤器，传 null 等于不过滤，与命令行不给 --genre 一致。
+    /// </summary>
+    private string? SelectedGenre() => GenreBox.SelectedIndex switch
+    {
+        1 => "doc",
+        2 => "fiction",
+        _ => null,
+    };
 
     // ================================================================
     //  选文件
@@ -307,6 +366,7 @@ public partial class LintTab : UserControl
         }
 
         string? minSeverity = SeverityBox.SelectedIndex == 1 ? "warn" : null;
+        string? genre = SelectedGenre();
         IReadOnlyCollection<string>? onlyIds = SelectedOnlyIds();
         string languageAtStart = Loc.CurrentLang;
 
@@ -318,10 +378,11 @@ public partial class LintTab : UserControl
 
         try
         {
-            var scan = await Task.Run(() => Run(files, paste, minSeverity, onlyIds));
+            var scan = await Task.Run(() => Run(files, paste, minSeverity, genre, onlyIds));
 
             _lastInputs = scan.Inputs;
             _lastMinSeverity = minSeverity;
+            _lastGenre = genre;
             // 选中项可能在跑完之后又变了，重渲染必须照这一次的原样重放，不能读当前的列表。
             _lastOnlyIds = onlyIds;
             ReportBox.Text = scan.Text;
@@ -348,7 +409,8 @@ public partial class LintTab : UserControl
     private sealed record Scan(string Text, int Hits, int Notes, List<(string File, string Text)> Inputs);
 
     private static Scan Run(
-        string[] files, string paste, string? minSeverity, IReadOnlyCollection<string>? onlyIds)
+        string[] files, string paste, string? minSeverity, string? genre,
+        IReadOnlyCollection<string>? onlyIds)
     {
         var inputs = new List<(string File, string Text)>();
         foreach (string path in files)
@@ -360,16 +422,15 @@ public partial class LintTab : UserControl
         if (!string.IsNullOrWhiteSpace(paste))
             inputs.Add((PasteSource, paste));
 
-        return Render(inputs, minSeverity, onlyIds);
+        return Render(inputs, minSeverity, genre, onlyIds);
     }
 
     /// <summary>扫一遍并渲染成人读报告。文案出处随当前界面语言，缺译时退回引擎里的原文。</summary>
     private static Scan Render(
-        List<(string File, string Text)> inputs, string? minSeverity, IReadOnlyCollection<string>? onlyIds)
+        List<(string File, string Text)> inputs, string? minSeverity, string? genre,
+        IReadOnlyCollection<string>? onlyIds)
     {
-        // 第四个参数是档位（doc/fiction）：界面暂不暴露选择器，发 null 就跑全部规则，
-        // 与命令行不给 --genre 时一致。要加选择器时，把它接在这里。
-        var reportSet = LintRunner.Run(inputs, onlyIds, minSeverity, genre: null, LintTextSource.Instance);
+        var reportSet = LintRunner.Run(inputs, onlyIds, minSeverity, genre, LintTextSource.Instance);
         string text = LintOutput.Render(reportSet, asJson: false, LintTextSource.Instance);
 
         int hits = 0, notes = 0;
@@ -393,11 +454,12 @@ public partial class LintTab : UserControl
 
         int generation = ++_generation;
         string? minSeverity = _lastMinSeverity;
+        string? genre = _lastGenre;
         IReadOnlyCollection<string>? onlyIds = _lastOnlyIds;
 
         try
         {
-            var scan = await Task.Run(() => Render(inputs, minSeverity, onlyIds));
+            var scan = await Task.Run(() => Render(inputs, minSeverity, genre, onlyIds));
             if (generation != _generation)
                 return;
 

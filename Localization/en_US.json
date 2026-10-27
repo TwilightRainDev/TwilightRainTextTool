@@ -6,7 +6,6 @@
   "TabVN": "Visual Novel",
   "TabLint": "AI-tone Lint",
   "TabAbout": "About",
-
   "LabelSourceFile": "Source File:",
   "LabelThreshold": "Threshold:",
   "LabelEncoding": "Detected Encoding:",
@@ -18,7 +17,6 @@
   "LabelFind": "Find:",
   "LabelReplaceWith": "Replace With:",
   "LabelLanguage": "Language:",
-
   "BtnBrowse": "Browse...",
   "BtnProcess": "Process",
   "BtnPreview": "Preview",
@@ -39,10 +37,8 @@
   "UpdateCheckFailed": "Unable to check for updates (offline or no releases).",
   "UpdateAvailable": "New version {1} available (current: {0}).\n\nOpen download page?",
   "UpdateUpToDate": "You're up to date ({0}).",
-
   "RadioByte": "By Bytes",
   "RadioChar": "By Characters",
-
   "ChkFixCjk": "Fix CJK truncation (merge next line if it ends with a CJK char)",
   "ChkFixPunct": "Fix punct. truncation",
   "LabelPunctChars": "Custom punct.:",
@@ -52,21 +48,17 @@
   "ChkTrimLeadingComma": "Trim leading comma",
   "ChkOverwrite": "Dangerous overwrite (writes back to original)",
   "ChkBackupBeforeOverwrite": "Back up as .bak",
-
   "EncodingNotSelected": "(No file selected)",
   "EncodingUtf8Bom": "UTF-8 (BOM)",
   "EncodingUtf8": "UTF-8",
   "EncodingUtf16Le": "UTF-16 LE",
   "EncodingUtf16Be": "UTF-16 BE",
   "EncodingGbk": "GBK (ANSI)",
-
   "HintRuleEdit": "Hint: Select a rule in the list to edit; modify \"Find\"/\"Replace With\" then click \"Add/Update\" to save",
-
   "StatusReady": "Ready — drag & drop or select a file to start",
   "StatusProcessing": "Processing...",
   "StatusJoining": "Joining files...",
   "StatusReplacing": "Executing punctuation replacement...",
-
   "StatusSelected": "Selected: {0}  |  Encoding: {1}",
   "StatusFilesSelected": "{0} file(s) selected for batch processing",
   "StatusFilesSelectedShort": "[{0} files]",
@@ -82,13 +74,11 @@
   "StatusReplaceComplete": "Replace complete! Output: {0}",
   "StatusRulesSaved": "Saved {0} replace rule(s)",
   "StatusRuleDeleted": "Deleted. {0} rule(s) remaining",
-
   "LabelOutput": "Output: {0}",
   "ExtraCjk": "CJK truncation fix",
   "ExtraPunct": "Punct. truncation fix",
   "ExtraTrimLeadingComma": "Trim leading comma",
   "ExtraReplace": "Punctuation replacement",
-
   "MsgProcessTitle": "Processing Complete",
   "MsgProcessBody": "Processing complete!{0}\n\nOutput file:\n{1}\n\nOpen output file location?",
   "MsgBatchBody": "{0} file(s) processed.\n\nOpen output folder?",
@@ -98,7 +88,6 @@
   "MsgReplaceBody": "Replace complete!\n\nOutput file:\n{0}\n\nOpen output file location?",
   "MsgErrorTitle": "Error",
   "MsgSuccessTitle": "Success",
-
   "MsgFileNotFound": "File not found: {0}",
   "MsgReadFailed": "Cannot read file: {0}",
   "MsgProcessFailed": "Processing failed: {0}",
@@ -109,10 +98,8 @@
   "MsgEnterFind": "Please enter the \"Find\" text.",
   "MsgAddRule": "Please add at least one replacement rule.",
   "MsgReplaceFailed": "Replace failed: {0}",
-
   "MsgOverwriteTitle": "Dangerous Operation",
   "MsgOverwriteBody": "This will write directly back to the original file. Unless \"Back up as .bak\" is checked, the original content cannot be recovered. Continue?",
-
   "SchemeWinTitle": "Preset Replacement Schemes",
   "SchemeNew": "New Scheme",
   "SchemeEdit": "Edit Scheme",
@@ -140,7 +127,6 @@
   "SchemeEditDelete": "Delete Selected",
   "SchemeEditNameEmpty": "Please enter a scheme name",
   "StatusSchemeApplied": "Scheme applied: added {0} rule(s) (was {1} → now {2})",
-
   "MsgSavedTo": "Saved to:\n{0}",
   "MsgSaveTitle": "Saved",
   "MsgSaveFailed": "Save failed: {0}",
@@ -153,20 +139,16 @@
   "ConfigImportTitle": "Select config files to import (app_config.json / replace_rules.json)",
   "ConfigExported": "Config exported to {0}",
   "ConfigImported": "Config imported successfully",
-
   "PreviewTitle": "Preview — Processing Result",
   "PreviewHint": "This is a preview — click Save to write to file, or Close to discard.",
-
   "AboutTitle": "TwilightRain's Text Tool",
   "AboutVersion": "Version {0}",
   "AboutAuthor": "Author: TwilightRain",
   "AboutDescription": "An all-in-one text processing tool:\nLine Merge, File Join, CJK Truncation Fix,\nPunct. Replacement, VN Reformat, AI-tone Lint.",
   "AboutLanguage": "Language:",
-
   "LangZhCN": "简体中文",
   "LangZhTW": "繁體中文",
   "LangEnUS": "English",
-
   "LabelVNFile": "Source File:",
   "LabelVNEncoding": "Detected Encoding:",
   "LabelVNMode": "Mode:",
@@ -184,7 +166,6 @@
   "StatusVNPresetApplied": "Applied {0} character scheme(s), {1} character(s) total",
   "MsgVNDoneTitle": "Processing Complete",
   "MsgVNDoneBody": "Processing complete!\n\nOutput file:\n{0}\n\nOpen output folder?",
-
   "VnSchemeWinTitle": "Preset Character Schemes",
   "VnSchemeNew": "New Scheme",
   "VnSchemeEdit": "Edit Scheme",
@@ -209,14 +190,12 @@
   "VnSchemeEditRoutes": "Route Names (optional, one per line):",
   "VnSchemeEditNameEmpty": "Please enter a scheme name",
   "VnSchemeEditCharsEmpty": "Please enter at least one character",
-
   "VnSchemeCharCount": "{0} character(s)",
   "VnSchemeCharNone": "no characters",
   "VnSchemeRouteCount": ", {0} route(s)",
   "VnSchemeRoutePrefix": "[route] ",
   "VnSchemeEditScenePattern": "Scene marker regex (optional):",
   "VnSchemeEditPatternInvalid": "Invalid regex: {0}",
-
   "LabelLintOnly": "Rule IDs:",
   "LabelLintMinSeverity": "Min severity:",
   "LintSeverityAll": "All",
@@ -228,7 +207,6 @@
   "StatusLintRunning": "Checking...",
   "StatusLintDone": "Check complete: {0} hit(s), {1} note(s)",
   "MsgLintNeedInput": "Choose at least one file, or paste some text.",
-
   "LintGroupHeader": "[Hit] {0} ({1} hit(s))",
   "LintLocation": "line {0}, col {1}",
   "LintSchemeTag": "Scheme: {0}",
@@ -300,5 +278,9 @@
   "LintNote_repeated-paragraph-opening": "Paragraph openings repeat heavily: {0}",
   "LintNote_exclamation-density": "High exclamation mark density: {0} mark(s) / {1} char(s)",
   "LintNote_ordinal-skeleton": "Ordinal skeleton \"first/next/finally\" appears {0} time(s), a typical trace of structured formatting",
-  "LintNote_explicit-numbering": "Explicit numbering markers: {0}, a typical trace of structured formatting"
+  "LintNote_explicit-numbering": "Explicit numbering markers: {0}, a typical trace of structured formatting",
+  "LabelLintGenre": "Text type",
+  "LintGenreAll": "All rules",
+  "LintGenreDoc": "Programming docs",
+  "LintGenreFiction": "Fiction"
 }

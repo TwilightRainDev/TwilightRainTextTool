@@ -52,6 +52,13 @@
             <ComboBoxItem x:Name="SeverityAllItem" />
             <ComboBoxItem x:Name="SeverityWarnItem" />
           </ComboBox>
+          <TextBlock x:Name="GenreLabel" VerticalAlignment="Center" />
+          <ComboBox x:Name="GenreBox" SelectedIndex="0" VerticalAlignment="Center"
+                    SelectionChanged="OnGenreChanged">
+            <ComboBoxItem x:Name="GenreAllItem" />
+            <ComboBoxItem x:Name="GenreDocItem" />
+            <ComboBoxItem x:Name="GenreFictionItem" />
+          </ComboBox>
           <Button x:Name="BtnLint" Classes="primary" Click="OnLint" />
         </StackPanel>
 

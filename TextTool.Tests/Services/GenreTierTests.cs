@@ -26,6 +26,8 @@ public class GenreTierTests
     private const string 非活物主语 = "anthropomorphic-subject";
     private const string 过程残留 = "doc-process-residue";
     private const string 助手号腔 = "assistant-persona";
+    private const string 元评价路标 = "meta-commentary-marker";
+    private const string 对举句式 = "parallel-contrast";
 
     private static List<LintHit> Hits(string text, string? genre, string id) =>
         LintRunner.Run(new[] { ("样本.txt", text) }, null, null, genre)
@@ -152,6 +154,41 @@ public class GenreTierTests
     {
         // 单收单词会把「流程公开」「立规矩」「服务器繁忙」全判成 AI 腔，那些都是正常中文
         Assert.Empty(Hits(text, null, 助手号腔));
+    }
+
+    [Theory]
+    [InlineData("这不叫偷懒，这叫编。")]
+    [InlineData("他要的不是改得更卖力，是你得先分清同类。")]
+    [InlineData("那不是句号的锅，是不会写。")]
+    public void 纠偏句式的新骨架报出(string text)
+    {
+        Assert.NotEmpty(Hits(text, null, 对举句式));
+    }
+
+    [Theory]
+    [InlineData("这条最硬，先说为什么不核销。")]
+    [InlineData("挤牙膏那条，真疼。")]
+    [InlineData("这条我不改，我给他补一刀。")]
+    public void 元评价路标报出(string text)
+    {
+        Assert.NotEmpty(Hits(text, null, 元评价路标));
+    }
+
+    [Theory]
+    [InlineData("他不是老师，是医生。")]
+    [InlineData("她不是不想去，是走不开。")]
+    public void 人称代词开头的判断句不报(string text)
+    {
+        // 这两种在小说对白里到处都是，收窄的代价是漏掉「他不是不想，是不能」这类真纠偏
+        Assert.DoesNotContain(Hits(text, null, 对举句式), h => h.Match.Contains("，是"));
+    }
+
+    [Theory]
+    [InlineData("这条路最硬的时候是冬天，地面会冻裂。")]
+    [InlineData("这两条建议跟别的一样，都要求先备份。")]
+    public void 路标式的正常用法不报(string text)
+    {
+        Assert.Empty(Hits(text, null, 元评价路标));
     }
 
     [Fact]

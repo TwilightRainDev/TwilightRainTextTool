@@ -3,7 +3,7 @@ namespace TextTool.Tests.Scripts;
 public class ReleaseScriptTests
 {
     private static string ScriptPath =>
-        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "scripts", "release.ps1"));
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "scripts", "release.sh"));
 
     private static string PropsPath =>
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "Directory.Build.props"));
@@ -48,18 +48,20 @@ public class ReleaseScriptTests
 
     private static (int Code, string Stderr, string Stdout) Invoke(params string[] args)
     {
-        var shell = PowerShellLocator.Resolve();
-        var arg_line = $"-NoProfile -ExecutionPolicy Bypass -File \"{ScriptPath}\"";
-        if (args.Length > 0)
-            arg_line += " " + string.Join(" ", args);
-        var psi = new System.Diagnostics.ProcessStartInfo(shell, arg_line)
+        var shell = BashLocator.Resolve();
+        var psi = new System.Diagnostics.ProcessStartInfo(shell)
         {
             RedirectStandardError = true,
             RedirectStandardOutput = true,
             UseShellExecute = false,
         };
+        // 脚本路径用正斜杠：bash 把反斜杠当转义字符，C:/... 在 Git Bash 与 Linux 上都认。
+        psi.ArgumentList.Add(ScriptPath.Replace('\\', '/'));
+        foreach (var arg in args)
+            psi.ArgumentList.Add(arg);
+
         using var proc = System.Diagnostics.Process.Start(psi)
-            ?? throw new InvalidOperationException("无法启动 PowerShell");
+            ?? throw new InvalidOperationException("无法启动 bash");
         var stdout = proc.StandardOutput.ReadToEnd();
         var stderr = proc.StandardError.ReadToEnd();
         proc.WaitForExit(30_000);

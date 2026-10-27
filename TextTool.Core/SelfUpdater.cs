@@ -36,7 +36,7 @@ public static class SelfUpdater
 
     /// <summary>
     /// 指定平台的 CLI 安装包资产名，如 TextTool-CLI-2.4.0-linux-x64.zip。
-    /// 名单的唯一维护点是 scripts/github-release.ps1 的 Get-TextToolReleaseAssetNames，
+    /// 名单的唯一维护点是 scripts/release-assets.sh 的 texttool_release_asset_names，
     /// CI 与两个发布脚本都从那里取；这里改名要和那份名单同时改。
     /// </summary>
     public static string GetCliAssetName(string version, string rid) =>

@@ -3,9 +3,9 @@ using System.Diagnostics;
 namespace TextTool.Tests.Scripts;
 
 /// <summary>
-/// 发布产物命名横跨四处：Core 的 SelfUpdater、scripts/github-release.ps1 的名单、
+/// 发布产物命名横跨四处：Core 的 SelfUpdater、scripts/release-assets.sh 的名单、
 /// CI 的打包步骤、两个发布脚本的签名与等待清单。名单只有一个来源
-/// （Get-TextToolReleaseAssetNames），这里钉住其余三处都从它取、
+/// （texttool_release_asset_names），这里钉住其余三处都从它取、
 /// 且命名与 SelfUpdater 在 win-x64 与 linux-x64 上都对得上。
 /// 任何一处只改一边都会让「客户端找一个没人产出的包」或「产出了却没人签名」
 /// 这类故障悄悄溜过去，而且只有真发版时才暴露。
@@ -20,28 +20,28 @@ public class ReleasePackagingTests
 
     private static string ScriptPath(string name) => Path.Combine(RepoRoot, "scripts", name);
 
-    /// <summary>在独立 PowerShell 进程里跑一段前缀脚本的命令，返回去首尾空白的标准输出。</summary>
-    private static string RunPowerShellScript(string scriptName, string command)
+    /// <summary>
+    /// 在独立 bash 进程里 source 一份脚本再跑一段命令，返回去首尾空白的标准输出。
+    /// 脚本路径用正斜杠：bash 把反斜杠当转义字符，C:/... 这种写法在 Git Bash 与 Linux 上都认。
+    /// </summary>
+    private static string RunBashScript(string scriptName, string command)
     {
-        var shell = PowerShellLocator.Resolve();
+        var shell = BashLocator.Resolve();
         var psi = new ProcessStartInfo(shell)
         {
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
         };
-        psi.ArgumentList.Add("-NoProfile");
-        psi.ArgumentList.Add("-ExecutionPolicy");
-        psi.ArgumentList.Add("Bypass");
-        psi.ArgumentList.Add("-Command");
-        psi.ArgumentList.Add($". '{ScriptPath(scriptName)}'; {command}");
+        psi.ArgumentList.Add("-c");
+        psi.ArgumentList.Add($". '{ScriptPath(scriptName).Replace('\\', '/')}'; {command}");
 
         using var proc = Process.Start(psi)
-            ?? throw new InvalidOperationException("无法启动 PowerShell");
+            ?? throw new InvalidOperationException("无法启动 bash");
         string stdout = proc.StandardOutput.ReadToEnd();
         string stderr = proc.StandardError.ReadToEnd();
         proc.WaitForExit(60_000);
-        Assert.True(proc.ExitCode == 0, $"PowerShell 执行失败（exit {proc.ExitCode}）：{stderr}");
+        Assert.True(proc.ExitCode == 0, $"bash 执行失败（exit {proc.ExitCode}）：{stderr}");
         return stdout.Trim();
     }
 
@@ -70,9 +70,9 @@ public class ReleasePackagingTests
     public void 名单与SelfUpdater命名_四份逐一对应()
     {
         // 双 RID 齐活：GUI 与 CLI 各有 win-x64 与 linux-x64，一共四份。
-        var names = RunPowerShellScript(
-                "github-release.ps1",
-                "(Get-TextToolReleaseAssetNames -Raw '2.0.0') -join '|'")
+        var names = RunBashScript(
+                "release-assets.sh",
+                "texttool_release_asset_names 2.0.0 | tr '\\n' '|'")
             .Split('|', StringSplitOptions.RemoveEmptyEntries);
 
         Assert.Equal(4, names.Length);
@@ -86,44 +86,50 @@ public class ReleasePackagingTests
     [Fact]
     public void 缺一套产物_被逐项点名()
     {
+        const string guiWin = "TextTool-GUI-2.0.0-win-x64.zip";
+        const string guiLinux = "TextTool-GUI-2.0.0-linux-x64.zip";
+        const string cliWin = "TextTool-CLI-2.0.0-win-x64.zip";
+        const string cliLinux = "TextTool-CLI-2.0.0-linux-x64.zip";
+
         // 什么都没产出：四份全点名，而不是报一句未找到 zip 了事。
-        var nothing = RunPowerShellScript(
-                "github-release.ps1",
-                "(Get-TextToolMissingReleaseAssets -Raw '2.0.0' -Present @()) -join '|'")
+        var nothing = RunBashScript(
+                "release-assets.sh",
+                "texttool_missing_release_assets 2.0.0 | tr '\\n' '|'")
             .Split('|', StringSplitOptions.RemoveEmptyEntries);
 
         Assert.Equal(4, nothing.Length);
-        Assert.Contains("TextTool-GUI-2.0.0-win-x64.zip", nothing);
-        Assert.Contains("TextTool-GUI-2.0.0-linux-x64.zip", nothing);
-        Assert.Contains("TextTool-CLI-2.0.0-win-x64.zip", nothing);
-        Assert.Contains("TextTool-CLI-2.0.0-linux-x64.zip", nothing);
+        Assert.Contains(guiWin, nothing);
+        Assert.Contains(guiLinux, nothing);
+        Assert.Contains(cliWin, nothing);
+        Assert.Contains(cliLinux, nothing);
 
         // 只缺一套（linux 的 CLI）：必须单独点名，否则就只有那一份没人签、也没人发。
-        var oneRid = RunPowerShellScript(
-                "github-release.ps1",
-                "$present = @('TextTool-GUI-2.0.0-win-x64.zip', 'TextTool-GUI-2.0.0-win-x64.zip.sha256'," +
-                " 'TextTool-GUI-2.0.0-linux-x64.zip', 'TextTool-GUI-2.0.0-linux-x64.zip.sha256'," +
-                " 'TextTool-CLI-2.0.0-win-x64.zip', 'TextTool-CLI-2.0.0-win-x64.zip.sha256');" +
-                " (Get-TextToolMissingReleaseAssets -Raw '2.0.0' -Present $present) -join '|'");
+        var oneRid = RunBashScript(
+            "release-assets.sh",
+            $"texttool_missing_release_assets 2.0.0" +
+            $" {guiWin} {guiWin}.sha256 {guiLinux} {guiLinux}.sha256 {cliWin} {cliWin}.sha256 | tr '\\n' '|'")
+            // tr 每行都补一个分隔符，末行也带着，单点名比较时去掉。
+            .TrimEnd('|');
 
-        Assert.Equal("TextTool-CLI-2.0.0-linux-x64.zip", oneRid);
+        Assert.Equal(cliLinux, oneRid);
 
         // .sha256 缺了也算缺，名字带后缀点名。
-        var oneSha = RunPowerShellScript(
-                "github-release.ps1",
-                "$present = @('TextTool-GUI-2.0.0-win-x64.zip'," +
-                " 'TextTool-GUI-2.0.0-linux-x64.zip', 'TextTool-GUI-2.0.0-linux-x64.zip.sha256'," +
-                " 'TextTool-CLI-2.0.0-win-x64.zip', 'TextTool-CLI-2.0.0-win-x64.zip.sha256'," +
-                " 'TextTool-CLI-2.0.0-linux-x64.zip', 'TextTool-CLI-2.0.0-linux-x64.zip.sha256');" +
-                " (Get-TextToolMissingReleaseAssets -Raw '2.0.0' -Present $present) -join '|'");
+        var oneSha = RunBashScript(
+            "release-assets.sh",
+            $"texttool_missing_release_assets 2.0.0" +
+            $" {guiWin} {guiLinux} {guiLinux}.sha256 {cliWin} {cliWin}.sha256 {cliLinux} {cliLinux}.sha256" +
+            " | tr '\\n' '|'")
+            .TrimEnd('|');
 
-        Assert.Equal("TextTool-GUI-2.0.0-win-x64.zip.sha256", oneSha);
+        Assert.Equal($"{guiWin}.sha256", oneSha);
 
         // 四套齐全时一个字都不该报，否则真发版会被误拦。
-        var noneMissing = RunPowerShellScript(
-            "github-release.ps1",
-            "$present = @(Get-TextToolReleaseAssetNames -Raw '2.0.0' | ForEach-Object { $_, \"$_.sha256\" });" +
-            " (Get-TextToolMissingReleaseAssets -Raw '2.0.0' -Present $present) -join '|'");
+        var noneMissing = RunBashScript(
+            "release-assets.sh",
+            "texttool_missing_release_assets 2.0.0" +
+            " $(texttool_release_asset_names 2.0.0)" +
+            " $(texttool_release_asset_names 2.0.0 | sed 's/$/.sha256/')" +
+            " | tr '\\n' '|'");
 
         Assert.Equal("", noneMissing);
     }
@@ -150,38 +156,38 @@ public class ReleasePackagingTests
     {
         var text = ReadRepoFile(".github", "workflows", "build-test.yml");
 
-        Assert.Contains("Get-TextToolReleaseAssetNames", text, StringComparison.Ordinal);
-        Assert.Contains("Get-TextToolMissingReleaseAssets", text, StringComparison.Ordinal);
+        Assert.Contains("texttool_release_asset_names", text, StringComparison.Ordinal);
+        Assert.Contains("texttool_missing_release_assets", text, StringComparison.Ordinal);
 
         // 名字一旦在 YAML 里写死，就等于又抄了一份名单，迟早和脚本名单对不上。
-        Assert.DoesNotContain("TextTool-GUI-$version", text, StringComparison.Ordinal);
-        Assert.DoesNotContain("TextTool-CLI-$version", text, StringComparison.Ordinal);
+        // 认带 .zip 后缀的完整名字；YAML 里按前缀分流 GUI 与 CLI 不算抄名单。
+        Assert.DoesNotMatch(@"TextTool-(GUI|CLI)-\S*\.zip", text);
     }
 
     [Fact]
     public void 发布脚本名单_含两个RID的四份产物()
     {
-        var text = ReadRepoFile("scripts", "github-release.ps1");
+        var text = ReadRepoFile("scripts", "release-assets.sh");
 
-        Assert.Contains("TextTool-GUI-$Raw-win-x64.zip", text, StringComparison.Ordinal);
-        Assert.Contains("TextTool-GUI-$Raw-linux-x64.zip", text, StringComparison.Ordinal);
-        Assert.Contains("TextTool-CLI-$Raw-win-x64.zip", text, StringComparison.Ordinal);
-        Assert.Contains("TextTool-CLI-$Raw-linux-x64.zip", text, StringComparison.Ordinal);
+        Assert.Contains("TextTool-GUI-$raw-win-x64.zip", text, StringComparison.Ordinal);
+        Assert.Contains("TextTool-GUI-$raw-linux-x64.zip", text, StringComparison.Ordinal);
+        Assert.Contains("TextTool-CLI-$raw-win-x64.zip", text, StringComparison.Ordinal);
+        Assert.Contains("TextTool-CLI-$raw-linux-x64.zip", text, StringComparison.Ordinal);
     }
 
     [Fact]
     public void 签名与等待清单_都走同一份名单()
     {
-        // 名单只有一个来源（Get-TextToolReleaseAssetNames），两个脚本都只调
-        // Get-TextToolMissingReleaseAssets 这一处判据，不自己再抄一份。
-        foreach (string script in new[] { "publish.ps1", "release.ps1" })
+        // 名单只有一个来源（texttool_release_asset_names），两个脚本都只调
+        // texttool_missing_release_assets 这一处判据，不自己再抄一份。
+        foreach (string script in new[] { "publish.sh", "release.sh" })
         {
             var text = ReadRepoFile("scripts", script);
-            Assert.Contains("Get-TextToolMissingReleaseAssets", text, StringComparison.Ordinal);
-            Assert.DoesNotContain("TextTool-GUI-$Raw", text, StringComparison.Ordinal);
-            Assert.DoesNotContain("TextTool-CLI-$Raw", text, StringComparison.Ordinal);
+            Assert.Contains("texttool_missing_release_assets", text, StringComparison.Ordinal);
+            Assert.DoesNotContain("TextTool-GUI-$raw", text, StringComparison.Ordinal);
+            Assert.DoesNotContain("TextTool-CLI-$raw", text, StringComparison.Ordinal);
         }
 
-        Assert.Contains("Get-TextToolReleaseAssetNames", ReadRepoFile("scripts", "publish.ps1"), StringComparison.Ordinal);
+        Assert.Contains("texttool_release_asset_names", ReadRepoFile("scripts", "publish.sh"), StringComparison.Ordinal);
     }
 }

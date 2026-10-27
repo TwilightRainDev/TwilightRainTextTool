@@ -32,8 +32,8 @@
     "Title": "全半角混用",
     "Kind": "regex",
     "Patterns": [
-      "[,;:?!()\"'][\\u3400-\\u4DBF\\u4E00-\\u9FFF\\uF900-\\uFAFF\\u3000-\\u303F\\uFF00-\\uFFEF]",
-      "[\\u3400-\\u4DBF\\u4E00-\\u9FFF\\uF900-\\uFAFF\\u3000-\\u303F\\uFF00-\\uFFEF][,;:?!()\"']"
+      "[,;:?!()][\\u3400-\\u4DBF\\u4E00-\\u9FFF\\uF900-\\uFAFF\\u3000-\\u303F\\uFF00-\\uFFEF]",
+      "[\\u3400-\\u4DBF\\u4E00-\\u9FFF\\uF900-\\uFAFF\\u3000-\\u303F\\uFF00-\\uFFEF][,;:?!()]"
     ],
     "Severity": "warn",
     "Detail": "半角标点与中文或全角字符相邻",
@@ -47,12 +47,25 @@
     "Patterns": [
       "--+",
       "(?<!—)—(?!—)",
-      "[\\u3400-\\u4DBF\\u4E00-\\u9FFF] ?- ?[\\u3400-\\u4DBF\\u4E00-\\u9FFF]",
-      "~{2,}|[～]"
+      "[\\u3400-\\u4DBF\\u4E00-\\u9FFF] ?- ?[\\u3400-\\u4DBF\\u4E00-\\u9FFF]"
     ],
     "Severity": "info",
     "Detail": "破折号/波浪号写法不规范",
     "SuggestScheme": "横线省略号→逗号"
+  },
+  {
+    "Id": "tilde-run",
+    "Group": "punctuation",
+    "Title": "波浪号当省略号",
+    "Kind": "regex",
+    "Patterns": [
+      "~{2,}|[～]"
+    ],
+    "Genres": [
+      "doc"
+    ],
+    "Severity": "info",
+    "Detail": "拿 ~ 当省略号或语气符号——网文里常见，文档里就是排版噪声"
   },
   {
     "Id": "invisible-characters",
@@ -161,7 +174,10 @@
       "与……保持一致"
     ],
     "Severity": "info",
-    "Detail": "AI 高频词密度偏高"
+    "Detail": "AI 高频词密度偏高",
+    "Genres": [
+      "doc"
+    ]
   },
   {
     "Id": "vague-attribution",
@@ -329,7 +345,10 @@
       "的[^。，、\\n]{0,8}的[^。，、\\n]{0,8}的"
     ],
     "Severity": "info",
-    "Detail": "短距离内三个「的」"
+    "Detail": "短距离内三个「的」",
+    "Genres": [
+      "doc"
+    ]
   },
   {
     "Id": "copula-avoidance",
@@ -523,7 +542,7 @@
     "Kind": "regex",
     "Patterns": [
       "仿佛[^。！？\\n]{0,20}一般",
-      "犹如|宛若",
+      "(?:犹如|宛若)[^。！？\\n]{0,20}(?:一般|一样|似的)",
       "梨花带雨|如沐春风",
       "命运的齿轮|如潮水般涌来"
     ],

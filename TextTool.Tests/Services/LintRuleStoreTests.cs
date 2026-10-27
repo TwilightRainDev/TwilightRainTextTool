@@ -87,13 +87,13 @@ public class LintRuleStoreTests
     }
 
     [Fact]
-    public void GetDefaultRules_数据规则34条且顺序完整()
+    public void GetDefaultRules_数据规则35条且顺序完整()
     {
         var ids = LintRuleStore.GetDefaultRules().Select(r => r.Id).ToArray();
 
         // 顺序即分组：通用规则在前，小说档六条垫后。档位是过滤器，规则全表只有这一份。
         Assert.Equal(
-            new[] { "repeated-punctuation", "ellipsis-style", "mixed-punctuation-width", "dash-and-tilde", "invisible-characters", "emoji-and-symbols",
+            new[] { "repeated-punctuation", "ellipsis-style", "mixed-punctuation-width", "dash-and-tilde", "tilde-run", "invisible-characters", "emoji-and-symbols",
                     "cliche-words", "ai-frequent-words", "vague-attribution", "training-cutoff-disclaimer", "chatbot-artifacts", "sycophancy", "filler-phrases",
                     "parallel-contrast", "paragraph-ordinals", "elevated-ending", "stacked-modifiers", "copula-avoidance", "inline-title-list", "forced-reversal", "accounting-cliche",
                     "adverb-overuse", "violent-verbs", "hedging-ending", "anthropomorphic-subject", "doc-process-residue", "assistant-persona", "meta-commentary-marker",
@@ -124,6 +124,9 @@ public class LintRuleStoreTests
         // 档位：通用规则留空，小说规则只属于小说档。留空是「两档都跑」的意思，
         // 写成 ["doc"] 会让它在小说里静默消失。
         Assert.Empty(rules["cliche-words"].Genres);
+        // 这两条在真实小说里 85% 以上命中是正常用词（获得、展示、文学定语），收回文档档
+        Assert.Equal(new[] { "doc" }, rules["ai-frequent-words"].Genres);
+        Assert.Equal(new[] { "doc" }, rules["stacked-modifiers"].Genres);
         Assert.Empty(rules["adverb-overuse"].Genres);
         Assert.Empty(rules["violent-verbs"].Genres);
         Assert.Equal(new[] { "fiction" }, rules["fiction-body-tics"].Genres);

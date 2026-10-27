@@ -28,6 +28,10 @@ public class GenreTierTests
     private const string 助手号腔 = "assistant-persona";
     private const string 元评价路标 = "meta-commentary-marker";
     private const string 对举句式 = "parallel-contrast";
+    private const string 英文AI词 = "ai-frequent-words";
+    private const string 定语堆叠 = "stacked-modifiers";
+    private const string 波浪号 = "tilde-run";
+    private const string 全半角混排 = "mixed-punctuation-width";
 
     private static List<LintHit> Hits(string text, string? genre, string id) =>
         LintRunner.Run(new[] { ("样本.txt", text) }, null, null, genre)
@@ -189,6 +193,45 @@ public class GenreTierTests
     public void 路标式的正常用法不报(string text)
     {
         Assert.Empty(Hits(text, null, 元评价路标));
+    }
+
+    [Fact]
+    public void 小说里获得展示不报()
+    {
+        // 真实小说实测：这条规则 572 处命中里 85% 是「获得能力」「展示实力」
+        Assert.Empty(Hits("他获得了一份新的能力，并展示给所有人看。", "fiction", 英文AI词));
+        Assert.NotEmpty(Hits("他获得了能力，获得了信任，获得了名声。", "doc", 英文AI词));   // MinCount 按每条模式各自计数，得同一个词出现三次
+    }
+
+    [Fact]
+    public void 小说里文学定语不报()
+    {
+        Assert.Empty(Hits("他翻着画家提香的作品集，想起那家十分有人气的咖啡厅。", "fiction", 定语堆叠));
+        Assert.NotEmpty(Hits("这是一个基于多维度的深层次的长期的方案。", "doc", 定语堆叠));   // 三个「的」才成堆
+    }
+
+    [Fact]
+    public void 小说里波浪号不报()
+    {
+        // 网文的语气延长符号；文档里才是排版噪声
+        Assert.Empty(Hits("我回来了~~你等我一下~~", "fiction", 波浪号));
+        Assert.NotEmpty(Hits("见第 3 节～", "doc", 波浪号));
+    }
+
+    [Fact]
+    public void 直引号交给引号风格规则()
+    {
+        // 全半角混排只管标点，引号风格由 mixed-quote-style 单管，否则小说里满屏直引号全是噪声
+        Assert.Empty(Hits("他说\"行\"，然后就走了。", null, 全半角混排));
+        Assert.NotEmpty(Hits("他说\"行\",然后就走了。", null, 全半角混排));
+    }
+
+    [Theory]
+    [InlineData("他犹如一把刀。", false)]
+    [InlineData("他犹如一把刀一般站着。", true)]
+    public void 犹如是正常词_带组合才算陈词(string text, bool hit)
+    {
+        Assert.Equal(hit, Hits(text, "fiction", 陈词比喻).Count > 0);
     }
 
     [Fact]

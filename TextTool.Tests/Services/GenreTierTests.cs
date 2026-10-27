@@ -31,6 +31,7 @@ public class GenreTierTests
     private const string 英文AI词 = "ai-frequent-words";
     private const string 定语堆叠 = "stacked-modifiers";
     private const string 波浪号 = "tilde-run";
+    private const string 简介模板 = "synopsis-formula";
     private const string 全半角混排 = "mixed-punctuation-width";
 
     private static List<LintHit> Hits(string text, string? genre, string id) =>
@@ -241,6 +242,24 @@ public class GenreTierTests
         var text = "他把话咽了回去，摆摆手走了。总之，这件事就这么算了。";
         Assert.Empty(Hits(text, "fiction", "elevated-ending"));
         Assert.NotEmpty(Hits(text, "doc", "elevated-ending"));
+    }
+
+    [Theory]
+    [InlineData("在这个拥挤的城市里，每个人都有着自己的故事。")]
+    [InlineData("直到那天，他偶然发现了一种神秘的力量。")]
+    [InlineData("主角叶轩，是一个身处都市中的普通年轻人。")]
+    [InlineData("从此，他开始了他的冒险之旅。")]
+    public void 简介模板骨架报出(string text)
+    {
+        Assert.NotEmpty(Hits(text, "fiction", 简介模板));
+    }
+
+    [Theory]
+    [InlineData("她把饭盒放进包里，回头看了一眼走廊尽头。")]
+    [InlineData("这个城市在下雨，路灯把水面拉成长条。")]
+    public void 具体叙述不报简介模板(string text)
+    {
+        Assert.Empty(Hits(text, "fiction", 简介模板));
     }
 
     [Fact]

@@ -11,6 +11,7 @@ public class ReplyShapeScannerTests
     private const string 裸代号 = "agent-code-list";
     private const string 截断路径 = "agent-truncated-path";
     private const string 装饰符号 = "emoji-and-symbols";
+    private const string 暴力说法 = "violent-verbs";
 
     private static ReplyShapeScanner Scanner() => new(LintRuleStore.GetDefaultRules());
 
@@ -145,6 +146,27 @@ public class ReplyShapeScannerTests
         Assert.True(Hits("看 S1。")[0].Blocks);
         Assert.True(Hits("见 TextTool/doc\u2026/final.md 那份文件。")[0].Blocks);
         Assert.False(Hits("修好了 \u2705").Single(h => h.Id == 装饰符号).Blocks);
+    }
+
+    [Theory]
+    [InlineData("这一刀最狠，把那条接口钉死了。")]
+    [InlineData("这是最阴的一类问题，报错咬了我一口。")]
+    public void 暴力说法按只提醒处理(string text)
+    {
+        var hits = Hits(text).Where(h => h.Id == 暴力说法).ToList();
+
+        Assert.NotEmpty(hits);
+        Assert.All(hits, h => Assert.False(h.Blocks));
+    }
+
+    [Theory]
+    [InlineData("一刀切的策略不可取。")]
+    [InlineData("他一口咬定是环境问题。")]
+    [InlineData("齿轮咬合不良会影响寿命。")]
+    [InlineData("这间屋子最阴凉。")]
+    public void 暴力说法的护标挡住正常用法(string text)
+    {
+        Assert.DoesNotContain(Hits(text), h => h.Id == 暴力说法);
     }
 
     [Fact]

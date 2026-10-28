@@ -70,6 +70,7 @@ public class GenreTierTests
     [InlineData("砍一刀就能把这段改完。")]
     [InlineData("这一刀最狠，直接补一刀就行。")]
     [InlineData("这个报错咬了我一下。")]
+    [InlineData("这是最阴的一类，把接口钉死了。")]
     public void 暴力动词在文档档也报(string text)
     {
         Assert.NotEmpty(Hits(text, "doc", 暴力动词));
@@ -79,6 +80,7 @@ public class GenreTierTests
     [InlineData("一刀切的策略不可取。")]
     [InlineData("他一口咬定是环境问题。")]
     [InlineData("齿轮咬合不良会影响寿命。")]
+    [InlineData("这间屋子最阴凉，适合放设备。")]
     public void 暴力动词的术语护标挡住正常用法(string text)
     {
         Assert.Empty(Hits(text, "doc", 暴力动词));

@@ -18,7 +18,7 @@ public sealed class ReplyShapeScanner
     /// 本扫描器消费的规则 Id。外部系统按这些 Id 认契约，改名等于改对方的调用；
     /// </summary>
     public static readonly IReadOnlyList<string> RuleIds =
-        new[] { "agent-code-list", "agent-truncated-path", "emoji-and-symbols" };
+        new[] { "agent-code-list", "agent-truncated-path", "emoji-and-symbols", "violent-verbs" };
 
     private readonly List<(string Id, string Title, bool Blocks, List<Regex> Patterns)> _shapes;
 

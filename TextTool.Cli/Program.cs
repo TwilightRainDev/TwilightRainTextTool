@@ -369,7 +369,7 @@ public static class Program
             foreach (var file in files)
             {
                 string text = file == "-" ? ReadStdin() : ReadFileForLint(file);
-                inputs.Add((file == "-" ? "(stdin)" : Path.GetFileName(file), text));
+                inputs.Add((file == "-" ? "(stdin)" : file, text));
             }
 
             var reportSet = LintRunner.Run(inputs, onlyIds, minSeverity, genre);

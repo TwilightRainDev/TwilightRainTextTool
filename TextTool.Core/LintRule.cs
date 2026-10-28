@@ -37,7 +37,7 @@ public class LintRule
     /// <summary>
     /// 命中时是否值得打断对话当场重写。默认 false：新判据默认不获得打断权。
     /// 与 Severity 不是一回事：Severity 说的是这条值不值得改，本字段说的是值不值得停下来说。
-    /// 只有实时闸读它，lint 不看；为 true 时 Genres 必须含 agent，否则是配置错。
+    /// 只有实时闸读它，lint 不看；留空的通用判据也可标，档位专属的必须是 agent 档。
     /// </summary>
     public bool BlocksReply { get; set; }
     public string Detail { get; set; } = "";
@@ -145,8 +145,10 @@ public static class LintRuleStore
                 if (!GenreIds.Contains(genre))
                     throw new ArgumentException(
                         $"规则 {rule.Id} 的档位非法：{genre}（可选 {string.Join("、", GenreIds)}）");
-            // 文档专属判据标可打断是配置错：实时闸只跑智能体档，这个值在那里永远读不到
-            if (rule.BlocksReply && !rule.Genres.Contains("agent", StringComparer.OrdinalIgnoreCase))
+            // 文档或小说专属判据标可打断是配置错：实时闸只跑智能体档（含通用判据），这个值在那里读不到
+            if (rule.BlocksReply
+                && rule.Genres.Count > 0
+                && !rule.Genres.Contains("agent", StringComparer.OrdinalIgnoreCase))
                 throw new ArgumentException($"规则 {rule.Id} 标了可打断，但档位不含 agent");
             if (rule.Severity is not ("info" or "warn"))
                 throw new ArgumentException($"规则 {rule.Id} 的 Severity 非法：{rule.Severity}");

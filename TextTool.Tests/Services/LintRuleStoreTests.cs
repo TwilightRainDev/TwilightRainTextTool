@@ -198,13 +198,23 @@ public class LintRuleStoreTests
     [Fact]
     public void Validate_文档专属判据标可打断即抛()
     {
-        // 实时闸只跑智能体档，文档专属判据上的这个值永远读不到，是配置错
+        // 实时闸只跑智能体档（含通用判据），文档专属判据上的这个值永远读不到，是配置错
         var rule = Rule("doc-process-residue");
         rule.Genres = new List<string> { "doc" };
         rule.BlocksReply = true;
 
         var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
         Assert.Contains("agent", ex.Message);
+    }
+
+    [Fact]
+    public void Validate_通用判据可标可打断()
+    {
+        // 留空是「各档都跑」，实时闸会读到它
+        var rule = Rule("violent-verbs");
+        rule.BlocksReply = true;
+
+        LintRuleStore.Validate(new List<LintRule> { rule });
     }
 
     [Fact]

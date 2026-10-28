@@ -27,6 +27,7 @@ public class GenreTierTests
     private const string 过程残留 = "doc-process-residue";
     private const string 助手号腔 = "assistant-persona";
     private const string 元评价路标 = "meta-commentary-marker";
+    private const string 谄媚语气 = "sycophancy";
     private const string 对举句式 = "parallel-contrast";
     private const string 英文AI词 = "ai-frequent-words";
     private const string 定语堆叠 = "stacked-modifiers";
@@ -90,6 +91,8 @@ public class GenreTierTests
     [InlineData("若故障持续，还是要检查或更换设备。")]
     [InlineData("开会员买时间才可能划算，但总支出也未必更低。")]
     [InlineData("这些做法因人而异。")]
+    [InlineData("如果你愿意，我可以进一步帮你把这几步跑一遍。")]
+    [InlineData("希望这些信息对你有所帮助。")]
     public void 段末兜底报出(string text)
     {
         Assert.NotEmpty(Hits(text, null, 段末兜底));
@@ -179,6 +182,33 @@ public class GenreTierTests
     public void 元评价路标报出(string text)
     {
         Assert.NotEmpty(Hits(text, null, 元评价路标));
+    }
+
+    [Theory]
+    [InlineData("我们不妨换个角度来看这件事。")]
+    [InlineData("这背后反映的是一个更深层次的问题。")]
+    public void 换角度与背后反映算元话语(string text)
+    {
+        Assert.NotEmpty(Hits(text, null, 元评价路标));
+    }
+
+    [Theory]
+    [InlineData("这其实是一个非常好的问题。")]
+    [InlineData("你提到了一个非常关键的点。")]
+    [InlineData("我会稳稳地接住你。这反而更稳。")]
+    public void 抬高对方与接话腔报出(string text)
+    {
+        Assert.NotEmpty(Hits(text, null, 谄媚语气));
+    }
+
+    [Theory]
+    [InlineData("新调查找到了原因，修好问题，还把修改交了。")]
+    [InlineData("我们换个人来看这段。")]
+    public void 谄媚与元话语的护栏挡住正常搭配(string text)
+    {
+        // 「修好问题」是好与问题的偶然相邻，「换个人」不是换个角度
+        Assert.Empty(Hits(text, null, 谄媚语气));
+        Assert.Empty(Hits(text, null, 元评价路标));
     }
 
     [Theory]

@@ -58,6 +58,7 @@
             <ComboBoxItem x:Name="GenreAllItem" />
             <ComboBoxItem x:Name="GenreDocItem" />
             <ComboBoxItem x:Name="GenreFictionItem" />
+            <ComboBoxItem x:Name="GenreAgentItem" />
           </ComboBox>
           <Button x:Name="BtnLint" Classes="primary" Click="OnLint" />
         </StackPanel>

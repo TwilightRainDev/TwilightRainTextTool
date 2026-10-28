@@ -100,6 +100,7 @@ public partial class LintTab : UserControl
         GenreAllItem.Content = Loc.T("LintGenreAll");
         GenreDocItem.Content = Loc.T("LintGenreDoc");
         GenreFictionItem.Content = Loc.T("LintGenreFiction");
+        GenreAgentItem.Content = Loc.T("LintGenreAgent");
         BtnLint.Content = _running ? Loc.T("StatusLintRunning") : Loc.T("BtnLint");
         HintLabel.Text = Loc.T("HintLint");
 
@@ -259,6 +260,7 @@ public partial class LintTab : UserControl
     {
         1 => "doc",
         2 => "fiction",
+        3 => "agent",
         _ => null,
     };
 

@@ -12,13 +12,18 @@ public class LintRuleStoreTests
     public void Merge_外部规则按Id覆盖内置_其余保留()
     {
         var builtIn = new List<LintRule> { Rule("cliche-words"), Rule("ai-frequent-words") };
+        builtIn[1].Genres = new List<string> { "agent" };
+        builtIn[1].BlocksReply = true;
         var external = new List<LintRule> { Rule("ai-frequent-words", "覆盖"), Rule("appended-external-rule") };
+        external[0].Genres = new List<string> { "agent" };
+        external[0].BlocksReply = false;
 
         var merged = LintRuleStore.Merge(builtIn, external);
 
         Assert.Equal(3, merged.Count);
         Assert.Equal(new[] { "cliche-words", "ai-frequent-words", "appended-external-rule" }, merged.Select(r => r.Id));
         Assert.Equal("覆盖", merged[1].Patterns[0]);   // 覆盖发生在原位置
+        Assert.False(merged[1].BlocksReply);           // 开关随外部规则一起生效，克隆不漏字段
     }
 
     [Fact]
@@ -87,18 +92,21 @@ public class LintRuleStoreTests
     }
 
     [Fact]
-    public void GetDefaultRules_数据规则40条且顺序完整()
+    public void GetDefaultRules_数据规则49条且顺序完整()
     {
         var ids = LintRuleStore.GetDefaultRules().Select(r => r.Id).ToArray();
 
-        // 顺序即分组：通用规则在前，小说档十条垫后。档位是过滤器，规则全表只有这一份。
+        // 顺序即分组：通用规则在前，小说档十条、智能体档九条垫后。档位是过滤器，规则全表只有这一份。
         Assert.Equal(
             new[] { "repeated-punctuation", "ellipsis-style", "mixed-punctuation-width", "dash-and-tilde", "tilde-run", "invisible-characters", "emoji-and-symbols",
                     "cliche-words", "ai-frequent-words", "vague-attribution", "training-cutoff-disclaimer", "chatbot-artifacts", "sycophancy", "filler-phrases",
                     "parallel-contrast", "paragraph-ordinals", "elevated-ending", "stacked-modifiers", "copula-avoidance", "inline-title-list", "forced-reversal", "accounting-cliche",
                     "adverb-overuse", "violent-verbs", "hedging-ending", "anthropomorphic-subject", "doc-process-residue", "assistant-persona", "meta-commentary-marker",
                     "fiction-body-tics", "fiction-filler-modifiers", "fiction-dead-metaphor", "fiction-emotion-telling", "fiction-vague-nominalization", "fiction-vague-simile", "synopsis-formula",
-                    "trailer-ending", "outline-residue", "synopsis-register", "connective-scene-shift" },
+                    "trailer-ending", "outline-residue", "synopsis-register", "connective-scene-shift",
+                    "agent-commit-hash", "agent-code-list", "agent-path-list", "agent-cli-option",
+                    "agent-smoke-jargon", "agent-test-jargon", "agent-process-jargon", "agent-inline-code",
+                    "agent-truncated-path" },
             ids);
     }
 
@@ -129,8 +137,8 @@ public class LintRuleStoreTests
             new[] { "为了实现这一点", "因为下雨", "现在", "如果您需要帮助", "系统可以处理", "数据显示" },
             rules["filler-phrases"].Hints!.ToArray());
 
-        // 档位：通用规则留空，小说规则只属于小说档。留空是「两档都跑」的意思，
-        // 写成 ["doc"] 会让它在小说里静默消失。
+        // 档位：通用规则留空，小说与智能体规则只属于自己的档。留空是「各档都跑」的意思，
+        // 写成 ["doc"] 会让它在小说档与智能体档里静默消失。
         Assert.Empty(rules["cliche-words"].Genres);
         // 这两条在真实小说里 85% 以上命中是正常用词（获得、展示、文学定语），收回文档档
         Assert.Equal(new[] { "doc" }, rules["ai-frequent-words"].Genres);
@@ -143,6 +151,27 @@ public class LintRuleStoreTests
         Assert.Equal(new[] { "fiction" }, rules["fiction-emotion-telling"].Genres);
         Assert.Equal(new[] { "fiction" }, rules["fiction-vague-nominalization"].Genres);
         Assert.Equal(new[] { "doc" }, rules["anthropomorphic-subject"].Genres);
+
+        // 能不能打断：只有裸代号与截断路径标了，其余按默认不打断
+        Assert.True(rules["agent-code-list"].BlocksReply);
+        Assert.True(rules["agent-truncated-path"].BlocksReply);
+        Assert.False(rules["emoji-and-symbols"].BlocksReply);
+        Assert.False(rules["agent-smoke-jargon"].BlocksReply);
+
+        // 智能体档：四条按有无判，四条按段内密度判；档位只属于智能体档
+        Assert.All(
+            new[]
+            {
+                "agent-commit-hash", "agent-code-list", "agent-path-list", "agent-cli-option",
+                "agent-smoke-jargon", "agent-test-jargon", "agent-process-jargon", "agent-inline-code",
+            },
+            id => Assert.Equal(new[] { "agent" }, rules[id].Genres));
+        Assert.Equal("document", rules["agent-commit-hash"].Scope);
+        Assert.Equal("paragraph", rules["agent-code-list"].Scope);
+        Assert.Equal(2, rules["agent-code-list"].MinCount);
+        Assert.Equal(2, rules["agent-path-list"].MinCount);
+        Assert.Equal(2, rules["agent-test-jargon"].MinCount);
+        Assert.Equal(5, rules["agent-inline-code"].MinCount);
 
         // 段末兜底与段末升华是同一条赛道的两端：同一 Scope、同一截取长度
         Assert.Equal("paragraph", rules["hedging-ending"].Scope);
@@ -164,6 +193,18 @@ public class LintRuleStoreTests
 
         var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
         Assert.Contains("novel", ex.Message);
+    }
+
+    [Fact]
+    public void Validate_文档专属判据标可打断即抛()
+    {
+        // 实时闸只跑智能体档，文档专属判据上的这个值永远读不到，是配置错
+        var rule = Rule("doc-process-residue");
+        rule.Genres = new List<string> { "doc" };
+        rule.BlocksReply = true;
+
+        var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
+        Assert.Contains("agent", ex.Message);
     }
 
     [Fact]

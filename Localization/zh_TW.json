@@ -282,5 +282,6 @@
   "LabelLintGenre": "文本類型",
   "LintGenreAll": "全部規則",
   "LintGenreDoc": "程式文件",
-  "LintGenreFiction": "小說"
+  "LintGenreFiction": "小說",
+  "LintGenreAgent": "智能體回覆"
 }

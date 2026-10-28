@@ -282,5 +282,6 @@
   "LabelLintGenre": "Text type",
   "LintGenreAll": "All rules",
   "LintGenreDoc": "Programming docs",
-  "LintGenreFiction": "Fiction"
+  "LintGenreFiction": "Fiction",
+  "LintGenreAgent": "Agent replies"
 }

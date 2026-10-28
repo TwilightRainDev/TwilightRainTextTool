@@ -698,5 +698,141 @@
     ],
     "Severity": "info",
     "Detail": "用论证连接词承担场景切换（然而，在一次偶然的机会下……），叙事被压成分段说明。真人小说每十万字 0.48 次，这批 AI 稿 36.6 次"
+  },
+  {
+    "Id": "agent-commit-hash",
+    "Group": "lexis",
+    "Title": "提交哈希",
+    "Kind": "regex",
+    "Patterns": [
+      "(?<![0-9a-fA-F])(?=[0-9a-f]{7,40}(?![0-9a-fA-F]))[0-9a-f]*[a-f][0-9a-f]*"
+    ],
+    "Genres": [
+      "agent"
+    ],
+    "Severity": "warn",
+    "Detail": "正文里串着小写十六进制串（9f7761a、2773ef7）——读者解不开，只会跳过这一句。回复每十万字 86 处，人写的技术博文 0 处。要指认一笔改动就说它改了什么，哈希只在真要回到那一版时才有用"
+  },
+  {
+    "Id": "agent-code-list",
+    "Group": "lexis",
+    "Title": "裸代号清单",
+    "Kind": "regex",
+    "Patterns": [
+      "(?<![A-Za-z0-9])[A-Z]{1,2}[-_\\u2013]?\\d{1,4}(?![0-9A-Za-z])"
+    ],
+    "Scope": "paragraph",
+    "MinCount": 2,
+    "Genres": [
+      "agent"
+    ],
+    "Severity": "warn",
+    "Detail": "一段里至少两个只有内部认得的短代号（P1 P2 P6 / S1-S6 / C1-C6）——读者手里没有码表，读到的是一串编号。回复每十万字 113 处，人写的技术博文 5 处。写它管的那件事，代号放进括号或不写",
+    "BlocksReply": true
+  },
+  {
+    "Id": "agent-path-list",
+    "Group": "lexis",
+    "Title": "路径清单",
+    "Kind": "regex",
+    "Patterns": [
+      "[A-Za-z0-9_./-]+\\.(?:cs|json|md|ts|mjs|js|sh|py|yml|zip|axaml|csproj|txt|html)"
+    ],
+    "Scope": "paragraph",
+    "MinCount": 2,
+    "Genres": [
+      "agent"
+    ],
+    "Severity": "info",
+    "Detail": "一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处"
+  },
+  {
+    "Id": "agent-cli-option",
+    "Group": "lexis",
+    "Title": "命令行选项",
+    "Kind": "regex",
+    "Patterns": [
+      "(?<!\\w)--[a-z][a-z-]{1,20}"
+    ],
+    "Genres": [
+      "agent"
+    ],
+    "Severity": "info",
+    "Detail": "正文里散着 --json、--genre 这类选项——只在敲命令时有用。回复每十万字 29 处，人写的技术博文 0 处。要给命令就单独成块，句子本身说清它会做什么"
+  },
+  {
+    "Id": "agent-smoke-jargon",
+    "Group": "lexis",
+    "Title": "冒烟行话",
+    "Kind": "regex",
+    "Patterns": [
+      "(?i:smoke)|冒烟|烟测"
+    ],
+    "Genres": [
+      "agent"
+    ],
+    "Severity": "warn",
+    "Detail": "冒烟、烟测、smoke——团队内部的测试行话，圈外人读不出「跑一遍主要流程看坏没坏」。回复每十万字 20 处，人写的技术博文 0 处。换成这一次具体验了什么，谁跑、看到什么算过"
+  },
+  {
+    "Id": "agent-test-jargon",
+    "Group": "lexis",
+    "Title": "测试行话",
+    "Kind": "regex",
+    "Patterns": [
+      "用例|断言|单测|回归|绿了|跑测试|测试跑"
+    ],
+    "Scope": "paragraph",
+    "MinCount": 2,
+    "Genres": [
+      "agent"
+    ],
+    "Severity": "info",
+    "Detail": "一段里两次以上用例、断言、单测、回归——测试圈的词在测试圈里精确，在回复里只增加解码成本。回复每十万字 41 处，人写的技术博文 0 处。说清验的是什么行为、结果如何，比列名词表省读者的力"
+  },
+  {
+    "Id": "agent-process-jargon",
+    "Group": "lexis",
+    "Title": "流程行话",
+    "Kind": "regex",
+    "Patterns": [
+      "收口|落盘|回填|入仓|出盘|落账|定盘|档位|口径|白盒|体检|断链|债账"
+    ],
+    "Genres": [
+      "agent"
+    ],
+    "Severity": "info",
+    "Detail": "收口、落盘、口径、档位、体检——这一带自造的词，头一次读到的人得先翻译一遍。回复每十万字 91 处，人写的技术博文 2 处。第一次出现时给一句同义的人话，或直接换掉"
+  },
+  {
+    "Id": "agent-inline-code",
+    "Group": "syntax",
+    "Title": "行内代码密集",
+    "Kind": "regex",
+    "Patterns": [
+      "`[A-Za-z0-9_./:@+=%~$*?<>|\\[\\]{}()#&;,!^ -]+`"
+    ],
+    "Scope": "paragraph",
+    "MinCount": 5,
+    "Genres": [
+      "agent"
+    ],
+    "Severity": "info",
+    "Detail": "一段里五处以上反引号片段，切的是文件、命令、标识符这类机器词——正文被切成一截中文一截机器词，读的人要不停换脑。回复每十万字 397 处，人写的技术博文 25 处。只留读者真要照着输入的那几个，其余写成它的名字"
+  },
+  {
+    "Id": "agent-truncated-path",
+    "Group": "lexis",
+    "Title": "截断路径",
+    "Kind": "regex",
+    "Patterns": [
+      "(?<![A-Za-z0-9/._~:@+%#\\u2026-])(?=[A-Za-z0-9/._~:@+%#\\u2026-]*/)(?=[A-Za-z0-9/._~:@+%#\\u2026-]*(?:\\u2026|\\.{3}))[A-Za-z0-9/._~:@+%#\\u2026-]+"
+    ],
+    "Genres": [
+      "agent"
+    ],
+    "Severity": "warn",
+    "Detail": "路径中段用省略号代替（…/rule-map.md），读者照着找不着，复制回终端更跑不起来。回复每十万字 33 处，人写的技术博文 0 处。给全名，或只说文件名",
+    "BlocksReply": true
   }
 ]

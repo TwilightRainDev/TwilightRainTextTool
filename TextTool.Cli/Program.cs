@@ -14,7 +14,8 @@ namespace TextTool.Cli;
 ///   texttool replace &lt;file...&gt; [--scheme &lt;name&gt;]
 ///   texttool vn &lt;file...&gt; [--scheme &lt;name...&gt;] [--max-para N] [--reformat-only|--punct-only]
 ///   texttool join &lt;directory&gt; [--pattern &quot;*.txt&quot;] [--output &lt;name&gt;]
-///   texttool lint &lt;file...&gt; [--only &lt;id...&gt;] [--min-severity warn] [--genre doc|fiction] [--json]
+///   texttool lint &lt;file...&gt; [--only &lt;id...&gt;] [--min-severity warn] [--genre doc|fiction|agent] [--json]
+///   texttool reply-check [--json] [&lt;file&gt;|-]
 ///   texttool update [--check]
 /// </summary>
 public static class Program
@@ -49,6 +50,7 @@ public static class Program
                 "vn" => RunVn(args[1..]),
                 "join" => RunJoin(args[1..]),
                 "lint" => RunLint(args[1..]),
+                "reply-check" => RunReplyCheck(args[1..]),
                 "update" => RunUpdate(args[1..]),
                 "help" or "--help" or "-h" => PrintUsage(),
                 _ => UnknownCommand(args[0]),
@@ -401,14 +403,70 @@ public static class Program
         return reader.ReadToEnd();
     }
 
+    /// <summary>
+    /// reply-check：回复里「离开文件就看不懂」的写法，一行一处。
+    /// 回答闸把它当工具调用，输出因此是稳定契约：人读一行一处，JSON 带版本号。
+    /// 退出码与 lint 一致：0 = 无命中，1 = 有命中，2 = 用法/读取错误。
+    /// </summary>
+    private static int RunReplyCheck(string[] args)
+    {
+        try
+        {
+            try { Console.OutputEncoding = new UTF8Encoding(false); }
+            catch (Exception ex) when (ex is IOException or SecurityException or ArgumentException) { }
+
+            bool json = false;
+            string? input = null;
+            for (int i = 0; i < args.Length; i++)
+            {
+                switch (args[i])
+                {
+                    case "--json": json = true; break;
+                    case "--help" or "-h": PrintReplyCheckHelp(); return 0;
+                    case "-":
+                        if (input is not null) throw new ArgumentException("reply-check 只读一个输入");
+                        input = "-";
+                        break;
+                    default:
+                        if (input is not null) throw new ArgumentException("reply-check 只读一个输入");
+                        input = args[i];
+                        break;
+                }
+            }
+
+            string text = input is null or "-" ? ReadStdin() : ReadFileForLint(input);
+            var hits = ReplyShapeScanner.FromStore().Scan(text);
+            Console.Write(ReplyShapeOutput.Render(hits, json));
+            return hits.Count > 0 ? 1 : 0;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"错误：{ex.Message}");
+            return 2;
+        }
+    }
+
+    private static void PrintReplyCheckHelp() =>
+        Console.WriteLine("""
+            reply-check 选项：
+              --json                以 JSON 输出（Version 1：Version 与 Hits 两项，每条带 Id、Token、Line）
+              --help                显示本说明
+
+            输入：一个文件路径，或传 - 从 stdin 读；不给也走 stdin。
+            围栏代码块里的内容整块跳过：那是引用的原文，不是回复的措辞。
+
+            退出码与 lint 一致：0 = 没有命中，1 = 有命中，2 = 用法或读取错误。
+            """);
+
     private static void PrintLintHelp() =>
         Console.WriteLine("""
             lint 选项：
               --json                以 JSON 输出（契约见 README.md 的「命令行（CLI）」节）
               --only <Id,...>       只跑指定规则，如 --only parallel-contrast,cliche-words
               --min-severity <info|warn>  只输出 warn 及以上（统计项不受影响）
-              --genre <doc|fiction> 按文本类型选规则：doc = 编程文档，fiction = 小说；
-                                    不给则跑全部规则（与加档位之前一致）
+              --genre <doc|fiction|agent> 按文本类型选规则：doc = 编程文档，fiction = 小说，
+                                          agent = 智能体回复（读者要能一句句读懂，不受团队行话与代号）；
+                                          不给则跑全部规则（与加档位之前一致）
 
             输入：文件路径可多个；传 - 表示从 stdin 读。
 
@@ -461,6 +519,7 @@ public static class Program
               texttool vn <文件...> [选项]        视觉小说排版
               texttool join <目录> [选项]         文件拼接
               texttool lint <文件...> [选项]        AI 味检查（只报不改）
+              texttool reply-check [选项] [文件]    回复里读者解不开的写法（只报不改）
               texttool update [--check]           自更新（--check 仅检查）
 
             运行 texttool <命令> --help 查看各命令选项。

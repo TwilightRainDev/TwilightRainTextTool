@@ -24,8 +24,8 @@ public class LintRule
     /// <summary>document 或 paragraph。</summary>
     public string Scope { get; set; } = "document";
     /// <summary>
-    /// 适用档位：doc（编程文档）或 fiction（小说）。留空 = 两档通用。
-    /// 留空不是「不适用」：写成 ["doc"] 的规则在小说里会静默消失。
+    /// 适用档位：doc（编程文档）、fiction（小说）、agent（智能体回复）。留空 = 各档通用。
+    /// 留空不是「不适用」：写成 ["doc"] 的规则在小说档与智能体档里都会静默消失。
     /// </summary>
     public List<string> Genres { get; set; } = new();
     /// <summary>仅 Scope=paragraph 有效：只检查段末 N 字。</summary>
@@ -34,6 +34,12 @@ public class LintRule
     public int MinCount { get; set; } = 1;
     /// <summary>info 或 warn。</summary>
     public string Severity { get; set; } = "info";
+    /// <summary>
+    /// 命中时是否值得打断对话当场重写。默认 false：新判据默认不获得打断权。
+    /// 与 Severity 不是一回事：Severity 说的是这条值不值得改，本字段说的是值不值得停下来说。
+    /// 只有实时闸读它，lint 不看；为 true 时 Genres 必须含 agent，否则是配置错。
+    /// </summary>
+    public bool BlocksReply { get; set; }
     public string Detail { get; set; } = "";
     /// <summary>与 Patterns 下标对齐的建议改法（可空）。</summary>
     public List<string>? Hints { get; set; }
@@ -47,6 +53,12 @@ public static class LintRuleStore
 {
     /// <summary>资源名前缀取 RootNamespace（TextTool），不是程序集名（TextTool.Core）。</summary>
     internal const string EmbeddedResourceName = "TextTool.default_lint_rules.json";
+
+    /// <summary>
+    /// 档位取值全集。三处要用：规则文件的档位校验、命令行 --genre 的取值校验、界面的下拉项。
+    /// 拼错一个字母的档位（novel、agents）不会报错，规则会在所有档位下静默不跑，所以只列这一次。
+    /// </summary>
+    public static readonly IReadOnlyList<string> GenreIds = new[] { "doc", "fiction", "agent" };
 
     public static List<LintRule> Load()
     {
@@ -130,8 +142,12 @@ public static class LintRuleStore
                 throw new ArgumentException($"规则 {rule.Id} 的 Genres 为 null");
             // 拼错的档位（novel、Doc）会让规则在任何 --genre 下都不跑，与 Id 撞码同类：加载即报
             foreach (var genre in rule.Genres)
-                if (genre is not ("doc" or "fiction"))
-                    throw new ArgumentException($"规则 {rule.Id} 的档位非法：{genre}");
+                if (!GenreIds.Contains(genre))
+                    throw new ArgumentException(
+                        $"规则 {rule.Id} 的档位非法：{genre}（可选 {string.Join("、", GenreIds)}）");
+            // 文档专属判据标可打断是配置错：实时闸只跑智能体档，这个值在那里永远读不到
+            if (rule.BlocksReply && !rule.Genres.Contains("agent", StringComparer.OrdinalIgnoreCase))
+                throw new ArgumentException($"规则 {rule.Id} 标了可打断，但档位不含 agent");
             if (rule.Severity is not ("info" or "warn"))
                 throw new ArgumentException($"规则 {rule.Id} 的 Severity 非法：{rule.Severity}");
             // 显式 null 会被 System.Text.Json 写回属性，模型上的 = new() 默认值挡不住，
@@ -162,7 +178,7 @@ public static class LintRuleStore
     {
         Id = r.Id, Group = r.Group, Title = r.Title, Kind = r.Kind,
         Patterns = new List<string>(r.Patterns), Scope = r.Scope,
-        Genres = new List<string>(r.Genres),
+        Genres = new List<string>(r.Genres), BlocksReply = r.BlocksReply,
         TailChars = r.TailChars, MinCount = r.MinCount, Severity = r.Severity,
         SkipInMarkdown = r.SkipInMarkdown,
         Detail = r.Detail, Hints = r.Hints is null ? null : new List<string>(r.Hints),

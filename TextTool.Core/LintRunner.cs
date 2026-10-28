@@ -19,9 +19,9 @@ public static class LintRunner
             && !minSeverity.Equals("warn", StringComparison.OrdinalIgnoreCase))
             throw new ArgumentException("--min-severity 只接受 info 或 warn");
         if (genre is not null
-            && !genre.Equals("doc", StringComparison.OrdinalIgnoreCase)
-            && !genre.Equals("fiction", StringComparison.OrdinalIgnoreCase))
-            throw new ArgumentException("--genre 只接受 doc 或 fiction");
+            && !LintRuleStore.GenreIds.Contains(genre, StringComparer.OrdinalIgnoreCase))
+            throw new ArgumentException(
+                $"--genre 只接受 {string.Join("、", LintRuleStore.GenreIds)}");
         if (onlyIds is not null && onlyIds.Count == 0)
             throw new ArgumentException("--only 需要至少一个规则 Id");
         var rules = LintRuleStore.Load();
@@ -35,7 +35,7 @@ public static class LintRunner
         }
         if (genre is not null)
         {
-            // 留空的规则两档都跑；被档位挡掉的规则与 --only 同时点名时必须报错，
+            // 留空的规则各档都跑；被档位挡掉的规则与 --only 同时点名时必须报错，
             // 否则用户看到的是「零命中」，而真相是「这条规则不在这个档」——两种沉默完全不同
             var excluded = rules
                 .Where(r => r.Genres.Count > 0

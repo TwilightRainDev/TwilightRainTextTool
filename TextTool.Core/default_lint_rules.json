@@ -782,7 +782,11 @@
       "agent"
     ],
     "Severity": "warn",
-    "Detail": "冒烟、烟测、smoke——团队内部的测试行话，圈外人读不出「跑一遍主要流程看坏没坏」。回复每十万字 20 处，人写的技术博文 0 处。换成这一次具体验了什么，谁跑、看到什么算过"
+    "Detail": "冒烟、烟测、smoke——团队内部的测试行话，圈外人读不出「跑一遍主要流程看坏没坏」。回复每十万字 20 处，人写的技术博文 0 处。换成这一次具体验了什么，谁跑、看到什么算过",
+    "Scope": "document",
+    "MinCount": 1,
+    "BlocksReply": true,
+    "ReplyMinCount": 2
   },
   {
     "Id": "agent-test-jargon",
@@ -798,7 +802,9 @@
       "agent"
     ],
     "Severity": "info",
-    "Detail": "一段里两次以上用例、断言、单测、回归——测试圈的词在测试圈里精确，在回复里只增加解码成本。回复每十万字 41 处，人写的技术博文 0 处。说清验的是什么行为、结果如何，比列名词表省读者的力"
+    "Detail": "一段里两次以上用例、断言、单测、回归——测试圈的词在测试圈里精确，在回复里只增加解码成本。回复每十万字 41 处，人写的技术博文 0 处。说清验的是什么行为、结果如何，比列名词表省读者的力",
+    "BlocksReply": true,
+    "ReplyMinCount": 2
   },
   {
     "Id": "agent-process-jargon",
@@ -812,7 +818,11 @@
       "agent"
     ],
     "Severity": "info",
-    "Detail": "收口、落盘、口径、档位、体检——这一带自造的词，头一次读到的人得先翻译一遍。回复每十万字 91 处，人写的技术博文 2 处。第一次出现时给一句同义的人话，或直接换掉"
+    "Detail": "收口、落盘、口径、档位、体检——这一带自造的词，头一次读到的人得先翻译一遍。回复每十万字 91 处，人写的技术博文 2 处。第一次出现时给一句同义的人话，或直接换掉",
+    "Scope": "document",
+    "MinCount": 1,
+    "BlocksReply": true,
+    "ReplyMinCount": 2
   },
   {
     "Id": "agent-inline-code",
@@ -844,5 +854,39 @@
     "Severity": "warn",
     "Detail": "路径中段用省略号代替（…/rule-map.md），读者照着找不着，复制回终端更跑不起来。回复每十万字 33 处，人写的技术博文 0 处。给全名，或只说文件名",
     "BlocksReply": true
+  },
+  {
+    "Id": "agent-conclusion-first",
+    "Group": "structure",
+    "Title": "结论先行",
+    "Kind": "regex",
+    "Patterns": [
+      "先说结论|结论先说|先给结论|结论先行|先报结论|直接说结论|结论放在前面"
+    ],
+    "Scope": "document",
+    "Genres": [
+      "agent"
+    ],
+    "MinCount": 1,
+    "Severity": "info",
+    "BlocksReply": true,
+    "Detail": "把总结压在开头，读者还没读到来龙去脉就先被塞了结论；顺着讲一遍，结论放后面才有分量"
+  },
+  {
+    "Id": "agent-permission-ask",
+    "Group": "structure",
+    "Title": "正文里求许可",
+    "Kind": "regex",
+    "Patterns": [
+      "要不要我|要我(?:来|先|再)|如果你(?:愿意|想|需要)|只要你(?:回复|说)|我可以(?:帮你|再|进一步)|需要我(?:帮|做)"
+    ],
+    "Scope": "document",
+    "Genres": [
+      "agent"
+    ],
+    "MinCount": 1,
+    "Severity": "info",
+    "BlocksReply": false,
+    "Detail": "向人做决定该走问卷工具：正文里问一句既没选项也不落记录，还占掉一轮"
   }
 ]

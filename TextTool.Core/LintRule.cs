@@ -40,6 +40,11 @@ public class LintRule
     /// 只有实时闸读它，lint 不看；留空的通用判据也可标，档位专属的必须是 agent 档。
     /// </summary>
     public bool BlocksReply { get; set; }
+    /// <summary>
+    /// 回复里要凑够几处才值得按上一字段处置。留空按 1 算；与 MinCount 分开，因为
+    /// lint 的门限是给文档定的，回复里的密度是另一件事。
+    /// </summary>
+    public int? ReplyMinCount { get; set; }
     public string Detail { get; set; } = "";
     /// <summary>与 Patterns 下标对齐的建议改法（可空）。</summary>
     public List<string>? Hints { get; set; }
@@ -146,6 +151,9 @@ public static class LintRuleStore
                     throw new ArgumentException(
                         $"规则 {rule.Id} 的档位非法：{genre}（可选 {string.Join("、", GenreIds)}）");
             // 文档或小说专属判据标可打断是配置错：实时闸只跑智能体档（含通用判据），这个值在那里读不到
+            if (rule.ReplyMinCount is < 1)
+                throw new ArgumentException($"规则 {rule.Id} 的回复门限小于 1");
+
             if (rule.BlocksReply
                 && rule.Genres.Count > 0
                 && !rule.Genres.Contains("agent", StringComparer.OrdinalIgnoreCase))
@@ -181,6 +189,7 @@ public static class LintRuleStore
         Id = r.Id, Group = r.Group, Title = r.Title, Kind = r.Kind,
         Patterns = new List<string>(r.Patterns), Scope = r.Scope,
         Genres = new List<string>(r.Genres), BlocksReply = r.BlocksReply,
+        ReplyMinCount = r.ReplyMinCount,
         TailChars = r.TailChars, MinCount = r.MinCount, Severity = r.Severity,
         SkipInMarkdown = r.SkipInMarkdown,
         Detail = r.Detail, Hints = r.Hints is null ? null : new List<string>(r.Hints),

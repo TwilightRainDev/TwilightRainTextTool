@@ -10,22 +10,27 @@ public sealed record ReplyShapeHit(string Id, string Title, string Token, int Li
 
 /// <summary>
 /// 回复里机器词与越界字符的定位：每条判据一行一处，围栏代码块整块不看。
-/// 判据与正则都取自规则表（<see cref="RuleIds"/>）。按「出现即算」匹配，不看 Scope 与 MinCount。
+/// 判据与正则都取自规则表（<see cref="RuleIds"/>）。默认出现即算；规则表里标了回复门限的，
+/// 要同一段内凑够那个数才返回，不够的整段不提（单处行话既不值得打断也不值得提醒）。
 /// </summary>
 public sealed class ReplyShapeScanner
 {
     /// <summary>
     /// 本扫描器消费的规则 Id。外部系统按这些 Id 认契约，改名等于改对方的调用；
     /// </summary>
-    public static readonly IReadOnlyList<string> RuleIds =
-        new[] { "agent-code-list", "agent-truncated-path", "emoji-and-symbols", "violent-verbs" };
+    public static readonly IReadOnlyList<string> RuleIds = new[]
+    {
+        "agent-code-list", "agent-truncated-path", "emoji-and-symbols", "violent-verbs",
+        "agent-process-jargon", "agent-smoke-jargon", "agent-test-jargon",
+        "agent-conclusion-first", "agent-permission-ask",
+    };
 
-    private readonly List<(string Id, string Title, bool Blocks, List<Regex> Patterns)> _shapes;
+    private readonly List<(string Id, string Title, bool Blocks, int MinCount, List<Regex> Patterns)> _shapes;
 
     public ReplyShapeScanner(IEnumerable<LintRule> rules)
     {
         var byId = rules.ToDictionary(r => r.Id, StringComparer.OrdinalIgnoreCase);
-        _shapes = new List<(string, string, bool, List<Regex>)>();
+        _shapes = new List<(string, string, bool, int, List<Regex>)>();
         foreach (var id in RuleIds)
         {
             if (!byId.TryGetValue(id, out var rule))
@@ -35,7 +40,7 @@ public sealed class ReplyShapeScanner
             // 多条模式是正常形状（装饰符号按码区分了五条），空表才是配置错
             if (rule.Patterns.Count == 0)
                 throw new InvalidOperationException($"规则 {id} 没有模式");
-            _shapes.Add((rule.Id, rule.Title, rule.BlocksReply,
+            _shapes.Add((rule.Id, rule.Title, rule.BlocksReply, rule.ReplyMinCount ?? 1,
                 rule.Patterns.Select(p => RegexGuard.Create(p)).ToList()));
         }
     }
@@ -49,11 +54,21 @@ public sealed class ReplyShapeScanner
     public IReadOnlyList<ReplyShapeHit> Scan(string text)
     {
         var hits = new List<ReplyShapeHit>();
+        var lines = text.Split('\n');
+        // 段落按空行切：门限判据按这个口径数，与文档侧的空行分段一致
+        var paragraphOfLine = new int[lines.Length + 1];
+        int paragraph = 0;
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (lines[i].Trim().Length == 0) paragraph++;
+            paragraphOfLine[i + 1] = paragraph;
+        }
+
         // 同一行同一个片段只报一次：一段正文里同一个写法复述两遍，读者的问题只有一个
         var seen = new HashSet<string>(StringComparer.Ordinal);
         bool inFence = false;
         int line = 0;
-        foreach (var raw in text.Split('\n'))
+        foreach (var raw in lines)
         {
             line++;
             if (FenceLine.IsMatch(raw))
@@ -62,7 +77,7 @@ public sealed class ReplyShapeScanner
                 continue;
             }
             if (inFence) continue;
-            foreach (var (id, title, blocks, patterns) in _shapes)
+            foreach (var (id, title, blocks, _, patterns) in _shapes)
                 foreach (var pattern in patterns)
                     foreach (Match match in pattern.Matches(raw))
                     {
@@ -70,6 +85,23 @@ public sealed class ReplyShapeScanner
                         hits.Add(new ReplyShapeHit(id, title, match.Value, line, blocks));
                     }
         }
-        return hits;
+
+        return ApplyMinCount(hits, paragraphOfLine);
+    }
+
+    /// <summary>门限以下的命中不返回：够不着门限的判据在回复里连提一句都不值。</summary>
+    private IReadOnlyList<ReplyShapeHit> ApplyMinCount(
+        List<ReplyShapeHit> hits, int[] paragraphOfLine)
+    {
+        var thresholds = _shapes.ToDictionary(s => s.Id, s => s.MinCount, StringComparer.OrdinalIgnoreCase);
+        if (thresholds.Values.All(t => t <= 1)) return hits;
+
+        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var hit in hits)
+            counts[$"{hit.Id}\u0000{paragraphOfLine[hit.Line]}"] =
+                counts.GetValueOrDefault($"{hit.Id}\u0000{paragraphOfLine[hit.Line]}") + 1;
+
+        return hits.Where(hit =>
+            counts[$"{hit.Id}\u0000{paragraphOfLine[hit.Line]}"] >= thresholds[hit.Id]).ToList();
     }
 }

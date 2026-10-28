@@ -92,7 +92,7 @@ public class LintRuleStoreTests
     }
 
     [Fact]
-    public void GetDefaultRules_数据规则49条且顺序完整()
+    public void GetDefaultRules_数据规则51条且顺序完整()
     {
         var ids = LintRuleStore.GetDefaultRules().Select(r => r.Id).ToArray();
 
@@ -106,7 +106,7 @@ public class LintRuleStoreTests
                     "trailer-ending", "outline-residue", "synopsis-register", "connective-scene-shift",
                     "agent-commit-hash", "agent-code-list", "agent-path-list", "agent-cli-option",
                     "agent-smoke-jargon", "agent-test-jargon", "agent-process-jargon", "agent-inline-code",
-                    "agent-truncated-path" },
+                    "agent-truncated-path", "agent-conclusion-first", "agent-permission-ask" },
             ids);
     }
 
@@ -152,11 +152,18 @@ public class LintRuleStoreTests
         Assert.Equal(new[] { "fiction" }, rules["fiction-vague-nominalization"].Genres);
         Assert.Equal(new[] { "doc" }, rules["anthropomorphic-subject"].Genres);
 
-        // 能不能打断：只有裸代号与截断路径标了，其余按默认不打断
+        // 能不能打断：裸代号、截断路径、行话族、结论先行标了；装饰符号与正文求许可按默认只提醒
         Assert.True(rules["agent-code-list"].BlocksReply);
         Assert.True(rules["agent-truncated-path"].BlocksReply);
+        Assert.True(rules["agent-smoke-jargon"].BlocksReply);
+        Assert.True(rules["agent-conclusion-first"].BlocksReply);
         Assert.False(rules["emoji-and-symbols"].BlocksReply);
-        Assert.False(rules["agent-smoke-jargon"].BlocksReply);
+        Assert.False(rules["agent-permission-ask"].BlocksReply);
+
+        // 行话族的回复门限与 lint 门限分开：lint 单处就报，回复里一段两处才打断
+        Assert.Equal(1, rules["agent-process-jargon"].MinCount);
+        Assert.Equal(2, rules["agent-process-jargon"].ReplyMinCount);
+        Assert.Null(rules["agent-code-list"].ReplyMinCount);
 
         // 智能体档：四条按有无判，四条按段内密度判；档位只属于智能体档
         Assert.All(
@@ -205,6 +212,16 @@ public class LintRuleStoreTests
 
         var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
         Assert.Contains("agent", ex.Message);
+    }
+
+    [Fact]
+    public void Validate_回复门限小于一即抛()
+    {
+        var rule = Rule("agent-process-jargon");
+        rule.ReplyMinCount = 0;
+
+        var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
+        Assert.Contains("回复门限", ex.Message);
     }
 
     [Fact]

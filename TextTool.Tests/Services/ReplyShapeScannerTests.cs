@@ -12,6 +12,9 @@ public class ReplyShapeScannerTests
     private const string 截断路径 = "agent-truncated-path";
     private const string 装饰符号 = "emoji-and-symbols";
     private const string 暴力说法 = "violent-verbs";
+    private const string 流程行话 = "agent-process-jargon";
+    private const string 结论先行 = "agent-conclusion-first";
+    private const string 求许可 = "agent-permission-ask";
 
     private static ReplyShapeScanner Scanner() => new(LintRuleStore.GetDefaultRules());
 
@@ -146,6 +149,37 @@ public class ReplyShapeScannerTests
         Assert.True(Hits("看 S1。")[0].Blocks);
         Assert.True(Hits("见 TextTool/doc\u2026/final.md 那份文件。")[0].Blocks);
         Assert.False(Hits("修好了 \u2705").Single(h => h.Id == 装饰符号).Blocks);
+    }
+
+    [Fact]
+    public void 行话要一段里凑够两处才返回()
+    {
+        // 单处行话既不值得打断也不值得提醒，整段不提
+        Assert.DoesNotContain(Hits("这段只有一处收口。"), h => h.Id == 流程行话);
+
+        var hits = Hits("这段收口了，也落盘了。\n\n另一段只有一处收口。").Where(h => h.Id == 流程行话).ToList();
+
+        Assert.Equal(new[] { "收口", "落盘" }, hits.Select(h => h.Token));
+        Assert.All(hits, h => Assert.True(h.Blocks));
+    }
+
+    [Fact]
+    public void 门限按段算而不是按行算()
+    {
+        // 两处行话分在两段，各自都够不着门限
+        Assert.DoesNotContain(Hits("这段收口。\n\n那段落盘。"), h => h.Id == 流程行话);
+    }
+
+    [Fact]
+    public void 结论先行与正文求许可各有各的强度()
+    {
+        var hits = Hits("先说结论，这条能跑。\n\n要不要我下一步接进闸？");
+
+        var conclusion = Assert.Single(hits.Where(h => h.Id == 结论先行));
+        Assert.True(conclusion.Blocks);
+
+        var ask = Assert.Single(hits.Where(h => h.Id == 求许可));
+        Assert.False(ask.Blocks);
     }
 
     [Theory]

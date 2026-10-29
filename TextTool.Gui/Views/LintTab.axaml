@@ -17,8 +17,8 @@
     所以外面不套 ScrollViewer：套了星号行就失去意义，报告区自己会滚。
     报告正文由 LintRunner 与 LintOutput 按当前界面语言渲染，本页只把结果放进只读框。
 
-    上半左边是输入与选项，右边是规则侧栏。规则有二十来条，纵向铺开会把粘贴框压没，
-    所以侧栏只给高度上限，条数再多也在自己框里滚。
+    上半左边是输入与选项，右边是规则侧栏。侧栏只有一个入口按钮与一行摘要：
+    勾选哪几条规则在弹窗里做，与预设方案窗同一套操作，侧栏不随规则条数变长。
   -->
   <Grid Margin="16" RowDefinitions="*,Auto,*">
 
@@ -73,18 +73,12 @@
         规则侧栏：只跑选中的规则，全部选中等同全跑，实现见 code-behind 的 SelectedOnlyIds。
         列表宽度高度都只给上限：外部规则的标题可能很长，条数也可能很多，都不该把左边挤没或顶满整页。
       -->
-      <Grid Grid.Column="1" RowDefinitions="Auto,Auto" VerticalAlignment="Top">
-        <TextBlock x:Name="OnlyLabel" Grid.Row="0" />
-        <!--
-          用勾选框而不是多选列表：多选列表用系统强调色铺满选中项，浅色主题下
-          整块变蓝，看不出哪些被选中、也不知道那是可点的。
-        -->
-        <ScrollViewer Grid.Row="1" Margin="0,0,0,8" MaxWidth="180" MaxHeight="160"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled">
-          <StackPanel x:Name="RuleItems" />
-        </ScrollViewer>
-      </Grid>
+      <StackPanel Grid.Column="1" VerticalAlignment="Top" MaxWidth="200" Spacing="8">
+        <TextBlock x:Name="OnlyLabel" />
+        <Button x:Name="RulePresetButton" Click="OnOpenRulePreset"
+                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+        <TextBlock x:Name="OnlySummaryLabel" Classes="muted" TextWrapping="Wrap" />
+      </StackPanel>
 
     </Grid>
 

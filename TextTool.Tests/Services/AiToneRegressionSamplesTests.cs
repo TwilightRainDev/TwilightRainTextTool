@@ -9,9 +9,10 @@ namespace TextTool.Tests.Services;
 /// 口径（作者拍定）：**人写的命中也在期望之内**——「人类写也不惯着」。
 /// 样本里的规则代号已按现行口径泛化（旧代号写成「命中数」之类）——读者读不懂的键比泛化更致命。
 /// 行尾注释只标出处**类别**（博客 / 技能文档 / 记忆条 / 评审记录）：那些原始文件不随本仓库分发。
-/// 所以本类只钉两件事：
+/// 所以本类只钉三件事：
 /// 1. 每一处「反而」都要报出来（漏报一处 AI 味，就是留一个病灶——实测那一批漏报 8 处，全是 AI 原话）；
-/// 2. 「算…账」的术语护栏必须挡住（`结算账户`/`核算账目`/`账单日` 这类真术语不是套话）。
+/// 2. 「算…账」的术语护栏必须挡住（`结算账户`/`核算账目`/`账单日` 这类真术语不是套话）；
+/// 3. 社区洁癖四条照报，同时不把字面相近的日常叙述算进去。
 ///
 /// 改判据先跑这些用例：「反而」那条取裸词而非词表，正是因为词表档位在这批样本上漏掉了 8 处 AI 原话。
 /// </summary>
@@ -20,9 +21,10 @@ public class AiToneRegressionSamplesTests
     private static AiToneLintService Service() => new(LintRuleStore.GetDefaultRules());
 
     // 规则在报告与 --only 里的标识。码只在这里各出现一次，用例正文一律按现象名引用——
-    // 读用例的人不必先解码，改规则 Id 时也只改这两行。
+    // 读用例的人不必先解码，改规则 Id 时也只改这三行。
     private const string 强加反转 = "forced-reversal";
     private const string 算账式引出数据 = "accounting-cliche";
+    private const string 社区洁癖 = "fiction-community-taste";
 
     private static List<LintHit> HitsOf(string id, string text) =>
         Service().Scan(text, "样本.txt").Hits.Where(h => h.Id == id).ToList();
@@ -87,5 +89,29 @@ public class AiToneRegressionSamplesTests
     public void 算账术语护栏挡住真术语(string text)
     {
         Assert.Empty(HitsOf(算账式引出数据, text));
+    }
+
+    /// <summary>
+    /// 社区洁癖四条：石子投湖、抿唇、绞手、指节泛白。它们在真人稿里同样出现，收进来按社区口碑，
+    /// 不是人机差分结论。因此判据只认固定搭配，字面相近的日常叙述一条都不能吃——护栏用例见下。
+    /// </summary>
+    [Theory]
+    [InlineData("像一颗石子投入湖中，在心底泛起涟漪。")]
+    [InlineData("那些话如石头投入水面，久久不散。")]
+    [InlineData("她的嘴唇最终只抿成一条直线。")]
+    [InlineData("双手无意识地绞在一起。")]
+    [InlineData("指节因为用力而泛白。")]
+    public void 社区洁癖四条报出(string text)
+    {
+        Assert.NotEmpty(HitsOf(社区洁癖, text));
+    }
+
+    [Theory]
+    [InlineData("小孩把石头扔进水里，溅了一身。")]
+    [InlineData("她抿了一口茶，把杯子放下。")]
+    [InlineData("两根麻绳绞在一起，解不开了。")]
+    public void 社区洁癖护栏挡住日常叙述(string text)
+    {
+        Assert.Empty(HitsOf(社区洁癖, text));
     }
 }

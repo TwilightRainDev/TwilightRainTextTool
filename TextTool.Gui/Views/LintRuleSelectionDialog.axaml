@@ -1,0 +1,55 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TextTool.Gui.Views.LintRuleSelectionDialog"
+        Width="640" Height="560"
+        MinWidth="480" MinHeight="360"
+        WindowStartupLocation="CenterOwner">
+
+  <!--
+    预设规则勾选窗。布局与预设方案勾选窗同源：树占剩余高度，其余行一律 Auto，
+    下面依次是规则操作行、行内提示、右下角的取消与确定。控件尺寸不写死，窗口只给初值与下限。
+    缺输入、校验失败、删除确认全部走行内文字，不弹系统对话框。
+  -->
+  <Grid Margin="12" RowDefinitions="*,Auto,Auto,Auto">
+
+    <!-- 规则树：顶层是可勾选的组，展开后是组内的规则，每条规则也能单独勾 -->
+    <TreeView x:Name="RulesTree" Grid.Row="0"
+              SelectionChanged="OnRuleSelected"
+              DoubleTapped="OnTreeDoubleTapped"
+              ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
+
+    <!--
+      规则操作行。删除按钮点下去后原地显示确认与取消两个按钮：
+      两个按钮放在同一个无间距的容器里，删按钮隐藏时不留空档。
+    -->
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,10,0,0">
+      <Button x:Name="NewButton" Click="OnNew" />
+      <Button x:Name="EditButton" Click="OnEdit" IsEnabled="False" />
+      <StackPanel Orientation="Horizontal">
+        <Button x:Name="DeleteButton" Click="OnDeleteRequest" IsEnabled="False" />
+        <StackPanel x:Name="DeleteConfirmPanel" Orientation="Horizontal" Spacing="8"
+                    IsVisible="False">
+          <Button x:Name="ConfirmDeleteButton" Click="OnDeleteConfirm" />
+          <Button x:Name="CancelDeleteButton" Click="OnDeleteCancel" />
+        </StackPanel>
+      </StackPanel>
+    </StackPanel>
+
+    <!-- 摘要与行内提示：摘要随勾选实时刷新，错误与删除确认用警告色 -->
+    <StackPanel Grid.Row="2" Margin="0,8,0,0" Spacing="4">
+      <TextBlock x:Name="SummaryLabel" Classes="muted" TextWrapping="Wrap" />
+      <TextBlock x:Name="HintLabel" Classes="muted" TextWrapping="Wrap" IsVisible="False" />
+      <TextBlock x:Name="WarningLabel" TextWrapping="Wrap" IsVisible="False"
+                 Foreground="{DynamicResource WarningFg}" />
+    </StackPanel>
+
+    <!-- 取消 / 确定，主操作在右 -->
+    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8"
+                Margin="0,10,0,0">
+      <Button x:Name="CancelButton" Click="OnCancel" />
+      <Button x:Name="OkButton" Classes="primary" Click="OnOk" />
+    </StackPanel>
+
+  </Grid>
+
+</Window>

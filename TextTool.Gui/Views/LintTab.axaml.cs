@@ -26,7 +26,7 @@ public partial class LintTab : UserControl
 
     private readonly List<string> _selectedFiles = new();
 
-    /// <summary>规则清单，列表里显示 Title，选中项对应 <see cref="LintRunner.Run"/> 的 onlyIds。</summary>
+    /// <summary>规则清单。勾中的那几条对应 <see cref="LintRunner.Run"/> 的 onlyIds。</summary>
     private List<LintRule> _rules = new();
 
     /// <summary>上一次扫过的输入与选项。换语言时拿它重扫，不重新读盘、不重新取选中项。</summary>
@@ -35,11 +35,8 @@ public partial class LintTab : UserControl
     private string? _lastGenre;
     private IReadOnlyCollection<string>? _lastOnlyIds;
 
-    /// <summary>本页正在改列表选中状态时为真，避免 SelectionChanged 回头再改一遍。</summary>
-    private readonly List<(LintRule Rule, CheckBox Box)> _ruleChecks = new();
-
-    /// <summary>程序改勾选状态时用它挡住回调，避免把刚勾回去的那条又判成零选。</summary>
-    private bool _syncingRules;
+    /// <summary>勾中的规则 Id。等于整张表时检查那一步传 null，理由见 SelectedOnlyIds。</summary>
+    private HashSet<string> _selectedRuleIds = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>动态文案记下键与参数，切语言时按新语言重刷。</summary>
     private Message? _result;
@@ -102,7 +99,9 @@ public partial class LintTab : UserControl
         GenreFictionItem.Content = Loc.T("LintGenreFiction");
         GenreAgentItem.Content = Loc.T("LintGenreAgent");
         BtnLint.Content = _running ? Loc.T("StatusLintRunning") : Loc.T("BtnLint");
+        RulePresetButton.Content = Loc.T("BtnLintRulePreset");
         HintLabel.Text = Loc.T("HintLint");
+        RefreshOnlySummary();
 
         InlineWarning.Text = Format(_warning);
         InlineWarning.IsVisible = _warning is not null;
@@ -131,10 +130,11 @@ public partial class LintTab : UserControl
     // ================================================================
 
     /// <summary>
-    /// 取规则清单填进列表，默认全选。配置读不出来时列表留空、按全跑处理，
+    /// 取规则清单。keepIds 为 null 表示全部勾上（程序启动与首次读表），
+    /// 否则只勾这些 Id，表里没有的丢掉。配置读不出来时清单留空、按全跑处理，
     /// 并用现有文案在这里提示一次；检查那一步会把同一个错误再抛一次，走 ErrorOccurred。
     /// </summary>
-    private void LoadRules()
+    private void LoadRules(IReadOnlyCollection<string>? keepIds = null)
     {
         try
         {
@@ -143,45 +143,64 @@ public partial class LintTab : UserControl
         catch (Exception ex)
         {
             _rules = new();
+            _selectedRuleIds = new(StringComparer.OrdinalIgnoreCase);
             ShowWarning("MsgConfigBroken", ex.Message);
             return;
         }
 
-        BuildRuleChecks();
-    }
+        var keep = keepIds is null
+            ? null
+            : new HashSet<string>(keepIds, StringComparer.OrdinalIgnoreCase);
+        _selectedRuleIds = new HashSet<string>(
+            _rules.Where(rule => keep is null || keep.Contains(rule.Id)).Select(rule => rule.Id),
+            StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>每条规则一个勾选框，默认全勾。规则名是数据不是文案，按原样显示。</summary>
-    private void BuildRuleChecks()
-    {
-        _ruleChecks.Clear();
-        RuleItems.Children.Clear();
-
-        foreach (LintRule rule in _rules)
-        {
-            var box = new CheckBox
-            {
-                Content = rule.Title,
-                IsChecked = true,
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-
-            box.IsCheckedChanged += (_, _) => OnRuleToggled(box);
-            _ruleChecks.Add((rule, box));
-            RuleItems.Children.Add(box);
-        }
-
-        ApplyGenreToRuleChecks();
+        RefreshOnlySummary();
     }
 
     /// <summary>
-    /// 切档位：不适用的规则置灰并取消勾选。
-    /// 勾着一条小说规则又要跑文档档，引擎会直接报错——那是对的（两种沉默必须分开），
-    /// 但界面不该让这种组合先被选出来。
+    /// 打开预设规则勾选窗。窗里可以新建、编辑、删除判据，都直接写规则文件，
+    /// 所以回来重读一次表；勾选按窗里交回来的那批算，报告按新规则重放。
+    /// </summary>
+    private async void OnOpenRulePreset(object? sender, RoutedEventArgs e)
+    {
+        if (TopLevel.GetTopLevel(this) is not Window owner)
+            return;
+
+        List<string>? selected = await LintRuleSelectionDialog.ShowAsync(owner, _selectedRuleIds, SelectedGenre());
+        if (selected is null)
+            return;
+
+        LoadRules(selected);
+        await RerenderReportAsync();
+    }
+
+    /// <summary>侧栏摘要：本档实际会跑几条，全部规则共几条。</summary>
+    private void RefreshOnlySummary()
+    {
+        // XAML 解析期间下拉框的初始选中项也会触发档位变更，那时侧栏还没建出来
+        if (OnlySummaryLabel is null)
+            return;
+
+        int applicable = _rules.Count(AppliesToGenre);
+        int selected = _rules.Count(rule => _selectedRuleIds.Contains(rule.Id) && AppliesToGenre(rule));
+        OnlySummaryLabel.Text = Loc.T("LintRuleSelectedSummary", selected, applicable);
+    }
+
+    /// <summary>这条规则在当前档位下跑不跑。规则自己的 Genres 为空表示各档通用。</summary>
+    private bool AppliesToGenre(LintRule rule) =>
+        SelectedGenre() is not { } genre
+        || rule.Genres.Count == 0
+        || rule.Genres.Contains(genre, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// 切档位：报告与摘要都按新档重算。不适用的规则本来就不会跑，
+    /// 勾选集合不去动它，切回来还是原来那批。
     /// </summary>
     private async void OnGenreChanged(object? sender, SelectionChangedEventArgs e)
     {
-        ApplyGenreToRuleChecks();
-        if (_ruleChecks.Count == 0 || _running || string.IsNullOrEmpty(ReportBox.Text))
+        RefreshOnlySummary();
+        if (_rules.Count == 0 || _running || string.IsNullOrEmpty(ReportBox.Text))
             return;
 
         // 报告是上一次档位算的，换了档就得按新档重放，留着旧结果等于骗人
@@ -189,64 +208,16 @@ public partial class LintTab : UserControl
         await RerenderReportAsync();
     }
 
-    private void ApplyGenreToRuleChecks()
-    {
-        if (_ruleChecks.Count == 0)
-            return;
-
-        string? genre = SelectedGenre();
-        _syncingRules = true;
-        try
-        {
-            foreach (var (rule, box) in _ruleChecks)
-            {
-                bool applies = genre is null
-                    || rule.Genres.Count == 0
-                    || rule.Genres.Contains(genre, StringComparer.OrdinalIgnoreCase);
-                box.IsEnabled = applies;
-                if (!applies)
-                    box.IsChecked = false;
-            }
-        }
-        finally
-        {
-            _syncingRules = false;
-        }
-    }
-
     /// <summary>
-    /// 一条都不勾在引擎那边没有对应的意思：只有「传一批 Id」与「不传」两种，
-    /// 空集合直接报错。所以勾掉最后一条时把它勾回去，界面上不会出现零选。
-    /// </summary>
-    private void OnRuleToggled(CheckBox source)
-    {
-        if (_syncingRules || source.IsChecked == true)
-            return;
-
-        if (_ruleChecks.Any(pair => pair.Box.IsChecked == true))
-            return;
-
-        _syncingRules = true;
-        try
-        {
-            source.IsChecked = true;
-        }
-        finally
-        {
-            _syncingRules = false;
-        }
-    }
-
-    /// <summary>
-    /// 选中项就是 onlyIds，全选时返回 null。全选必须传 null 而不是全部 Id：
+    /// 勾中的就是 onlyIds，全选时返回 null。全选必须传 null 而不是全部 Id：
     /// 算法规则由代码产出（见 AiToneLintService.AlgorithmRuleIds），不在本列表里，
     /// 传一份数据规则的 Id 会把算法规则的命中一并筛掉。
     /// </summary>
     private IReadOnlyCollection<string>? SelectedOnlyIds()
     {
-        var selected = _ruleChecks
-            .Where(pair => pair.Box.IsChecked == true)
-            .Select(pair => pair.Rule.Id)
+        var selected = _rules
+            .Where(rule => _selectedRuleIds.Contains(rule.Id) && AppliesToGenre(rule))
+            .Select(rule => rule.Id)
             .ToList();
 
         return selected.Count == 0 || selected.Count == _rules.Count ? null : selected;

@@ -59,6 +59,9 @@ public static class LintRuleStore
     /// <summary>资源名前缀取 RootNamespace（TextTool），不是程序集名（TextTool.Core）。</summary>
     internal const string EmbeddedResourceName = "TextTool.default_lint_rules.json";
 
+    /// <summary>外部规则的文件名。界面写它，命令行读它，路径固定为程序目录。</summary>
+    public const string OverrideFileName = "lint_rules.json";
+
     /// <summary>
     /// 档位取值全集。三处要用：规则文件的档位校验、命令行 --genre 的取值校验、界面的下拉项。
     /// 拼错一个字母的档位（novel、agents）不会报错，规则会在所有档位下静默不跑，所以只列这一次。
@@ -68,7 +71,7 @@ public static class LintRuleStore
     public static List<LintRule> Load()
     {
         var builtIn = GetDefaultRules();
-        var external = JsonFileStore.Load<LintRule>("lint_rules.json");
+        var external = LoadOverrides();
         // 两侧各自先校验，再合并，再校验合并结果。四个边界各有理由：
         // 算法撞码——external 的 Id 撞上代码产出的算法 Id 时先挡下来；
         // 内置侧——Merge 会 Clone，Patterns 为 null 时 Clone 先 NRE；
@@ -80,6 +83,27 @@ public static class LintRuleStore
         var merged = Merge(builtIn, external);
         Validate(merged);
         return merged;
+    }
+
+    /// <summary>
+    /// 程序目录里那份外部规则。它只存被改过的条目，按 Id 覆盖内置；空列表就是全部走内置。
+    /// 界面上的词表编辑页与命令行读的是同一份文件，改完两边立刻一致。
+    /// </summary>
+    /// <param name="baseDir">仅测试注入用，生产路径固定为程序目录。</param>
+    public static List<LintRule> LoadOverrides(string? baseDir = null) =>
+        JsonFileStore.Load<LintRule>(OverrideFileName, baseDir: baseDir);
+
+    /// <summary>
+    /// 写回外部规则。先按内置实际合并一遍再校验，坏数据不落盘：
+    /// 写一个非法正则进文件，下次启动 Load 会抛，程序起不来。
+    /// </summary>
+    /// <param name="baseDir">仅测试注入用，生产路径固定为程序目录。</param>
+    public static void SaveOverrides(List<LintRule> rules, string? baseDir = null)
+    {
+        ValidateNoAlgorithmIdCollision(rules);
+        Validate(rules);
+        Validate(Merge(GetDefaultRules(), rules));
+        JsonFileStore.Save(OverrideFileName, rules, baseDir);
     }
 
     public static List<LintRule> GetDefaultRules()

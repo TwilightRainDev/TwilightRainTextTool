@@ -14,6 +14,11 @@ public class GenreTierTests
     // 规则 Id 只在这里各出现一次，用例正文按现象名引用；改 Id 时只改这几行。
     private const string 套话词 = "cliche-words";
     private const string 网文脸 = "fiction-body-tics";
+    private const string 生理反应 = "fiction-physio-tics";
+    private const string 氛围道具 = "fiction-atmosphere-props";
+    private const string 强势腔 = "fiction-dominant-register";
+    private const string 外文混排 = "foreign-script-mix";
+    private const string 中文夹英文 = "latin-word-in-cjk";
     private const string 程度词堆叠 = "fiction-filler-modifiers";
     private const string 陈词比喻 = "fiction-dead-metaphor";
     private const string 心理告知 = "fiction-emotion-telling";
@@ -41,7 +46,7 @@ public class GenreTierTests
 
     [Theory]
     [InlineData(网文脸, "他眼中闪过一丝不耐，嘴角勾起一抹笑。")]
-    [InlineData(网文脸, "她深吸一口气，心头一震，瞳孔微缩。")]
+    [InlineData(网文脸, "她深吸一口气，心头一震，垂下眼睑。")]
     [InlineData(程度词堆叠, "她微微侧头，语气里带着些许冷，还藏着几分不甘，只剩一抹苦笑。")]
     [InlineData(陈词比喻, "他的话像潮水般涌来，仿佛整个世界都被淹了一般。")]
     [InlineData(陈词比喻, "她哭得梨花带雨，笑得如沐春风。")]
@@ -50,6 +55,9 @@ public class GenreTierTests
     [InlineData(副词重复, "他猛地站起，椅子刮过地面。她猛地回头。")]
     [InlineData(抽象名词化, "他目光里有一种读不懂的东西。")]
     [InlineData(万能比喻, "他语气很轻，像是在说今天天气不错。")]
+    [InlineData(生理反应, "他瞳孔骤然收缩。")]
+    [InlineData(生理反应, "她呼吸一滞，瞬间僵住。")]
+    [InlineData(生理反应, "他的理智崩塌了，眼底泛起一丝暗红。")]
     public void 小说档规则命中样本(string id, string text)
     {
         Assert.NotEmpty(Hits(text, "fiction", id));
@@ -62,9 +70,31 @@ public class GenreTierTests
     [InlineData(心理告知, "此刻，她终于意识到自己错了。")]
     [InlineData(抽象名词化, "他目光里有一种读不懂的东西。")]
     [InlineData(万能比喻, "他语气很轻，像是在说今天天气不错。")]
+    [InlineData(生理反应, "他瞳孔骤然收缩。")]
+    [InlineData(氛围道具, "空气仿佛凝固，屋里氤氲着热气。")]
+    [InlineData(强势腔, "他死盯着她，目光充满占有欲。")]
+    [InlineData(中文夹英文, "他 subtly 退开半步。")]
     public void 文档档不报小说规则(string id, string text)
     {
         Assert.Empty(Hits(text, "doc", id));
+    }
+
+    [Theory]
+    [InlineData("他低声说了一句почти。")]
+    [InlineData("他低声说了一句có gǎng。")]
+    public void 外文混排三档都报(string text)
+    {
+        // 字符集判据不跑词表：模型把语气词写成别国文字，与档位无关
+        foreach (var genre in new[] { "doc", "fiction", "agent" })
+            Assert.NotEmpty(Hits(text, genre, 外文混排));
+    }
+
+    [Fact]
+    public void 中文夹英文词只在小说档报()
+    {
+        // 同人译名与品牌名也会命中，所以只到提醒级，且不进文档档与智能体档
+        Assert.NotEmpty(Hits("他 subtly 退开半步。", "fiction", 中文夹英文));
+        Assert.Empty(Hits("他 subtly 退开半步。", "agent", 中文夹英文));
     }
 
     [Theory]

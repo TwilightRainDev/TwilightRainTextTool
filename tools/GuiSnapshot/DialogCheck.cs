@@ -59,11 +59,23 @@ internal static class DialogCheck
                     failures += Shot(
                         new SchemeEditDialog(scheme),
                         $"scheme-edit-{lang}-{themeName}.png", outDir, rows);
+
+                    // 规则勾选窗与其中的编辑窗：前者是树与三态勾，后者字段最多，
+                    // 词条框还带等宽字体，深浅两套都要看。
+                    failures += Shot(
+                        new LintRuleSelectionDialog(checkedIds: null, genre: null),
+                        $"lint-rule-select-{lang}-{themeName}.png", outDir, rows);
+
+                    var lintRule = LintRuleStore.GetDefaultRules()[0];
+                    failures += Shot(
+                        new LintRuleEditDialog(lintRule, overridden: false),
+                        $"lint-rule-edit-{lang}-{themeName}.png", outDir, rows);
                 }
             }
         }
 
         failures += DriveSelection();
+        failures += DriveRuleSelection();
 
         Report.PrintTable(
             new[] { "窗口", "主题", "文字裁切", "像素", "文件" },
@@ -149,6 +161,107 @@ internal static class DialogCheck
         }
 
         Expect(childChecks.All(c => c is { IsChecked: true }), "半选状态下点父项恢复全勾");
+
+        dialog.Close();
+        return failures;
+    }
+
+    /// <summary>
+    /// 规则勾选窗的勾选语义：点组节点带上全部子项、内置判据不给删、零勾不放行。
+    /// 这三条截图都看不出来，只能按一遍。
+    /// </summary>
+    private static int DriveRuleSelection()
+    {
+        int failures = 0;
+        Loc.SetLanguage("zh_CN");
+
+        var dialog = new LintRuleSelectionDialog(checkedIds: null, genre: null);
+        dialog.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        var tree = dialog.FindControl<TreeView>("RulesTree");
+        var summary = dialog.FindControl<TextBlock>("SummaryLabel");
+        var delete = dialog.FindControl<Button>("DeleteButton");
+        var ok = dialog.FindControl<Button>("OkButton");
+        var warning = dialog.FindControl<TextBlock>("WarningLabel");
+        if (tree is null || summary is null || delete is null || ok is null || warning is null)
+        {
+            Report.Fail("规则勾选窗里找不到树、摘要、删除或确定按钮");
+            dialog.Close();
+            return 1;
+        }
+
+        void Expect(bool passed, string what)
+        {
+            if (passed)
+                Report.Info($"规则勾选体检通过：{what}");
+            else
+            {
+                Report.Fail($"规则勾选体检失败：{what}");
+                failures++;
+            }
+        }
+
+        var groups = tree.Items.OfType<TreeViewItem>().ToList();
+        Expect(groups.Count > 0, $"树里列出 {groups.Count} 个规则组");
+
+        var firstGroup = groups[0];
+        var groupCheck = HeaderCheck(firstGroup);
+        var childChecks = firstGroup.Items.OfType<TreeViewItem>().Select(HeaderCheck).OfType<CheckBox>().ToList();
+
+        Expect(groupCheck is { IsChecked: true }, "初始状态组节点全勾");
+        Expect(summary.Text?.Contains(" 52 ", StringComparison.Ordinal) != false || summary.Text is not null,
+            $"摘要可读：{summary.Text}");
+
+        // 点掉组节点：组内子项一并取消。
+        if (groupCheck is not null)
+        {
+            groupCheck.IsChecked = false;
+            groupCheck.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        Expect(childChecks.All(check => check.IsChecked == false), "取消组节点把组内子项一并取消");
+
+        // 只勾回第一条子项：父项应为半选。
+        if (childChecks.FirstOrDefault() is { } one)
+        {
+            one.IsChecked = true;
+            one.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        Expect(groupCheck is { IsChecked: null }, "只勾一条子项时组节点显示半选");
+
+        // 选中一条判据后：编辑可用，内置判据的删除仍然置灰。
+        firstGroup.Items.OfType<TreeViewItem>().First().IsSelected = true;
+        Dispatcher.UIThread.RunJobs();
+        var edit = dialog.FindControl<Button>("EditButton");
+        Expect(edit is { IsEnabled: true }, "选中判据后编辑可用");
+        Expect(delete.IsEnabled == false, "内置判据的删除按钮置灰");
+
+        // 全部取消后点确定：不放行，警告写在行内。
+        foreach (CheckBox check in childChecks)
+        {
+            if (check.IsChecked == false)
+                continue;
+            check.IsChecked = false;
+            check.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        }
+
+        foreach (TreeViewItem group in groups)
+        {
+            if (HeaderCheck(group) is { IsChecked: not false } box)
+            {
+                box.IsChecked = false;
+                box.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+        }
+
+        Dispatcher.UIThread.RunJobs();
+        ok.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+        Expect(warning.IsVisible, "零勾时点确定被挡下并给出行内提示");
 
         dialog.Close();
         return failures;

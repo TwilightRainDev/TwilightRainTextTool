@@ -92,17 +92,18 @@ public class LintRuleStoreTests
     }
 
     [Fact]
-    public void GetDefaultRules_数据规则51条且顺序完整()
+    public void GetDefaultRules_数据规则57条且顺序完整()
     {
         var ids = LintRuleStore.GetDefaultRules().Select(r => r.Id).ToArray();
 
-        // 顺序即分组：通用规则在前，小说档十条、智能体档九条垫后。档位是过滤器，规则全表只有这一份。
+        // 顺序即分组：通用规则在前，小说档十六条、智能体档十一条垫后。档位是过滤器，规则全表只有这一份。
         Assert.Equal(
-            new[] { "repeated-punctuation", "ellipsis-style", "mixed-punctuation-width", "dash-and-tilde", "tilde-run", "invisible-characters", "emoji-and-symbols",
+            new[] { "repeated-punctuation", "ellipsis-style", "mixed-punctuation-width", "dash-and-tilde", "tilde-run", "invisible-characters", "emoji-and-symbols", "foreign-script-mix",
                     "cliche-words", "ai-frequent-words", "vague-attribution", "training-cutoff-disclaimer", "chatbot-artifacts", "sycophancy", "filler-phrases",
                     "parallel-contrast", "paragraph-ordinals", "elevated-ending", "stacked-modifiers", "copula-avoidance", "inline-title-list", "forced-reversal", "accounting-cliche",
                     "adverb-overuse", "violent-verbs", "hedging-ending", "anthropomorphic-subject", "doc-process-residue", "assistant-persona", "meta-commentary-marker",
-                    "fiction-body-tics", "fiction-filler-modifiers", "fiction-dead-metaphor", "fiction-emotion-telling", "fiction-vague-nominalization", "fiction-vague-simile", "synopsis-formula",
+                    "fiction-body-tics", "fiction-physio-tics", "fiction-atmosphere-props", "fiction-dominant-register",
+                    "fiction-filler-modifiers", "fiction-dead-metaphor", "fiction-emotion-telling", "fiction-vague-nominalization", "fiction-vague-simile", "fiction-community-taste", "latin-word-in-cjk", "synopsis-formula",
                     "trailer-ending", "outline-residue", "synopsis-register", "connective-scene-shift",
                     "agent-commit-hash", "agent-code-list", "agent-path-list", "agent-cli-option",
                     "agent-smoke-jargon", "agent-test-jargon", "agent-process-jargon", "agent-inline-code",
@@ -148,6 +149,12 @@ public class LintRuleStoreTests
         Assert.Empty(rules["adverb-overuse"].Genres);
         Assert.Empty(rules["violent-verbs"].Genres);
         Assert.Equal(new[] { "fiction" }, rules["fiction-body-tics"].Genres);
+        Assert.Equal(new[] { "fiction" }, rules["fiction-physio-tics"].Genres);
+        Assert.Equal(new[] { "fiction" }, rules["fiction-atmosphere-props"].Genres);
+        Assert.Equal(new[] { "fiction" }, rules["fiction-dominant-register"].Genres);
+        Assert.Equal(new[] { "fiction" }, rules["latin-word-in-cjk"].Genres);
+        // 外文字符判据走字符集不跑词表，三档都要报，所以档位留空
+        Assert.Empty(rules["foreign-script-mix"].Genres);
         Assert.Equal(new[] { "fiction" }, rules["fiction-emotion-telling"].Genres);
         Assert.Equal(new[] { "fiction" }, rules["fiction-vague-nominalization"].Genres);
         Assert.Equal(new[] { "doc" }, rules["anthropomorphic-subject"].Genres);
@@ -189,6 +196,13 @@ public class LintRuleStoreTests
         Assert.Equal(2, rules["adverb-overuse"].MinCount);
         Assert.Equal("paragraph", rules["fiction-filler-modifiers"].Scope);
         Assert.Equal(3, rules["fiction-filler-modifiers"].MinCount);
+        // 氛围道具按段内密度判：单处氤氲是白描，凑够两处才是布景板
+        Assert.Equal("paragraph", rules["fiction-atmosphere-props"].Scope);
+        Assert.Equal(2, rules["fiction-atmosphere-props"].MinCount);
+        // 四条新小说判据都不带打断权：实时闸只跑智能体档与通用判据
+        Assert.All(
+            new[] { "fiction-physio-tics", "fiction-atmosphere-props", "fiction-dominant-register", "latin-word-in-cjk" },
+            id => Assert.False(rules[id].BlocksReply));
     }
 
     [Fact]
@@ -338,5 +352,58 @@ public class LintRuleStoreTests
     public void ValidateNoAlgorithmIdCollision_数据规则Id放行()
     {
         LintRuleStore.ValidateNoAlgorithmIdCollision(new List<LintRule> { Rule("cliche-words"), Rule("X9") });
+    }
+
+    /// <summary>
+    /// 界面上的词表编辑页把改动写进程序目录的 lint_rules.json，这里钉住三件事：
+    /// 写进去能读回来、坏规则不落盘、清空即回到内置。
+    /// </summary>
+    [Fact]
+    public void SaveOverrides_写入后能原样读回()
+    {
+        using var dir = new TempDir();
+        var rule = Rule("cliche-words", "改过的词");
+        rule.Genres = new List<string> { "fiction" };
+
+        LintRuleStore.SaveOverrides(new List<LintRule> { rule }, dir.Path);
+
+        var loaded = LintRuleStore.LoadOverrides(dir.Path);
+        var only = Assert.Single(loaded);
+        Assert.Equal("cliche-words", only.Id);
+        Assert.Equal(new[] { "改过的词" }, only.Patterns);
+        Assert.Equal(new[] { "fiction" }, only.Genres);
+    }
+
+    [Fact]
+    public void SaveOverrides_非法正则不落盘()
+    {
+        using var dir = new TempDir();
+        var rule = Rule("cliche-words");
+        rule.Kind = "regex";
+        rule.Patterns = new List<string> { "(未闭合" };
+
+        Assert.Throws<ArgumentException>(
+            () => LintRuleStore.SaveOverrides(new List<LintRule> { rule }, dir.Path));
+
+        // 校验在写盘之前：磁盘上不能留下一条会让下次启动直接报错的规则
+        Assert.False(File.Exists(Path.Combine(dir.Path, LintRuleStore.OverrideFileName)));
+    }
+
+    [Fact]
+    public void SaveOverrides_空列表写到磁盘再读回是空表()
+    {
+        using var dir = new TempDir();
+        LintRuleStore.SaveOverrides(new List<LintRule> { Rule("cliche-words") }, dir.Path);
+        LintRuleStore.SaveOverrides(new List<LintRule>(), dir.Path);
+
+        Assert.Empty(LintRuleStore.LoadOverrides(dir.Path));
+    }
+
+    [Fact]
+    public void SaveOverrides_文件不存在时读回空表()
+    {
+        using var dir = new TempDir();
+
+        Assert.Empty(LintRuleStore.LoadOverrides(dir.Path));
     }
 }

@@ -92,7 +92,7 @@ public class AiToneRegressionSamplesTests
     }
 
     /// <summary>
-    /// 社区洁癖四条：石子投湖、抿唇、绞手、指节泛白。它们在真人稿里同样出现，收进来按社区口碑，
+    /// 社区洁癖五族：石子投湖、抿唇、绞手、指节泛白、指甲掐掌心。它们在真人稿里同样出现，收进来按社区口碑，
     /// 不是人机差分结论。因此判据只认固定搭配，字面相近的日常叙述一条都不能吃——护栏用例见下。
     /// </summary>
     [Theory]
@@ -101,7 +101,9 @@ public class AiToneRegressionSamplesTests
     [InlineData("她的嘴唇最终只抿成一条直线。")]
     [InlineData("双手无意识地绞在一起。")]
     [InlineData("指节因为用力而泛白。")]
-    public void 社区洁癖四条报出(string text)
+    [InlineData("他指甲深陷进掌心，把话咽了回去。")]
+    [InlineData("指甲抠得发白，他把手缩进袖子里。")]
+    public void 社区洁癖五族报出(string text)
     {
         Assert.NotEmpty(HitsOf(社区洁癖, text));
     }
@@ -110,6 +112,8 @@ public class AiToneRegressionSamplesTests
     [InlineData("小孩把石头扔进水里，溅了一身。")]
     [InlineData("她抿了一口茶，把杯子放下。")]
     [InlineData("两根麻绳绞在一起，解不开了。")]
+    [InlineData("他指甲深陷在泥里，一拔就带出一截草根。")]
+    [InlineData("她把指甲剪短，怕干活时劈了。")]
     public void 社区洁癖护栏挡住日常叙述(string text)
     {
         Assert.Empty(HitsOf(社区洁癖, text));

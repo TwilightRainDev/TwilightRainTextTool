@@ -734,6 +734,37 @@
     "Detail": "中文句子里夹一个英文副词或形容词（他 subtly 退开半步）——同人译名与品牌名也会命中，这条只提醒"
   },
   {
+    "Id": "fiction-bold-template",
+    "Group": "punctuation",
+    "Title": "正文里的加粗模板",
+    "Kind": "regex",
+    "Patterns": [
+      "\\*\\*[^*\\n]{1,60}\\*\\*"
+    ],
+    "Genres": [
+      "fiction"
+    ],
+    "Severity": "warn",
+    "Detail": "小说正文里出现加粗标记，不论长短——出版文本不这样强调，系统提示与判定结果的模板才这么排"
+  },
+  {
+    "Id": "fiction-machine-numbers",
+    "Group": "punctuation",
+    "Title": "机器式数值",
+    "Kind": "regex",
+    "Patterns": [
+      "\\d+\\.\\d+\\s*(?:%|克|毫米|厘米|升|秒|小时|倍)",
+      "(?<![\\d.])\\d+\\s*%",
+      "\\d{1,2}:\\d{2}(?::\\d{2})?",
+      "第\\s*\\d+\\s*条"
+    ],
+    "Genres": [
+      "fiction"
+    ],
+    "Severity": "info",
+    "Detail": "带小数的量、百分比、时间码、条款编号——机器与公文这样写数值，叙事写「七八成」「二百来块」；汉字数字不管"
+  },
+  {
     "Id": "synopsis-formula",
     "Group": "syntax",
     "Title": "简介模板骨架",

@@ -92,18 +92,20 @@ public class LintRuleStoreTests
     }
 
     [Fact]
-    public void GetDefaultRules_数据规则57条且顺序完整()
+    public void GetDefaultRules_全部规则与顺序固定()
     {
         var ids = LintRuleStore.GetDefaultRules().Select(r => r.Id).ToArray();
 
-        // 顺序即分组：通用规则在前，小说档十六条、智能体档十一条垫后。档位是过滤器，规则全表只有这一份。
+        // 顺序即分组：通用规则在前，小说与智能体的专属规则垫后。档位是过滤器，规则全表只有这一份。
+        // 条数不写进名字也不写进注释：加一条规则就要改一处数字，而中文数字又搜不到。
         Assert.Equal(
             new[] { "repeated-punctuation", "ellipsis-style", "mixed-punctuation-width", "dash-and-tilde", "tilde-run", "invisible-characters", "emoji-and-symbols", "foreign-script-mix",
                     "cliche-words", "ai-frequent-words", "vague-attribution", "training-cutoff-disclaimer", "chatbot-artifacts", "sycophancy", "filler-phrases",
                     "parallel-contrast", "paragraph-ordinals", "elevated-ending", "stacked-modifiers", "copula-avoidance", "inline-title-list", "forced-reversal", "accounting-cliche",
                     "adverb-overuse", "violent-verbs", "hedging-ending", "anthropomorphic-subject", "doc-process-residue", "assistant-persona", "meta-commentary-marker",
                     "fiction-body-tics", "fiction-physio-tics", "fiction-atmosphere-props", "fiction-dominant-register",
-                    "fiction-filler-modifiers", "fiction-dead-metaphor", "fiction-emotion-telling", "fiction-vague-nominalization", "fiction-vague-simile", "fiction-community-taste", "latin-word-in-cjk", "synopsis-formula",
+                    "fiction-filler-modifiers", "fiction-dead-metaphor", "fiction-emotion-telling", "fiction-vague-nominalization", "fiction-vague-simile", "fiction-community-taste", "latin-word-in-cjk",
+                    "fiction-bold-template", "fiction-machine-numbers", "synopsis-formula",
                     "trailer-ending", "outline-residue", "synopsis-register", "connective-scene-shift",
                     "agent-commit-hash", "agent-code-list", "agent-path-list", "agent-cli-option",
                     "agent-smoke-jargon", "agent-test-jargon", "agent-process-jargon", "agent-inline-code",
@@ -153,6 +155,11 @@ public class LintRuleStoreTests
         Assert.Equal(new[] { "fiction" }, rules["fiction-atmosphere-props"].Genres);
         Assert.Equal(new[] { "fiction" }, rules["fiction-dominant-register"].Genres);
         Assert.Equal(new[] { "fiction" }, rules["latin-word-in-cjk"].Genres);
+        Assert.Equal(new[] { "fiction" }, rules["fiction-bold-template"].Genres);
+        Assert.Equal(new[] { "fiction" }, rules["fiction-machine-numbers"].Genres);
+        // 加粗模板是提醒级以上的硬信号（出版正文不排标记），数值只到提醒
+        Assert.Equal("warn", rules["fiction-bold-template"].Severity);
+        Assert.Equal("info", rules["fiction-machine-numbers"].Severity);
         // 外文字符判据走字符集不跑词表，三档都要报，所以档位留空
         Assert.Empty(rules["foreign-script-mix"].Genres);
         Assert.Equal(new[] { "fiction" }, rules["fiction-emotion-telling"].Genres);
@@ -199,7 +206,7 @@ public class LintRuleStoreTests
         // 氛围道具按段内密度判：单处氤氲是白描，凑够两处才是布景板
         Assert.Equal("paragraph", rules["fiction-atmosphere-props"].Scope);
         Assert.Equal(2, rules["fiction-atmosphere-props"].MinCount);
-        // 四条新小说判据都不带打断权：实时闸只跑智能体档与通用判据
+        // 新加的小说判据都不带打断权：实时闸只跑智能体档与通用判据
         Assert.All(
             new[] { "fiction-physio-tics", "fiction-atmosphere-props", "fiction-dominant-register", "latin-word-in-cjk" },
             id => Assert.False(rules[id].BlocksReply));

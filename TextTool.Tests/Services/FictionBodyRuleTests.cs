@@ -111,6 +111,28 @@ public class FictionBodyRuleTests
     }
 
     [Fact]
+    public void 表情与体态模板报出()
+    {
+        // 脸红像苹果、脸色惨白、眉头拧成川字、细若蚊蝇、媚眼如丝、吐气如兰、勾起下巴
+        Assert.NotEmpty(Hits("主角脸红得像苹果。", "fiction", "fiction-body-tics"));
+        Assert.NotEmpty(Hits("脸色刷地一下惨白。", "fiction", "fiction-body-tics"));
+        Assert.NotEmpty(Hits("眉头拧成川字。", "fiction", "fiction-body-tics"));
+        Assert.NotEmpty(Hits("发出蚊子般的声音细若蚊蝇。", "fiction", "fiction-body-tics"));
+        Assert.NotEmpty(Hits("一边媚眼如丝吐气如兰。", "fiction", "fiction-body-tics"));
+        Assert.NotEmpty(Hits("用一根手指勾起你的下巴。", "fiction", "fiction-body-tics"));
+    }
+
+    [Fact]
+    public void 表情与体态的日常写法不报()
+    {
+        Assert.Empty(Hits("她脸红了，低头喝了口水。", "fiction", "fiction-body-tics"));
+        Assert.Empty(Hits("他的脸色不太好，可能是没睡好。", "fiction", "fiction-body-tics"));
+        Assert.Empty(Hits("眉头皱了一下，没说话。", "fiction", "fiction-body-tics"));
+        Assert.Empty(Hits("下巴上有一道陈年的疤。", "fiction", "fiction-body-tics"));
+        Assert.Empty(Hits("她说话声音很细，尾音往下垂。", "fiction", "fiction-body-tics"));
+    }
+
+    [Fact]
     public void 石子族要比喻标记才算套话()
     {
         // 「她把一颗石子丢进水里」是写实动作，AI 的「石子丢入湖面」在字面上与它同形，

@@ -367,6 +367,16 @@ public class GenreTierTests
         Assert.NotEmpty(Hits("不可否认，这套方案赋能了整个流程。", "fiction", 套话词));
     }
 
+    [Theory]
+    [InlineData("这件事至关重要，尤為关键。")]
+    [InlineData("不容忽视的是，结果前所未有。")]
+    public void 评价式空话小说档与文档档都抓(string text)
+    {
+        // 套话词是通用规则：这四个词在两种文本里都是空话
+        Assert.NotEmpty(Hits(text, "fiction", 套话词));
+        Assert.NotEmpty(Hits(text, "doc", 套话词));
+    }
+
     [Fact]
     public void 不给档位时跑全部规则()
     {

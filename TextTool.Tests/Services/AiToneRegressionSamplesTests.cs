@@ -103,6 +103,7 @@ public class AiToneRegressionSamplesTests
     [InlineData("指节因为用力而泛白。")]
     [InlineData("他指甲深陷进掌心，把话咽了回去。")]
     [InlineData("指甲抠得发白，他把手缩进袖子里。")]
+    [InlineData("他指甲嵌入掌心，才把话咽了回去。")]
     public void 社区洁癖五族报出(string text)
     {
         Assert.NotEmpty(HitsOf(社区洁癖, text));

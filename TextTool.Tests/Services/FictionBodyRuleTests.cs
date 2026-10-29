@@ -33,6 +33,8 @@ public class FictionBodyRuleTests
     [InlineData("他浑身僵住。")]
     [InlineData("他的理智崩塌了。")]
     [InlineData("瞳孔微缩。")]
+    [InlineData("我心中涌起一股荒诞感。")]
+    [InlineData("她挤出一滴生理性的眼泪。")]
     public void 生理反应套话报出(string text)
     {
         Assert.NotEmpty(Hits(text, "fiction", 生理反应));
@@ -43,6 +45,7 @@ public class FictionBodyRuleTests
     [InlineData("他的呼吸很沉，像是走了很远的路。")]
     [InlineData("她打了个寒战，把外套裹紧。")]
     [InlineData("他眼眶有点发酸，低头揉了揉。")]
+    [InlineData("心里泛起一点酸味，他把它按下去。")]
     public void 正常的体征叙述不报(string text)
     {
         Assert.Empty(Hits(text, "fiction", 生理反应));
@@ -88,6 +91,22 @@ public class FictionBodyRuleTests
     {
         // 气场、深渊、小兽、甬道这些词真人照写；只收搭配是这条规则的存在前提
         Assert.Empty(Hits(text, "fiction", 强势腔));
+    }
+
+    [Fact]
+    public void 动作与语气套话报出()
+    {
+        // 推了推不存在的眼镜是动作模板；语气毫无波澜与紧绷的声带是语气模板
+        Assert.NotEmpty(Hits("他抬手推了推不存在的眼镜。", "fiction", "fiction-body-tics"));
+        Assert.NotEmpty(Hits("他语气毫无波澜地补了一句。", "fiction", "fiction-body-tics"));
+        Assert.NotEmpty(Hits("他绷着紧绷的声带开口。", "fiction", "fiction-body-tics"));
+    }
+
+    [Fact]
+    public void 动作与语气套话的日常写法不报()
+    {
+        Assert.Empty(Hits("他抬手推了推眼镜，把合同翻到最后一页。", "fiction", "fiction-body-tics"));
+        Assert.Empty(Hits("弦绷紧了，再拧就要断。", "fiction", "fiction-body-tics"));
     }
 
     [Fact]

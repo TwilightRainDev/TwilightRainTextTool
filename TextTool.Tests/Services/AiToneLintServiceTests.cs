@@ -187,6 +187,26 @@ public class AiToneLintServiceTests
     }
 
     [Fact]
+    public void Scan_双引号里嵌单引号不算混用()
+    {
+        // 中文规范写法：外层双引号、内层单引号。两套里各用一个是嵌套，不是风格对撑。
+        var text = "他说：“我记住了‘下次一定’这句话。”";
+
+        Assert.DoesNotContain(Service().Scan(text, "t.txt").Hits, h => h.Id == "mixed-quote-style");
+    }
+
+    [Fact]
+    public void Scan_弯引号与直角引号共现仍算混用()
+    {
+        // 两套字体共现才是真混用：这不是嵌套，是同一篇里换了引号字体
+        var text = "他说“好”，又说「行」。";
+
+        var hit = Assert.Single(Service().Scan(text, "t.txt").Hits.Where(h => h.Id == "mixed-quote-style"));
+        Assert.Contains("弯引号", hit.Detail);
+        Assert.Contains("直角引号", hit.Detail);
+    }
+
+    [Fact]
     public void Scan_段落长度均一产出C1统计项()
     {
         var text = string.Join("\n", Enumerable.Repeat(new string('字', 20), 5));

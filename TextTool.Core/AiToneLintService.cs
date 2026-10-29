@@ -128,14 +128,16 @@ public sealed class AiToneLintService
         }
     }
 
-    private static readonly (string Key, string Name, Regex Pattern)[] QuoteStyles =
+    // 同一套引号里的双引号与单引号不是两种风格：中文规范用法就是「双引号里嵌单引号」，
+    // 按单个字符算会把规范的嵌套引用判成混用。Family 只用来判混用，展示仍按单个名称报数量。
+    private static readonly (string Family, string Key, string Name, Regex Pattern)[] QuoteStyles =
     {
-        ("ascii-double", "ASCII 直引号", RegexGuard.Create("\"")),
-        ("curly-double", "弯引号", RegexGuard.Create("[“”]")),
-        ("corner", "直角引号", RegexGuard.Create("[「」]")),
-        ("double-corner", "双直角引号", RegexGuard.Create("[『』]")),
-        ("ascii-single", "ASCII 直单引号", RegexGuard.Create("'")),
-        ("curly-single", "弯单引号", RegexGuard.Create("[‘’]")),
+        ("curly", "curly-double", "弯引号", RegexGuard.Create("[“”]")),
+        ("curly", "curly-single", "弯单引号", RegexGuard.Create("[‘’]")),
+        ("ascii", "ascii-double", "ASCII 直引号", RegexGuard.Create("\"")),
+        ("ascii", "ascii-single", "ASCII 直单引号", RegexGuard.Create("'")),
+        ("corner", "corner", "直角引号", RegexGuard.Create("[「」]")),
+        ("corner", "double-corner", "双直角引号", RegexGuard.Create("[『』]")),
     };
 
     private static readonly Regex OrdinalSkeleton = RegexGuard.Create("首先|其次|再次|最后|其一|其二|其三");
@@ -160,12 +162,14 @@ public sealed class AiToneLintService
         // mixed-quote-style 引号风格混用：命中定位到全文最早出现的引号字符，规模写进 Detail
         var used = QuoteStyles
             .Select(s => (
+                s.Family,
                 Name: _text.Get($"LintQuote_{s.Key}", s.Name),
                 Count: s.Pattern.Matches(text).Count,
                 Index: s.Pattern.Match(text).Index))
             .Where(s => s.Count > 0)
             .ToList();
-        if (used.Count > 1)
+        // 按套判，不按单个字符判：双引号里嵌单引号是规范写法，不是混用
+        if (used.Select(s => s.Family).Distinct().Count() > 1)
         {
             int first = used.Min(s => s.Index);
             var (line, col) = lineStarts.Locate(first);

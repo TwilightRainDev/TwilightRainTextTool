@@ -96,8 +96,9 @@ public class FictionBodyRuleTests
     [Fact]
     public void 动作与语气套话报出()
     {
-        // 推了推不存在的眼镜是动作模板；语气毫无波澜与紧绷的声带是语气模板
+        // 推眼镜本身就算动作模板，不管有没有「不存在的」那层变体
         Assert.NotEmpty(Hits("他抬手推了推不存在的眼镜。", "fiction", "fiction-body-tics"));
+        Assert.NotEmpty(Hits("他抬手推了推眼镜，把合同翻到最后一页。", "fiction", "fiction-body-tics"));
         Assert.NotEmpty(Hits("他语气毫无波澜地补了一句。", "fiction", "fiction-body-tics"));
         Assert.NotEmpty(Hits("他绷着紧绷的声带开口。", "fiction", "fiction-body-tics"));
     }
@@ -105,7 +106,7 @@ public class FictionBodyRuleTests
     [Fact]
     public void 动作与语气套话的日常写法不报()
     {
-        Assert.Empty(Hits("他抬手推了推眼镜，把合同翻到最后一页。", "fiction", "fiction-body-tics"));
+        Assert.Empty(Hits("他把眼镜摘下来擦了擦。", "fiction", "fiction-body-tics"));
         Assert.Empty(Hits("弦绷紧了，再拧就要断。", "fiction", "fiction-body-tics"));
     }
 

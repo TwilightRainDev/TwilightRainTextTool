@@ -22,6 +22,8 @@ public partial class LintRuleEditDialog : Window
     /// <summary>规则表被写过时为真，调用方据此重读列表。</summary>
     public bool Changed { get; private set; }
 
+    public LintRuleEditDialog() : this(new LintRule(), false) { }
+
     public LintRuleEditDialog(LintRule rule, bool overridden)
     {
         InitializeComponent();

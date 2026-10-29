@@ -152,6 +152,10 @@ public sealed class AiToneLintService
     internal const int ShortSentenceMaxChars = 10;
     internal const int ShortSentenceMinRun = 4;
 
+    /// <summary>逐字重复的下限：短于这个长度的段落与句子不比对，否则「好。」「他点了点头。」会把整篇报成重复。</summary>
+    internal const int MinRepeatParagraphChars = 20;
+    internal const int MinRepeatSentenceChars = 12;
+
     /// <summary>显式序号标记：行首的 1. / 1、/ 1) / （1）/ 一、 之类硬编号。</summary>
     private static readonly Regex ExplicitOrdinalMarker = RegexGuard.Create(
         @"(?m)^[ \t]*(?:[0-9]{1,2}[.、)]|[（(][0-9]{1,2}[)）]|[一二三四五六七八九十]+[.、])");
@@ -311,6 +315,77 @@ public sealed class AiToneLintService
                     "显式序号标记 {0} 处——结构化排版的典型痕迹",
                     markers),
             });
+
+        ScanRepeatedVerbatim(text, paragraphs, report, lineStarts);
+    }
+
+    /// <summary>
+    /// repeated-verbatim 逐字重复：完全相同的段落或句子再次出现时报出来。
+    /// 只比逐字相同（去首尾空白后完全相等），近似复述不在此列——那要相似度阈值，
+    /// 误伤对象是排比、副歌式的刻意反复。段重复时不再逐句报：同一段报一遍就够。
+    /// </summary>
+    private void ScanRepeatedVerbatim(string text, List<(int Offset, string Text)> paragraphs,
+        LintReport report, LineStarts lineStarts)
+    {
+        var firstSeen = new Dictionary<string, (int Line, int Col)>(StringComparer.Ordinal);
+        var repeatedRanges = new List<(int Start, int End)>();
+
+        void Report(int offset, string body)
+        {
+            var (line, col) = lineStarts.Locate(offset);
+            var (firstLine, firstCol) = firstSeen[body];
+            report.Hits.Add(new LintHit
+            {
+                Id = "repeated-verbatim", Group = "structure", Severity = "warn",
+                Title = _text.Get("LintRule_repeated-verbatim_Title", "逐字重复"),
+                Line = line, Col = col, Length = body.Length,
+                Match = body, Snippet = Snippet(text, offset, body.Length),
+                Detail = _text.Get("LintRule_repeated-verbatim_Detail",
+                    "与第 {0} 行第 {1} 列逐字相同", firstLine, firstCol),
+            });
+        }
+
+        foreach (var (offset, body) in paragraphs)
+        {
+            if (body.Length < MinRepeatParagraphChars) continue;
+            if (firstSeen.TryAdd(body, lineStarts.Locate(offset)))
+                continue;
+            Report(offset, body);
+            repeatedRanges.Add((offset, offset + body.Length));
+        }
+
+        // 句子级的首现表单独一份：段与句的长度不同，同一段的两份不会互相冒充
+        firstSeen.Clear();
+        foreach (var (offset, body) in SentenceBlocks(text))
+        {
+            if (body.Length < MinRepeatSentenceChars) continue;
+            if (repeatedRanges.Any(r => offset >= r.Start && offset < r.End)) continue;
+            if (firstSeen.TryAdd(body, lineStarts.Locate(offset)))
+                continue;
+            Report(offset, body);
+        }
+    }
+
+    /// <summary>按句末标点切句，带上原文偏移，供逐字比对定位用。</summary>
+    private static IEnumerable<(int Offset, string Text)> SentenceBlocks(string text)
+    {
+        int start = 0;
+        for (int i = 0; i < text.Length; i++)
+        {
+            if (text[i] is not ('。' or '！' or '？' or '…')) continue;
+            foreach (var block in Trimmed(text, start, i + 1)) yield return block;
+            start = i + 1;
+        }
+        foreach (var block in Trimmed(text, start, text.Length)) yield return block;
+    }
+
+    private static IEnumerable<(int Offset, string Text)> Trimmed(string text, int from, int to)
+    {
+        if (to <= from) yield break;
+        int start = from, end = to;
+        while (start < end && char.IsWhiteSpace(text[start])) start++;
+        while (end > start && char.IsWhiteSpace(text[end - 1])) end--;
+        if (end > start) yield return (start, text[start..end]);
     }
 
     private static double StdDev(List<double> values, double mean)

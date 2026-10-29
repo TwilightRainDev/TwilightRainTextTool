@@ -324,5 +324,7 @@
   "LintGroupLexis": "Lexis and cliches",
   "LintGroupSyntax": "Syntax",
   "LintGroupStructure": "Structure",
-  "LintGroupStatistics": "Statistics"
+  "LintGroupStatistics": "Statistics",
+  "LintRule_repeated-verbatim_Title": "Verbatim repetition",
+  "LintRule_repeated-verbatim_Detail": "Identical to line {0}, column {1}"
 }

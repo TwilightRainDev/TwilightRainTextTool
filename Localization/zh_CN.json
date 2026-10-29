@@ -324,5 +324,7 @@
   "LintGroupLexis": "词汇与套话",
   "LintGroupSyntax": "句法与结构",
   "LintGroupStructure": "篇章结构",
-  "LintGroupStatistics": "统计特征"
+  "LintGroupStatistics": "统计特征",
+  "LintRule_repeated-verbatim_Title": "逐字重复",
+  "LintRule_repeated-verbatim_Detail": "与第 {0} 行第 {1} 列逐字相同"
 }

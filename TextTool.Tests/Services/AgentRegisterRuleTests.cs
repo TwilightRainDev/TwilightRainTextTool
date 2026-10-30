@@ -45,6 +45,11 @@ public class AgentRegisterRuleTests
     [InlineData(测试行话, "断言全部通过，单测也绿了。")]
     [InlineData(流程行话, "按你选的口径这轮不落盘，等收口之后再入仓。")]
     [InlineData(流程行话, "那条断链先从档位配置里摘掉。")]
+    [InlineData(流程行话, "门禁全过之后才能合并。")]
+    [InlineData(流程行话, "先灰度发布再放量，出异常就立刻回滚。")]
+    [InlineData(流程行话, "建立唯一基线，拍快照，存证据链。")]
+    [InlineData(流程行话, "先干跑一次，再上故障注入。")]
+    [InlineData(流程行话, "探针埋好了，接着跑验收矩阵。")]
     [InlineData(行内代码, "改 `LintRule.cs` 的 `Genres` 字段、`LintRunner` 的 `GenreIds` 判断、`LintTab.axaml` 的下拉项，还有三份 `Localization` 的键。")]
     public void 智能体回复里的机器形状报出(string id, string text)
     {
@@ -59,6 +64,7 @@ public class AgentRegisterRuleTests
     [InlineData(冒烟行话, "我跑了一遍安装包，装完能打开。")]
     [InlineData(测试行话, "他断言明年会更好。")]
     [InlineData(流程行话, "他把文件从磁盘上删了，重启之后好了。")]
+    [InlineData(流程行话, "这张照片先转成灰度图，再调对比度。")]
     [InlineData(行内代码, "改 `package.json` 里的一行就够了。")]
     public void 人写的同类句子不报(string id, string text)
     {

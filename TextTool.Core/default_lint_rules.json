@@ -335,7 +335,11 @@
     "Scope": "paragraph",
     "MinCount": 2,
     "Severity": "warn",
-    "Detail": "段内序数词骨架"
+    "Detail": "段内序数词骨架",
+    "Genres": [
+      "doc",
+      "agent"
+    ]
   },
   {
     "Id": "elevated-ending",

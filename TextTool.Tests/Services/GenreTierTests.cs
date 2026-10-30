@@ -13,6 +13,7 @@ public class GenreTierTests
 {
     // 规则 Id 只在这里各出现一次，用例正文按现象名引用；改 Id 时只改这几行。
     private const string 套话词 = "cliche-words";
+    private const string 序数词 = "paragraph-ordinals";
     private const string 网文脸 = "fiction-body-tics";
     private const string 生理反应 = "fiction-physio-tics";
     private const string 氛围道具 = "fiction-atmosphere-props";
@@ -429,6 +430,30 @@ public class GenreTierTests
     }
 
     [Fact]
+    public void 序数词骨架小说档不报()
+    {
+        // 叙事里「再次」「最后」是日常用词，两类判据在小说档都只剩误报：
+        // 段内序数词与序数词骨架统计项都不出声
+        var text = "他再次抬手，涟漪再次升起，再次平息。\n最后一枚石子入水时，涟漪散得更远。";
+
+        Assert.Empty(Hits(text, "fiction", "paragraph-ordinals"));
+        var notes = LintRunner.Run(new[] { ("样本.txt", text) }, null, null, "fiction")
+            .Reports[0].Notes.Select(n => n.Id).ToList();
+        Assert.DoesNotContain("ordinal-skeleton", notes);
+    }
+
+    [Fact]
+    public void 序数词骨架文档档照报()
+    {
+        var text = "首先看输入，其次看输出，最后看中间结果。";
+
+        Assert.NotEmpty(Hits(text, "doc", 序数词));
+        var notes = LintRunner.Run(new[] { ("t.md", text) }, null, null, "doc")
+            .Reports[0].Notes.Select(n => n.Id).ToList();
+        Assert.Contains("ordinal-skeleton", notes);
+    }
+
+    [Fact]
     public void 小说档仍跑通用规则()
     {
         // 档位是过滤不是替换：小说档照样要抓套话
@@ -438,7 +463,7 @@ public class GenreTierTests
     [Theory]
     [InlineData("这件事至关重要，尤為关键。")]
     [InlineData("不容忽视的是，结果前所未有。")]
-    public void 评价式空话小说档与文档档都抓(string text)
+    public void 评价空话小说档与文档档都抓(string text)
     {
         // 套话词是通用规则：这四个词在两种文本里都是空话
         Assert.NotEmpty(Hits(text, "fiction", 套话词));

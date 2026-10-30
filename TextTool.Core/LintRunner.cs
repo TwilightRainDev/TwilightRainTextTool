@@ -55,7 +55,7 @@ public static class LintRunner
         var service = new AiToneLintService(rules, lintText);
         var reportSet = new LintReportSet();
         foreach (var (file, text) in inputs)
-            reportSet.Reports.Add(service.Scan(text, file).Filter(onlyIds, minSeverity));
+            reportSet.Reports.Add(service.Scan(text, file, genre).Filter(onlyIds, minSeverity));
         return reportSet;
     }
 }

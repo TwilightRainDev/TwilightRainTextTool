@@ -124,6 +124,8 @@ public class LintRuleStoreTests
         Assert.Equal(3, rules["ai-frequent-words"].MinCount);
 
         Assert.Equal("paragraph", rules["paragraph-ordinals"].Scope);
+        // 序数词只在文档与智能体回复里查：小说里「再次」「最后」是日常用词
+        Assert.Equal(new[] { "doc", "agent" }, rules["paragraph-ordinals"].Genres);
         Assert.Equal(2, rules["paragraph-ordinals"].MinCount);
 
         Assert.Equal("paragraph", rules["elevated-ending"].Scope);

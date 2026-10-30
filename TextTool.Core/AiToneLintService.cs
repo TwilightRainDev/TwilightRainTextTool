@@ -23,7 +23,7 @@ public sealed class AiToneLintService
     private string RuleText(string id, string field, string fallback) =>
         _text.Get($"LintRule_{id}_{field}", fallback);
 
-    public LintReport Scan(string text, string fileName)
+    public LintReport Scan(string text, string fileName, string? genre = null)
     {
         string mode = DetectParagraphMode(text);
         var report = new LintReport { File = fileName, Chars = text.Length, ParagraphMode = mode };
@@ -44,7 +44,7 @@ public sealed class AiToneLintService
                 ScanDocumentScope(rule, text, report, lineStarts);
         }
 
-        ScanAlgorithmRules(text, mode, report, lineStarts);
+        ScanAlgorithmRules(text, mode, report, lineStarts, genre);
         // 命中按 (行, 列) 排一次：同一规则的多条 Pattern 各扫一遍会让行号来回跳。
         // 同一位置的多条命中保序（OrderBy 稳定），repeated-punctuation/ellipsis-style 这类同跨度双报的次序不动。
         // 人读渲染只做组内排序（LintTextFormatter.Format），整表排序在这里——
@@ -165,7 +165,7 @@ public sealed class AiToneLintService
         @"(?m)^[ \t]*(?:[0-9]{1,2}[.、)]|[（(][0-9]{1,2}[)）]|[一二三四五六七八九十]+[.、])");
 
     private void ScanAlgorithmRules(string text, string mode, LintReport report,
-        LineStarts lineStarts)
+        LineStarts lineStarts, string? genre)
     {
         // mixed-quote-style 引号风格混用：命中定位到全文最早出现的引号字符，规模写进 Detail
         var used = QuoteStyles
@@ -296,9 +296,11 @@ public sealed class AiToneLintService
                     "LintNote_exclamation-density", "叹号密度偏高：{0} 个 / {1} 字", exclam, text.Length),
             });
 
-        // ordinal-skeleton 序数词骨架密度
+        // ordinal-skeleton 序数词骨架密度。
+        // 小说档不查：模型写小说本来就不会排「首先……其次……」，而「再次」「最后」在叙事里是日常用词，
+        // 一段里凑够两次就会误报（实测一篇投石头的散文里两处「再次」就够门限）。
         int ordinals = OrdinalSkeleton.Matches(text).Count;
-        if (ordinals >= 2)
+        if (ordinals >= 2 && !string.Equals(genre, "fiction", StringComparison.OrdinalIgnoreCase))
             report.Notes.Add(new LintNote
             {
                 Id = "ordinal-skeleton",

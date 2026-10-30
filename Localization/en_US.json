@@ -330,5 +330,7 @@
   "LintRule_repeated-token-run_Title": "Repeated run",
   "LintRule_repeated-token-run_Detail": "「{0}」repeated {1} times",
   "LintRule_fiction-sensation-tics_Title": "Sensation cliché",
-  "LintRule_fiction-sensation-tics_Detail": "Feelings written as ready-made noun phrases: falling into an ice cave, mind going blank, a puppet on strings. The reader gets a label, not anything concrete. Real writers also use these, so this rule only hints"
+  "LintRule_fiction-sensation-tics_Detail": "Feelings written as ready-made noun phrases: falling into an ice cave, mind going blank, a puppet on strings. The reader gets a label, not anything concrete. Real writers also use these, so this rule only hints",
+  "LintRule_fiction-synonym-chain_Title": "Synonym chain",
+  "LintRule_fiction-synonym-chain_Detail": "Two near-synonymous clauses side by side in one paragraph: the reader gets the same thing twice. Needs two in a paragraph; a single one is ordinary writing"
 }

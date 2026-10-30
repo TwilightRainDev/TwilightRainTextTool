@@ -332,5 +332,7 @@
   "LintRule_fiction-sensation-tics_Title": "Sensation cliché",
   "LintRule_fiction-sensation-tics_Detail": "Feelings written as ready-made noun phrases: falling into an ice cave, mind going blank, a puppet on strings. The reader gets a label, not anything concrete. Real writers also use these, so this rule only hints",
   "LintRule_fiction-synonym-chain_Title": "Synonym chain",
-  "LintRule_fiction-synonym-chain_Detail": "Two near-synonymous clauses side by side in one paragraph: the reader gets the same thing twice. Needs two in a paragraph; a single one is ordinary writing"
+  "LintRule_fiction-synonym-chain_Detail": "Two near-synonymous clauses side by side in one paragraph: the reader gets the same thing twice. Needs two in a paragraph; a single one is ordinary writing",
+  "LintRule_fiction-proportion-eyes_Title": "Emotion by the numbers",
+  "LintRule_fiction-proportion-eyes_Detail": "Feelings sliced into fractions: one part disdain, two parts displeasure, three parts coldness. The reader gets a pie chart legend instead of a person. Needs two in a paragraph"
 }

@@ -47,6 +47,7 @@ public class GenreTierTests
 
     [Theory]
     [InlineData(网文脸, "他眼中闪过一丝不耐，嘴角勾起一抹笑。")]
+    [InlineData(网文脸, "温热的气息让你水光潋滟。")]
     [InlineData(网文脸, "她深吸一口气，心头一震，垂下眼睑。")]
     [InlineData(程度词堆叠, "她微微侧头，语气里带着些许冷，还藏着几分不甘，只剩一抹苦笑。")]
     [InlineData(陈词比喻, "他的话像潮水般涌来，仿佛整个世界都被淹了一般。")]
@@ -54,6 +55,7 @@ public class GenreTierTests
     [InlineData(陈词比喻, "那番话说下来像是一把手术刀。")]
     [InlineData(陈词比喻, "那双眼睛如同两颗宝石。")]
     [InlineData(陈词比喻, "这句话像雷霆般击碎了她的困惑。")]
+    [InlineData(陈词比喻, "微微眯起那双深邃宝石般的眼眸。")]
     [InlineData(心理告知, "他这才明白，原来不是他想的那样。他不知道的是，门已经开了。")]
     [InlineData(心理告知, "此刻，她终于意识到自己错了。")]
     [InlineData(副词重复, "他猛地站起，椅子刮过地面。她猛地回头。")]
@@ -71,6 +73,7 @@ public class GenreTierTests
 
     [Theory]
     [InlineData(网文脸, "他眼中闪过一丝不耐，嘴角勾起一抹笑。")]
+    [InlineData(网文脸, "温热的气息让你水光潋滟。")]
     [InlineData(程度词堆叠, "她微微侧头，语气里带着些许冷，还藏着几分不甘，只剩一抹苦笑。")]
     [InlineData(陈词比喻, "他的话像潮水般涌来，仿佛整个世界都被淹了一般。")]
     [InlineData(心理告知, "此刻，她终于意识到自己错了。")]
@@ -82,6 +85,8 @@ public class GenreTierTests
     [InlineData(强势腔, "那只带着侵略性的手按在他肩上。")]
     [InlineData(强势腔, "宠溺的眼神落在她身上。")]
     [InlineData(强势腔, "如同信徒窥见神明的真容。")]
+    [InlineData(强势腔, "仿佛一尊献祭给恶神的木偶。")]
+    [InlineData(强势腔, "眼神里满是野兽般的占有欲。")]
     [InlineData(中文夹英文, "他 subtly 退开半步。")]
     public void 文档档不报小说规则(string id, string text)
     {

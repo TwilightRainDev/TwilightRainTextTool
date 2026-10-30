@@ -332,5 +332,7 @@
   "LintRule_fiction-sensation-tics_Title": "感受套话",
   "LintRule_fiction-sensation-tics_Detail": "感受被写成现成的名词短语：如坠冰窟、大脑一片空白、提线木偶。读者拿到的是一个标签，不是任何具体的东西。真人也会写「手脚冰凉」，所以这条只提示不打断",
   "LintRule_fiction-synonym-chain_Title": "同义连写",
-  "LintRule_fiction-synonym-chain_Detail": "同一段里两个近义短句并排（目光一凛、眼神一凛）：读者拿到的是同一件事说两遍。同段凑够两处才报，单处是正常写法"
+  "LintRule_fiction-synonym-chain_Detail": "同一段里两个近义短句并排（目光一凛、眼神一凛）：读者拿到的是同一件事说两遍。同段凑够两处才报，单处是正常写法",
+  "LintRule_fiction-proportion-eyes_Title": "比例式情绪",
+  "LintRule_fiction-proportion-eyes_Detail": "把情绪按分数切块（一分不屑、两分不满、三分凉薄）：读者拿到的是饼图的图例，不是一个人。社区把这种写法叫扇形统计图式眼神，同段凑够两处才报"
 }

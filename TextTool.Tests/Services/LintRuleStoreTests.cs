@@ -104,7 +104,7 @@ public class LintRuleStoreTests
                     "parallel-contrast", "paragraph-ordinals", "elevated-ending", "stacked-modifiers", "copula-avoidance", "inline-title-list", "forced-reversal", "accounting-cliche",
                     "adverb-overuse", "violent-verbs", "hedging-ending", "anthropomorphic-subject", "doc-process-residue", "assistant-persona", "meta-commentary-marker",
                     "fiction-body-tics", "fiction-physio-tics", "fiction-sensation-tics", "fiction-synonym-chain", "fiction-atmosphere-props", "fiction-dominant-register",
-                    "fiction-filler-modifiers", "fiction-dead-metaphor", "fiction-emotion-telling", "fiction-vague-nominalization", "fiction-vague-simile", "fiction-community-taste", "latin-word-in-cjk",
+                    "fiction-filler-modifiers", "fiction-dead-metaphor", "fiction-emotion-telling", "fiction-vague-nominalization", "fiction-vague-simile", "fiction-community-taste", "fiction-proportion-eyes", "latin-word-in-cjk",
                     "fiction-bold-template", "fiction-machine-numbers", "synopsis-formula",
                     "trailer-ending", "outline-residue", "synopsis-register", "connective-scene-shift",
                     "agent-commit-hash", "agent-code-list", "agent-path-list", "agent-cli-option",

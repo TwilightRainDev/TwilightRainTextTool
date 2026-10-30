@@ -161,6 +161,9 @@ public class GenreTierTests
     [InlineData("如果您确认优先级后，我继续推进。")]
     [InlineData("这部分等您确认后我再动。")]
     [InlineData("您看怎么安排？")]
+    [InlineData("如需，我可以生成验收结论摘要。")]
+    [InlineData("我可以帮你整理一份字段差异清单。")]
+    [InlineData("我可以列出一份待签字的清单。")]
     public void 正文里求许可报出(string text)
     {
         Assert.NotEmpty(Hits(text, "agent", 求许可));
@@ -169,6 +172,7 @@ public class GenreTierTests
     [Theory]
     [InlineData("如果您确认无误，请签字。")]
     [InlineData("如果你确认了，就直接发给对方。")]
+    [InlineData("我可以确认这一点，不用你操心。")]
     public void 条件句里的确认不算求许可(string text)
     {
         // 判的是等对方发话才动手，不是「假如你确认了」这种条件说明

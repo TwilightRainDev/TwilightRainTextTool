@@ -153,6 +153,23 @@
     "Detail": "正文里夹进西里尔、希腊、韩文、带声调拉丁字母或日文假名——多半是模型把语气词按别的语言写出来了"
   },
   {
+    "Id": "char-face",
+    "Group": "punctuation",
+    "Title": "越界字符",
+    "Kind": "regex",
+    "Patterns": [
+      "(?![\\u2018\\u2019\\u201c\\u201d\\u2014\\u2026\\ufeff\\ufe0f\\u200b-\\u200f\\u2060\\u00ad\\u00a0\\u2600-\\u27bf\\u2b00-\\u2bff\\u0370-\\u03ff\\u0400-\\u04ff\\u00c0-\\u024f\\u3040-\\u30ff\\uac00-\\ud7af\\ud800-\\udfff])[^ -~\\t\\r\\n\\u3000-\\u303f\\u3400-\\u4dbf\\u4e00-\\u9fff\\uf900-\\ufaff\\uff01-\\uff5e\\uffe0-\\uffe6]"
+    ],
+    "Genres": [
+      "doc",
+      "agent"
+    ],
+    "Scope": "document",
+    "MinCount": 1,
+    "Severity": "warn",
+    "Detail": "允许面之外的字：只有英文可打印区、汉字、中文全角标点三块放行。箭头、方框线、几何图形、带圈数字、约等号、乘号、人民币符号这类老控制台字体没有字形或宽度对不上，整行会错位；表情、隐形字符、外文字母、弯引号、破折号、省略号各有判据，不在此列"
+  },
+  {
     "Id": "cliche-words",
     "Group": "lexis",
     "Title": "套话词",

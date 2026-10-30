@@ -326,5 +326,7 @@
   "LintGroupStructure": "篇章結構",
   "LintGroupStatistics": "統計特徵",
   "LintRule_repeated-verbatim_Title": "逐字重複",
-  "LintRule_repeated-verbatim_Detail": "與第 {0} 行第 {1} 列逐字相同"
+  "LintRule_repeated-verbatim_Detail": "與第 {0} 行第 {1} 列逐字相同",
+  "LintRule_repeated-token-run_Title": "複讀串",
+  "LintRule_repeated-token-run_Detail": "「{0}」連寫 {1} 次"
 }

@@ -80,7 +80,7 @@ public sealed class AiToneLintService
 
     /// <summary>代码内算法规则的 Id 全集（数据规则之外的 mixed-quote-style/mixed-bracket-width 与 paragraph-length-uniform-explicit-numbering）。</summary>
     public static readonly IReadOnlyList<string> AlgorithmRuleIds =
-        new[] { "mixed-quote-style", "mixed-bracket-width", "paragraph-length-uniform", "sentence-length-uniform", "repeated-paragraph-opening", "exclamation-density", "ordinal-skeleton", "explicit-numbering", "short-sentence-run" };
+        new[] { "mixed-quote-style", "mixed-bracket-width", "paragraph-length-uniform", "sentence-length-uniform", "repeated-paragraph-opening", "exclamation-density", "ordinal-skeleton", "explicit-numbering", "short-sentence-run", "repeated-token-run" };
 
     /// <summary>算法规则与给定数据规则的 Id 并集（--only 的校验集）。</summary>
     public static IReadOnlyCollection<string> AllRuleIds(IEnumerable<LintRule> rules)
@@ -317,6 +317,105 @@ public sealed class AiToneLintService
             });
 
         ScanRepeatedVerbatim(text, paragraphs, report, lineStarts);
+        ScanRepeatedTokenRun(text, paragraphs, report, lineStarts);
+    }
+
+    /// <summary>复读串阈值：同一单元同段连写这么多遍算复读。</summary>
+    internal const int RepeatedTokenMinRun = 4;
+
+    /// <summary>单元长度的上下限：单字连写不算（那多为语气或强调，且重复标点另有规则），最长四个字。</summary>
+    internal const int RepeatedTokenMinUnit = 2;
+    internal const int RepeatedTokenMaxUnit = 4;
+
+    /// <summary>语气字与拟声字：连着写是说话的样子（「哈哈哈哈」），不是没词了。</summary>
+    private const string InterjectionChars = "哈呵嘿嘻呜哇呀吧啦嗯哦喔欸咦唔噗额呃嗗嘎啊嘤咪嘘唶";
+
+    /// <summary>
+    /// repeated-token-run 复读串：同一个单元在同一段里连写四遍以上。
+    /// 与 repeated-verbatim 分工：那条比完全相同的句子与段落，这条只看串里的重复，不要求整句相同。
+    /// 报整串一处而不是逐次报——「极其极其极其…」四十几条命中说的是一件事，
+    /// 逐次报只把报告淹掉，读者还得自己数。串里的单点命中因此让给本条。
+    /// </summary>
+    private void ScanRepeatedTokenRun(string text, List<(int Offset, string Text)> paragraphs,
+        LintReport report, LineStarts lineStarts)
+    {
+        var runs = new List<(int Start, int End)>();
+        foreach (var (offset, body) in paragraphs)
+        {
+            int i = 0;
+            while (i < body.Length)
+            {
+                var (unit, count) = FindTokenRun(body, i);
+                if (unit is null)
+                {
+                    i++;
+                    continue;
+                }
+
+                int start = offset + i;
+                int length = unit.Length * count;
+                var (line, col) = lineStarts.Locate(start);
+                report.Hits.Add(new LintHit
+                {
+                    Id = "repeated-token-run", Group = "structure", Severity = "warn",
+                    Title = _text.Get("LintRule_repeated-token-run_Title", "复读串"),
+                    Line = line, Col = col, Length = length,
+                    Match = unit, Snippet = Snippet(text, start, Math.Min(length, 40)),
+                    Detail = _text.Get(
+                        "LintRule_repeated-token-run_Detail", "「{0}」连写 {1} 次", unit, count),
+                });
+                runs.Add((start, start + length));
+                i += length;
+            }
+        }
+
+        if (runs.Count == 0) return;
+
+        // 整串已经报过一处，串里的其他命中不再各报一遍：副词同段堆叠在复读串里是同一个现象。
+        var spans = runs.Select(r =>
+        {
+            var (l1, c1) = lineStarts.Locate(r.Start);
+            var (l2, c2) = lineStarts.Locate(r.End - 1);
+            return (L1: l1, C1: c1, L2: l2, C2: c2);
+        }).ToList();
+        report.Hits.RemoveAll(h =>
+            h.Id != "repeated-token-run" && spans.Any(s => InsideSpan(s, h.Line, h.Col)));
+    }
+
+    private static bool InsideSpan((int L1, int C1, int L2, int C2) span, int line, int col)
+    {
+        if (line < span.L1 || line > span.L2) return false;
+        if (line == span.L1 && line == span.L2) return col >= span.C1 && col <= span.C2;
+        if (line == span.L1) return col >= span.C1;
+        if (line == span.L2) return col <= span.C2;
+        return true;
+    }
+
+    /// <summary>
+    /// 从 from 起的复读串：单元长度从短到长试，最短的那个凑够 RepeatedTokenMinRun 遍就是这串的周期。
+    /// 从短往长试而不是反过来：先撞上的那个才是「同一个词」（「极其极其极其」是「极其」在复读，
+    /// 不是「极其极其」在复读），报出来的 Match 也才是读者认得的那个词。
+    /// 带空白的、不含任何字母汉字的（标点、emoji）、全由语气字构成的单元都不算。
+    /// </summary>
+    private static (string? Unit, int Count) FindTokenRun(string body, int from)
+    {
+        for (int len = RepeatedTokenMinUnit; len <= RepeatedTokenMaxUnit; len++)
+        {
+            if (from + len * RepeatedTokenMinRun > body.Length) continue;
+            string unit = body.Substring(from, len);
+            if (unit.Any(char.IsWhiteSpace)) continue;
+            if (!unit.Any(char.IsLetter)) continue;
+            // 同一个字连写（「字字字字」）是强调或占位，不是词在复读。
+            if (unit.Distinct().Count() == 1) continue;
+            if (unit.All(c => InterjectionChars.Contains(c))) continue;
+
+            int count = 1;
+            while (from + len * (count + 1) <= body.Length &&
+                   string.CompareOrdinal(body, from + len * count, unit, 0, len) == 0)
+                count++;
+            if (count >= RepeatedTokenMinRun) return (unit, count);
+        }
+        return (null, 0);
     }
 
     /// <summary>

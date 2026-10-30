@@ -70,15 +70,27 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      # Linux 包不出 apphost（SDK 生成的原生启动器）：它只认几处固定位置，找不到装在
+      # ~/.dotnet 的运行时。改用 scripts/linux-launcher.sh 当启动器，下一条步骤把它复制进包里。
       - name: Publish GUI (${{ matrix.rid }})
         run: >-
           dotnet publish TextTool.Gui/TextTool.Gui.csproj -c Release -r ${{ matrix.rid }}
-          --self-contained false -o publish/TextTool.Gui/${{ matrix.rid }}
+          --self-contained false -p:UseAppHost=${{ matrix.rid == 'win-x64' }}
+          -o publish/TextTool.Gui/${{ matrix.rid }}
 
       - name: Publish CLI (${{ matrix.rid }})
         run: >-
           dotnet publish TextTool.Cli/TextTool.Cli.csproj -c Release -r ${{ matrix.rid }}
+          -p:UseAppHost=${{ matrix.rid == 'win-x64' }}
           -o publish/TextTool.Cli/${{ matrix.rid }}
+
+      # 启动器按产品名落位，dll 名由它自己的文件名推出，因此同一份脚本服务两份包。
+      - name: Install Linux launcher
+        if: matrix.rid == 'linux-x64'
+        shell: bash
+        run: |
+          cp scripts/linux-launcher.sh publish/TextTool.Cli/linux-x64/texttool
+          cp scripts/linux-launcher.sh publish/TextTool.Gui/linux-x64/TextTool.Gui
 
       - name: Sign binaries
         if: env.CODE_SIGN_CERT != ''
@@ -111,14 +123,14 @@ jobs:
           fi
           printf '%s\n' "${names[@]}" > package-names.txt
 
-      - name: Package zip
+      - name: Package zip (Windows)
+        if: matrix.rid == 'win-x64'
         shell: pwsh
         run: |
-          $rid = "${{ matrix.rid }}"
           New-Item -ItemType Directory -Path artifacts -Force | Out-Null
           foreach ($name in Get-Content package-names.txt) {
             $product = if ($name -like "TextTool-GUI-*") { "TextTool.Gui" } else { "TextTool.Cli" }
-            $src = "publish/$product/$rid"
+            $src = "publish/$product/win-x64"
             if (-not (Test-Path -LiteralPath $src)) {
               Write-Error "缺少发布目录 $src"
               exit 1
@@ -126,6 +138,23 @@ jobs:
             Compress-Archive -Path "$src/*" -DestinationPath "artifacts/$name"
             Write-Host "Packaged $name"
           }
+
+      # Linux 包必须把可执行位写进 zip：Compress-Archive 不写 Unix 权限，条目解到 Linux 上
+      # 全是 0644，启动器与界面都起不来。scripts/linux-zip.py 逐条写 external attributes：
+      # 启动器 0755，其余 0644。
+      - name: Package zip (Linux)
+        if: matrix.rid == 'linux-x64'
+        shell: bash
+        run: |
+          set -euo pipefail
+          PY="$(command -v python3 || command -v python)"
+          while read -r name; do
+            case "$name" in
+              TextTool-GUI-*) product=TextTool.Gui; launcher=TextTool.Gui ;;
+              *)              product=TextTool.Cli; launcher=texttool ;;
+            esac
+            "$PY" scripts/linux-zip.py "publish/$product/linux-x64" "artifacts/$name" "$launcher"
+          done < package-names.txt
 
       - name: Generate checksums
         shell: pwsh

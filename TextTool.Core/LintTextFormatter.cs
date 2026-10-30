@@ -25,6 +25,25 @@ public static class LintTextFormatter
         return sb.ToString();
     }
 
+    /// <summary>折叠只在处数够多时才有意义：两条命中也折叠，读者连样例都看不出来。</summary>
+    internal const int CollapseMinHits = 10;
+
+    /// <summary>折叠后列几条例样。</summary>
+    internal const int CollapseSamples = 3;
+
+    /// <summary>每千字处数，取一位小数只是为了显示，判定用原值。</summary>
+    internal static double Density(int hits, int chars) => chars <= 0 ? hits : hits * 1000.0 / chars;
+
+    /// <summary>
+    /// 该不该折叠：规则表里开了折叠密度、处数不少于 CollapseMinHits、密度达到阈值。
+    /// 只看处数不看密度会让长篇必然折叠，只看密度不看处数会让短文本的两处也折叠。
+    /// </summary>
+    internal static bool ShouldCollapse(LintReport report, string id, int hits)
+    {
+        if (!report.CollapseAtDensity.TryGetValue(id, out int threshold)) return false;
+        return hits >= CollapseMinHits && Density(hits, report.Chars) >= threshold;
+    }
+
     /// <summary>
     /// 渲染人读报告。text 为 null 时用中文原文，命令行走这条；
     /// 界面传入按当前语言取词的实现。
@@ -38,10 +57,17 @@ public static class LintTextFormatter
         {
             foreach (var group in report.Hits.GroupBy(h => $"{h.Id} {h.Title}"))
             {
-                sb.AppendLine(t.Get("LintGroupHeader", "[命中] {0}（{1} 处）", group.Key, group.Count()));
                 // 组内按 (行, 列) 升序：命中在引擎里的顺序是 规则→Pattern→位置，
                 // 同一规则的多条 Pattern 会让行号来回跳，人读报告需要单调
-                foreach (var hit in group.OrderBy(h => h.Line).ThenBy(h => h.Col))
+                var ordered = group.OrderBy(h => h.Line).ThenBy(h => h.Col).ToList();
+                bool collapsed = ShouldCollapse(report, ordered[0].Id, ordered.Count);
+                double density = Density(ordered.Count, report.Chars);
+                sb.AppendLine(collapsed
+                    ? t.Get("LintGroupHeaderDense",
+                        "[命中] {0}（{1} 处，每千字 {2} 处）：同一模板反复，只列样例",
+                        group.Key, ordered.Count, density.ToString("0.0"))
+                    : t.Get("LintGroupHeader", "[命中] {0}（{1} 处）", group.Key, ordered.Count));
+                foreach (var hit in collapsed ? ordered.Take(CollapseSamples) : ordered)
                 {
                     string hint = string.IsNullOrEmpty(hit.Hint) ? "" : $"  <- {hit.Hint}";
                     string detail = string.IsNullOrEmpty(hit.Detail) ? "" : $"  <- {hit.Detail}";
@@ -51,6 +77,9 @@ public static class LintTextFormatter
                     string where = t.Get("LintLocation", "第 {0} 行 第 {1} 列", hit.Line, hit.Col);
                     sb.AppendLine($"       {where}  {Visible(hit.Snippet)}{hint}{detail}{scheme}");
                 }
+                if (collapsed)
+                    sb.AppendLine("       " + t.Get(
+                        "LintCollapsedRest", "其余 {0} 处见 --json（位置一条不少）", ordered.Count - CollapseSamples));
             }
         }
         else

@@ -334,5 +334,7 @@
   "LintRule_fiction-synonym-chain_Title": "同義連寫",
   "LintRule_fiction-synonym-chain_Detail": "同一段裡兩個近義短句並排（目光一凜、眼神一凜）：讀者拿到的是同一件事說兩遍。同段湊夠兩處才報，單處是正常寫法",
   "LintRule_fiction-proportion-eyes_Title": "比例式情緒",
-  "LintRule_fiction-proportion-eyes_Detail": "把情緒按分數切塊（一分不屑、兩分不滿、三分涼薄）：讀者拿到的是餅圖的圖例，不是一個人。社區把這種寫法叫扇形統計圖式眼神，同段湊夠兩處才報"
+  "LintRule_fiction-proportion-eyes_Detail": "把情緒按分數切塊（一分不屑、兩分不滿、三分涼薄）：讀者拿到的是餅圖的圖例，不是一個人。社區把這種寫法叫扇形統計圖式眼神，同段湊夠兩處才報",
+  "LintGroupHeaderDense": "[命中] {0}（{1} 處，每千字 {2} 處）：同一模板反覆，只列樣例",
+  "LintCollapsedRest": "其餘 {0} 處見 --json（位置一條不少）"
 }

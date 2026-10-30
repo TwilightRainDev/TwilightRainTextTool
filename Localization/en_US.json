@@ -334,5 +334,7 @@
   "LintRule_fiction-synonym-chain_Title": "Synonym chain",
   "LintRule_fiction-synonym-chain_Detail": "Two near-synonymous clauses side by side in one paragraph: the reader gets the same thing twice. Needs two in a paragraph; a single one is ordinary writing",
   "LintRule_fiction-proportion-eyes_Title": "Emotion by the numbers",
-  "LintRule_fiction-proportion-eyes_Detail": "Feelings sliced into fractions: one part disdain, two parts displeasure, three parts coldness. The reader gets a pie chart legend instead of a person. Needs two in a paragraph"
+  "LintRule_fiction-proportion-eyes_Detail": "Feelings sliced into fractions: one part disdain, two parts displeasure, three parts coldness. The reader gets a pie chart legend instead of a person. Needs two in a paragraph",
+  "LintGroupHeaderDense": "[Hit] {0} ({1} hits, {2} per 1000 chars): one template repeating, samples only",
+  "LintCollapsedRest": "{0} more in --json (every location kept)"
 }

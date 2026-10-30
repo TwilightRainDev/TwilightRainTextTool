@@ -27,6 +27,10 @@ public sealed class AiToneLintService
     {
         string mode = DetectParagraphMode(text);
         var report = new LintReport { File = fileName, Chars = text.Length, ParagraphMode = mode };
+        // 折叠阈值随报告带出：渲染层不查规则表，界面与命令行两处看到的折叠口径因此一致
+        foreach (var rule in _rules)
+            if (rule.Rule.CollapseAtDensity is int density)
+                report.CollapseAtDensity[rule.Rule.Id] = density;
         // 行首下标表建一次就够：逐命中从头重扫是 O(长度×命中数)
         var lineStarts = new LineStarts(text);
 

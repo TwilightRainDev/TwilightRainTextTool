@@ -321,7 +321,8 @@
       "不是[^。！？\\n]{1,12}的锅"
     ],
     "Severity": "warn",
-    "Detail": "对举句式（AI 骨架）"
+    "Detail": "对举句式（AI 骨架）",
+    "CollapseAtDensity": 10
   },
   {
     "Id": "paragraph-ordinals",
@@ -446,7 +447,8 @@
     "Scope": "paragraph",
     "MinCount": 2,
     "Severity": "info",
-    "Detail": "同一段里副词反复出现（凑够两处才报）——一次是正常写法，连着用是在使劲"
+    "Detail": "同一段里副词反复出现（凑够两处才报）——一次是正常写法，连着用是在使劲",
+    "CollapseAtDensity": 10
   },
   {
     "Id": "violent-verbs",
@@ -700,7 +702,8 @@
       "fiction"
     ],
     "Severity": "info",
-    "Detail": "段内程度词凑够三处——单用是分寸，连用是虚"
+    "Detail": "段内程度词凑够三处——单用是分寸，连用是虚",
+    "CollapseAtDensity": 10
   },
   {
     "Id": "fiction-dead-metaphor",

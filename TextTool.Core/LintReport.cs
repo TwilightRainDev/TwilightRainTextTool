@@ -49,6 +49,13 @@ public sealed class LintReport
     public List<LintNote> Notes { get; set; } = new();
 
     /// <summary>
+    /// 规则 Id 到折叠密度的对照，由引擎按规则表填好，只供人读渲染用。
+    /// 不进 --json 契约：机器要的是全部位置，折叠是读者的负担问题。
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public Dictionary<string, int> CollapseAtDensity { get; set; } = new();
+
+    /// <summary>
     /// 过滤命中与统计项。--only 是规则选择轴，Hits 与 Notes 都按 Id 过滤；
     /// --min-severity 是严重度轴，Notes 无 severity 故不受它影响。退出码基于过滤后的 Hits 判定。
     /// </summary>
@@ -67,6 +74,8 @@ public sealed class LintReport
             File = File,
             Chars = Chars,
             ParagraphMode = ParagraphMode,
+            // 折叠口径随报告一起过来：过滤只该裁掉命中，不该让人读视图换一种渲染方式
+            CollapseAtDensity = new Dictionary<string, int>(CollapseAtDensity, StringComparer.OrdinalIgnoreCase),
             Notes = Notes
                 .Where(n => only is null || only.Contains(n.Id))
                 .Select(n => n.Copy())

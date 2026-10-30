@@ -45,6 +45,12 @@ public class LintRule
     /// lint 的门限是给文档定的，回复里的密度是另一件事。
     /// </summary>
     public int? ReplyMinCount { get; set; }
+    /// <summary>
+    /// 人读报告折叠阈值（每千字处数）。同一规则在同一份报告里处数够多、密度又够高时，
+    /// 人读视图只列三条例样加一行统计，位置一条不删；全量位置仍在 --json 里。
+    /// 只对「同一模板反复」那几条开放：标点、隐形字符这类位置是给人照着改的，不折叠。
+    /// </summary>
+    public int? CollapseAtDensity { get; set; }
     public string Detail { get; set; } = "";
     /// <summary>与 Patterns 下标对齐的建议改法（可空）。</summary>
     public List<string>? Hints { get; set; }
@@ -190,6 +196,8 @@ public static class LintRuleStore
                 throw new ArgumentException($"规则 {rule.Id} 的 Patterns 为空");
             if (rule.Patterns.Any(string.IsNullOrEmpty))
                 throw new ArgumentException($"规则 {rule.Id} 的 Patterns 含空串");
+            if (rule.CollapseAtDensity is <= 0)
+                throw new ArgumentException($"规则 {rule.Id} 的折叠密度必须为正整数");
             if (rule.MinCount < 1)
                 throw new ArgumentException($"规则 {rule.Id} 的 MinCount 必须 >= 1");
             if (rule.TailChars is <= 0)
@@ -215,6 +223,7 @@ public static class LintRuleStore
         Genres = new List<string>(r.Genres), BlocksReply = r.BlocksReply,
         ReplyMinCount = r.ReplyMinCount,
         TailChars = r.TailChars, MinCount = r.MinCount, Severity = r.Severity,
+        CollapseAtDensity = r.CollapseAtDensity,
         SkipInMarkdown = r.SkipInMarkdown,
         Detail = r.Detail, Hints = r.Hints is null ? null : new List<string>(r.Hints),
         SuggestScheme = r.SuggestScheme,

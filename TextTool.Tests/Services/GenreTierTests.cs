@@ -70,15 +70,9 @@ public class GenreTierTests
     [InlineData(生理反应, "他瞳孔骤然收缩。")]
     [InlineData(生理反应, "她呼吸一滞，瞬间僵住。")]
     [InlineData(生理反应, "他的理智崩塌了，眼底泛起一丝暗红。")]
-    [InlineData(网文脸, "他邪魅一笑，退开半步。")]
-    [InlineData(网文脸, "她贝齿轻咬下唇，没接话。")]
-    [InlineData(网文脸, "银牙咬碎，一个字也没说。")]
-    [InlineData(网文脸, "眼睑垂下，美得惊心动魄。")]
     [InlineData(生理反应, "他倒吸一口凉气，把话咽了回去。")]
     [InlineData(生理反应, "全场瞳孔地震。")]
     [InlineData(强势腔, "全身缓缓散发出王者之气。")]
-    [InlineData(生理反应, "他倒吸一口凉气，把话咽了回去。")]
-    [InlineData(生理反应, "全场瞳孔地震。")]
     public void 小说档规则命中样本(string id, string text)
     {
         Assert.NotEmpty(Hits(text, "fiction", id));

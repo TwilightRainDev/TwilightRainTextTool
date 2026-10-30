@@ -50,6 +50,10 @@ public class AgentRegisterRuleTests
     [InlineData(流程行话, "建立唯一基线，拍快照，存证据链。")]
     [InlineData(流程行话, "先干跑一次，再上故障注入。")]
     [InlineData(流程行话, "探针埋好了，接着跑验收矩阵。")]
+    [InlineData(流程行话, "还要 dry-run 一遍才算完。")]
+    [InlineData(流程行话, "先做 rollback 预案，再谈 canary。")]
+    [InlineData(流程行话, "RTO 与 RPO 都要压到十分钟以内。")]
+    [InlineData(测试行话, "这两条 regression 各配一个 fixture，fixture 单独放。")]
     [InlineData(行内代码, "改 `LintRule.cs` 的 `Genres` 字段、`LintRunner` 的 `GenreIds` 判断、`LintTab.axaml` 的下拉项，还有三份 `Localization` 的键。")]
     public void 智能体回复里的机器形状报出(string id, string text)
     {
@@ -69,6 +73,15 @@ public class AgentRegisterRuleTests
     public void 人写的同类句子不报(string id, string text)
     {
         Assert.Empty(Hits(text, "agent", id));
+    }
+
+    [Fact]
+    public void 英文行话只在智能体回复里报()
+    {
+        // dry-run、rollback 这些写在技术文档里是正常说法，两条行话规则只属于智能体回复
+        Assert.Empty(Hits("跑一次 dry-run，再补一个 fixture。", "doc", 流程行话));
+        Assert.Empty(Hits("跑一次 dry-run，再补一个 fixture。", "doc", 测试行话));
+        Assert.NotEmpty(Hits("跑一次 dry-run，再补一个 fixture。", "agent", 流程行话));
     }
 
     [Fact]

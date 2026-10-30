@@ -1045,7 +1045,9 @@
     "Kind": "regex",
     "Patterns": [
       "用例|断言|单测|回归|绿了|跑测试|测试跑",
-      "夹具"
+      "夹具",
+      "(?i)fixture",
+      "(?i)regression"
     ],
     "Scope": "paragraph",
     "MinCount": 2,
@@ -1083,7 +1085,15 @@
       "故障注入",
       "干跑",
       "探针",
-      "验收矩阵"
+      "验收矩阵",
+      "(?i)dry[ -]?run",
+      "(?i)roll ?back",
+      "(?i)baseline",
+      "(?i)snapshot",
+      "(?i)canary",
+      "(?i)fault injection",
+      "(?i)\\bRTO\\b",
+      "(?i)\\bRPO\\b"
     ],
     "Genres": [
       "agent"

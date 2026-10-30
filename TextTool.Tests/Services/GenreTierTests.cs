@@ -54,6 +54,7 @@ public class GenreTierTests
     [InlineData(心理告知, "此刻，她终于意识到自己错了。")]
     [InlineData(副词重复, "他猛地站起，椅子刮过地面。她猛地回头。")]
     [InlineData(副词重复, "她不由得后退半步，不由自主地捏紧包带，情不自禁地冷笑，自然而然地把话接过去。")]
+    [InlineData(副词重复, "极黑的眼圈下，极长的袍子已经很久没洗，极糟的味道挥之不去。")]
     [InlineData(抽象名词化, "他目光里有一种读不懂的东西。")]
     [InlineData(万能比喻, "他语气很轻，像是在说今天天气不错。")]
     [InlineData(生理反应, "他瞳孔骤然收缩。")]
@@ -346,6 +347,23 @@ public class GenreTierTests
             .Reports[0].Notes;
 
         Assert.DoesNotContain(notes, n => n.Id == 碎片短句);
+    }
+
+    [Theory]
+    [InlineData("极地考察队回来了。")]
+    [InlineData("这是极限，不是常态。")]
+    [InlineData("极少数人会这么选。")]
+    [InlineData("他态度积极，极为认真。")]
+    [InlineData("极端天气要提前准备。")]
+    [InlineData("极昼过后是极光。")]
+    [InlineData("极化与极权是两回事。")]
+    [InlineData("这已经做到极致了。")]
+    [InlineData("享受到了极点。")]
+    [InlineData("极大与极小之间还有很长的路。")]
+    [InlineData("极高的温度下，极轻的粉末会飘起来。")]
+    public void 极族的正常词不报(string text)
+    {
+        Assert.Empty(Hits(text, "fiction", 副词重复));
     }
 
     [Theory]

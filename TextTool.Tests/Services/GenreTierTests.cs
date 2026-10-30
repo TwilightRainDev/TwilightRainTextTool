@@ -51,6 +51,9 @@ public class GenreTierTests
     [InlineData(程度词堆叠, "她微微侧头，语气里带着些许冷，还藏着几分不甘，只剩一抹苦笑。")]
     [InlineData(陈词比喻, "他的话像潮水般涌来，仿佛整个世界都被淹了一般。")]
     [InlineData(陈词比喻, "她哭得梨花带雨，笑得如沐春风。")]
+    [InlineData(陈词比喻, "那番话说下来像是一把手术刀。")]
+    [InlineData(陈词比喻, "那双眼睛如同两颗宝石。")]
+    [InlineData(陈词比喻, "这句话像雷霆般击碎了她的困惑。")]
     [InlineData(心理告知, "他这才明白，原来不是他想的那样。他不知道的是，门已经开了。")]
     [InlineData(心理告知, "此刻，她终于意识到自己错了。")]
     [InlineData(副词重复, "他猛地站起，椅子刮过地面。她猛地回头。")]
@@ -76,6 +79,9 @@ public class GenreTierTests
     [InlineData(生理反应, "他瞳孔骤然收缩。")]
     [InlineData(氛围道具, "空气仿佛凝固，屋里氤氲着热气。")]
     [InlineData(强势腔, "他死盯着她，目光充满占有欲。")]
+    [InlineData(强势腔, "那只带着侵略性的手按在他肩上。")]
+    [InlineData(强势腔, "宠溺的眼神落在她身上。")]
+    [InlineData(强势腔, "如同信徒窥见神明的真容。")]
     [InlineData(中文夹英文, "他 subtly 退开半步。")]
     public void 文档档不报小说规则(string id, string text)
     {
@@ -135,6 +141,7 @@ public class GenreTierTests
     [InlineData("如果你需要，我可以先把清单列出来。")]
     [InlineData("接下来怎么排期，得你定。")]
     [InlineData("这一步你说了算。")]
+    [InlineData("如果你想，我真的可以再拆一遍。")]
     public void 正文里求许可报出(string text)
     {
         Assert.NotEmpty(Hits(text, "agent", 求许可));
@@ -390,6 +397,9 @@ public class GenreTierTests
     [InlineData("她微微点头，没接话。")]
     [InlineData("他猛地站起，椅子刮过地面。")]
     [InlineData("她不由得后退半步，没说别的。")]
+    [InlineData("医生握着手术刀走了进来。")]
+    [InlineData("宝石戒指掉在桌上，滚了半圈。")]
+    [InlineData("母神教的信徒在门外吟唱。")]
     public void 小说档的正常描写不报(string text)
     {
         foreach (var id in new[] { 网文脸, 陈词比喻 })

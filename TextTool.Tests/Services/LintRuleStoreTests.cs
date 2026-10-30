@@ -109,7 +109,7 @@ public class LintRuleStoreTests
                     "trailer-ending", "outline-residue", "synopsis-register", "connective-scene-shift",
                     "agent-commit-hash", "agent-code-list", "agent-path-list", "agent-cli-option",
                     "agent-smoke-jargon", "agent-test-jargon", "agent-process-jargon", "agent-inline-code",
-                    "agent-truncated-path", "agent-conclusion-first", "agent-permission-ask" },
+                    "agent-truncated-path", "numbered-reference", "agent-conclusion-first", "agent-permission-ask" },
             ids);
     }
 

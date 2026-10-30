@@ -49,6 +49,10 @@ public class GenreTierTests
     [InlineData(网文脸, "他眼中闪过一丝不耐，嘴角勾起一抹笑。")]
     [InlineData(网文脸, "温热的气息让你水光潋滟。")]
     [InlineData(网文脸, "她深吸一口气，心头一震，垂下眼睑。")]
+    [InlineData(网文脸, "他邪魅一笑，退开半步。")]
+    [InlineData(网文脸, "她贝齿轻咬下唇，没接话。")]
+    [InlineData(网文脸, "银牙咬碎，一个字也没说。")]
+    [InlineData(网文脸, "眼睑垂下，美得惊心动魄。")]
     [InlineData(程度词堆叠, "她微微侧头，语气里带着些许冷，还藏着几分不甘，只剩一抹苦笑。")]
     [InlineData(陈词比喻, "他的话像潮水般涌来，仿佛整个世界都被淹了一般。")]
     [InlineData(陈词比喻, "她哭得梨花带雨，笑得如沐春风。")]
@@ -66,6 +70,15 @@ public class GenreTierTests
     [InlineData(生理反应, "他瞳孔骤然收缩。")]
     [InlineData(生理反应, "她呼吸一滞，瞬间僵住。")]
     [InlineData(生理反应, "他的理智崩塌了，眼底泛起一丝暗红。")]
+    [InlineData(网文脸, "他邪魅一笑，退开半步。")]
+    [InlineData(网文脸, "她贝齿轻咬下唇，没接话。")]
+    [InlineData(网文脸, "银牙咬碎，一个字也没说。")]
+    [InlineData(网文脸, "眼睑垂下，美得惊心动魄。")]
+    [InlineData(生理反应, "他倒吸一口凉气，把话咽了回去。")]
+    [InlineData(生理反应, "全场瞳孔地震。")]
+    [InlineData(强势腔, "全身缓缓散发出王者之气。")]
+    [InlineData(生理反应, "他倒吸一口凉气，把话咽了回去。")]
+    [InlineData(生理反应, "全场瞳孔地震。")]
     public void 小说档规则命中样本(string id, string text)
     {
         Assert.NotEmpty(Hits(text, "fiction", id));
@@ -86,8 +99,11 @@ public class GenreTierTests
     [InlineData(强势腔, "宠溺的眼神落在她身上。")]
     [InlineData(强势腔, "如同信徒窥见神明的真容。")]
     [InlineData(强势腔, "仿佛一尊献祭给恶神的木偶。")]
+    [InlineData(强势腔, "全身缓缓散发出王者之气。")]
     [InlineData(强势腔, "眼神里满是野兽般的占有欲。")]
     [InlineData(中文夹英文, "他 subtly 退开半步。")]
+    [InlineData(网文脸, "他邪魅一笑，退开半步。")]
+    [InlineData(生理反应, "他倒吸一口凉气。")]
     public void 文档档不报小说规则(string id, string text)
     {
         Assert.Empty(Hits(text, "doc", id));
@@ -405,6 +421,10 @@ public class GenreTierTests
     [InlineData("医生握着手术刀走了进来。")]
     [InlineData("宝石戒指掉在桌上，滚了半圈。")]
     [InlineData("母神教的信徒在门外吟唱。")]
+    [InlineData("他咬紧牙关，没再说话。")]
+    [InlineData("我倒吸了一口冷气，因为屋里没开暖气。")]
+    [InlineData("这片土地很肥沃，适合种麦子。")]
+    [InlineData("医生说是眼睑炎，开了药。")]
     public void 小说档的正常描写不报(string text)
     {
         foreach (var id in new[] { 网文脸, 陈词比喻 })

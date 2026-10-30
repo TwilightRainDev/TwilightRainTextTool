@@ -101,17 +101,17 @@ public sealed class AiToneLintService
     private void ScanDocumentScope(CompiledRule rule, string text, LintReport report,
         LineStarts lineStarts)
     {
-        // 同一处只报一次：两张词表都可能盖住同一个词（如「砍一刀」与「这一刀」），
-        // 同一位置同一长度命中两遍，读者看到的是同一条证据被数了两次。
-        var seen = new HashSet<(int Index, int Length)>();
+        var candidates = new List<(int Index, int Length, string Value, string? Hint)>();
         foreach (var (regex, hint) in rule.Patterns)
         {
             var matches = regex.Matches(text);
             if (matches.Count < rule.Rule.MinCount) continue;
             foreach (Match m in matches)
-                if (seen.Add((m.Index, m.Length)))
-                    report.Hits.Add(Hit(rule.Rule, lineStarts, text, m.Index, m.Length, m.Value, hint));
+                candidates.Add((m.Index, m.Length, m.Value, hint));
         }
+
+        foreach (var (index, length, value, hint) in DropOverlaps(candidates))
+            report.Hits.Add(Hit(rule.Rule, lineStarts, text, index, length, value, hint));
     }
 
     private void ScanParagraphScope(CompiledRule rule, string text, LintReport report, string mode,
@@ -126,17 +126,37 @@ public sealed class AiToneLintService
             int windowStart = rule.Rule.TailChars is int tail && p.Text.Length > tail
                 ? p.Text.Length - tail
                 : 0;
-            // 同一处只报一次，理由同 ScanDocumentScope
-            var seen = new HashSet<(int Index, int Length)>();
+            var candidates = new List<(int Index, int Length, string Value, string? Hint)>();
             foreach (var (regex, hint) in rule.Patterns)
             {
                 var matches = regex.Matches(p.Text, windowStart);
                 if (matches.Count < rule.Rule.MinCount) continue;
                 foreach (Match m in matches)
-                    if (seen.Add((m.Index, m.Length)))
-                        report.Hits.Add(Hit(rule.Rule, lineStarts, text, p.Offset + m.Index, m.Length, m.Value, hint));
+                    candidates.Add((m.Index, m.Length, m.Value, hint));
             }
+
+            foreach (var (index, length, value, hint) in DropOverlaps(candidates))
+                report.Hits.Add(Hit(rule.Rule, lineStarts, text, p.Offset + index, length, value, hint));
         }
+    }
+
+    /// <summary>
+    /// 同一条规则里，同一处只报一次：两张词表可能盖住同一个词（「砍一刀」与「这一刀」），
+    /// 一个词也可能被两条词表从不同位置咬住（「验收口径」里既有「口径」又有「收口」）。
+    /// 这两种都数两遍同一条证据，读者看到的命中数就虚高。重叠时留长的：读者认的是整个词。
+    /// </summary>
+    private static List<(int Index, int Length, string Value, string? Hint)> DropOverlaps(
+        List<(int Index, int Length, string Value, string? Hint)> candidates)
+    {
+        if (candidates.Count <= 1) return candidates;
+
+        var kept = new List<(int Index, int Length, string Value, string? Hint)>();
+        foreach (var c in candidates.OrderByDescending(c => c.Length).ThenBy(c => c.Index))
+        {
+            bool overlaps = kept.Any(k => c.Index < k.Index + k.Length && k.Index < c.Index + c.Length);
+            if (!overlaps) kept.Add(c);
+        }
+        return kept.OrderBy(k => k.Index).ToList();
     }
 
     // 同一套引号里的双引号与单引号不是两种风格：中文规范用法就是「双引号里嵌单引号」，

@@ -1057,10 +1057,11 @@
     "Title": "测试行话",
     "Kind": "regex",
     "Patterns": [
-      "用例|断言|单测|回归|绿了|跑测试|测试跑",
+      "用例|单测|回归|绿了|跑测试|测试跑",
       "夹具",
       "(?i)fixture",
-      "(?i)regression"
+      "(?i)regression",
+      "断言[^。！？\\n]{0,4}(?:通过|失败|全部|都过)|(?:全部|逐条)断言"
     ],
     "Scope": "paragraph",
     "MinCount": 2,

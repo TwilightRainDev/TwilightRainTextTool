@@ -54,6 +54,7 @@ public class AgentRegisterRuleTests
     [InlineData(流程行话, "先做 rollback 预案，再谈 canary。")]
     [InlineData(流程行话, "RTO 与 RPO 都要压到十分钟以内。")]
     [InlineData(测试行话, "这两条 regression 各配一个 fixture，fixture 单独放。")]
+    [InlineData(测试行话, "这两处断言通过，那处断言失败，都记在报告里。")]
     [InlineData(行内代码, "改 `LintRule.cs` 的 `Genres` 字段、`LintRunner` 的 `GenreIds` 判断、`LintTab.axaml` 的下拉项，还有三份 `Localization` 的键。")]
     public void 智能体回复里的机器形状报出(string id, string text)
     {
@@ -67,6 +68,7 @@ public class AgentRegisterRuleTests
     [InlineData(命令行选项, "| 规则 | 命中 |\n|---|---|\n| 破折号 | 768 |")]
     [InlineData(冒烟行话, "我跑了一遍安装包，装完能打开。")]
     [InlineData(测试行话, "他断言明年会更好。")]
+    [InlineData(测试行话, "我既不主张它必然成立，也不宜作出更强的断言。")]
     [InlineData(流程行话, "他把文件从磁盘上删了，重启之后好了。")]
     [InlineData(流程行话, "这张照片先转成灰度图，再调对比度。")]
     [InlineData(行内代码, "改 `package.json` 里的一行就够了。")]

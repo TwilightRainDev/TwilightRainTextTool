@@ -53,6 +53,7 @@ public class GenreTierTests
     [InlineData(心理告知, "他这才明白，原来不是他想的那样。他不知道的是，门已经开了。")]
     [InlineData(心理告知, "此刻，她终于意识到自己错了。")]
     [InlineData(副词重复, "他猛地站起，椅子刮过地面。她猛地回头。")]
+    [InlineData(副词重复, "她不由得后退半步，不由自主地捏紧包带，情不自禁地冷笑，自然而然地把话接过去。")]
     [InlineData(抽象名词化, "他目光里有一种读不懂的东西。")]
     [InlineData(万能比喻, "他语气很轻，像是在说今天天气不错。")]
     [InlineData(生理反应, "他瞳孔骤然收缩。")]
@@ -351,6 +352,7 @@ public class GenreTierTests
     [InlineData("他看了她一眼，没说话。她把杯子放下，起身走了。")]
     [InlineData("她微微点头，没接话。")]
     [InlineData("他猛地站起，椅子刮过地面。")]
+    [InlineData("她不由得后退半步，没说别的。")]
     public void 小说档的正常描写不报(string text)
     {
         foreach (var id in new[] { 网文脸, 陈词比喻 })

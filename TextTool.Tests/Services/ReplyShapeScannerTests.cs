@@ -171,15 +171,23 @@ public class ReplyShapeScannerTests
     }
 
     [Fact]
-    public void 结论先行与正文求许可各有各的强度()
+    public void 结论先行与正文求许可都打断()
     {
         var hits = Hits("先说结论，这条能跑。\n\n要不要我下一步接进闸？");
 
-        var conclusion = Assert.Single(hits.Where(h => h.Id == 结论先行));
-        Assert.True(conclusion.Blocks);
+        Assert.True(Assert.Single(hits.Where(h => h.Id == 结论先行)).Blocks);
+        // 求拍板该走问卷工具：正文里问一句就占掉一轮，命中即打回
+        Assert.True(Assert.Single(hits.Where(h => h.Id == 求许可)).Blocks);
+    }
 
-        var ask = Assert.Single(hits.Where(h => h.Id == 求许可));
-        Assert.False(ask.Blocks);
+    [Theory]
+    [InlineData("如果你愿意，我可以把寻模型的启示再拆一遍。")]
+    [InlineData("如果你需要，我可以先把中转站的口径收一遍。")]
+    [InlineData("接下来怎么让过程更值钱，得你定。")]
+    [InlineData("这一步你说了算。")]
+    public void 把决定推回用户的形状也打断(string text)
+    {
+        Assert.True(Assert.Single(Hits(text).Where(h => h.Id == 求许可)).Blocks);
     }
 
     [Theory]

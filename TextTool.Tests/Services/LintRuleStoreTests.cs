@@ -166,13 +166,13 @@ public class LintRuleStoreTests
         Assert.Equal(new[] { "fiction" }, rules["fiction-vague-nominalization"].Genres);
         Assert.Equal(new[] { "doc" }, rules["anthropomorphic-subject"].Genres);
 
-        // 能不能打断：裸代号、截断路径、行话族、结论先行标了；装饰符号与正文求许可按默认只提醒
+        // 能不能打断：裸代号、截断路径、行话族、结论先行、正文求许可都标了；装饰符号按默认只提醒
         Assert.True(rules["agent-code-list"].BlocksReply);
         Assert.True(rules["agent-truncated-path"].BlocksReply);
         Assert.True(rules["agent-smoke-jargon"].BlocksReply);
         Assert.True(rules["agent-conclusion-first"].BlocksReply);
         Assert.False(rules["emoji-and-symbols"].BlocksReply);
-        Assert.False(rules["agent-permission-ask"].BlocksReply);
+        Assert.True(rules["agent-permission-ask"].BlocksReply);
 
         // 行话族的回复门限与 lint 门限分开：lint 单处就报，回复里一段两处才打断
         Assert.Equal(1, rules["agent-process-jargon"].MinCount);

@@ -28,6 +28,7 @@ public class GenreTierTests
     private const string 暴力动词 = "violent-verbs";
     private const string 碎片短句 = "short-sentence-run";
     private const string 段末兜底 = "hedging-ending";
+    private const string 求许可 = "agent-permission-ask";
     private const string 非活物主语 = "anthropomorphic-subject";
     private const string 过程残留 = "doc-process-residue";
     private const string 助手号腔 = "assistant-persona";
@@ -123,11 +124,20 @@ public class GenreTierTests
     [InlineData("若故障持续，还是要检查或更换设备。")]
     [InlineData("开会员买时间才可能划算，但总支出也未必更低。")]
     [InlineData("这些做法因人而异。")]
-    [InlineData("如果你愿意，我可以进一步帮你把这几步跑一遍。")]
     [InlineData("希望这些信息对你有所帮助。")]
     public void 段末兜底报出(string text)
     {
         Assert.NotEmpty(Hits(text, null, 段末兜底));
+    }
+
+    [Theory]
+    [InlineData("如果你愿意，我可以进一步帮你把这几步跑一遍。")]
+    [InlineData("如果你需要，我可以先把清单列出来。")]
+    [InlineData("接下来怎么排期，得你定。")]
+    [InlineData("这一步你说了算。")]
+    public void 正文里求许可报出(string text)
+    {
+        Assert.NotEmpty(Hits(text, "agent", 求许可));
     }
 
     [Fact]
@@ -212,6 +222,15 @@ public class GenreTierTests
     [InlineData("挤牙膏那条，真疼。")]
     [InlineData("这条我不改，我给他补一刀。")]
     public void 元评价路标报出(string text)
+    {
+        Assert.NotEmpty(Hits(text, null, 元评价路标));
+    }
+
+    [Theory]
+    [InlineData("我必须很认真地说一句：这条判据站不住。")]
+    [InlineData("我必须很认真的说一句：这条判据站不住。")]
+    [InlineData("一句话拆开，不啰嗦。")]
+    public void 元评价路标的新形状也报出(string text)
     {
         Assert.NotEmpty(Hits(text, null, 元评价路标));
     }

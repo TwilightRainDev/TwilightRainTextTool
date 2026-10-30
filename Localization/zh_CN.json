@@ -328,5 +328,7 @@
   "LintRule_repeated-verbatim_Title": "逐字重复",
   "LintRule_repeated-verbatim_Detail": "与第 {0} 行第 {1} 列逐字相同",
   "LintRule_repeated-token-run_Title": "复读串",
-  "LintRule_repeated-token-run_Detail": "「{0}」连写 {1} 次"
+  "LintRule_repeated-token-run_Detail": "「{0}」连写 {1} 次",
+  "LintRule_fiction-sensation-tics_Title": "感受套话",
+  "LintRule_fiction-sensation-tics_Detail": "感受被写成现成的名词短语：如坠冰窟、大脑一片空白、提线木偶。读者拿到的是一个标签，不是任何具体的东西。真人也会写「手脚冰凉」，所以这条只提示不打断"
 }

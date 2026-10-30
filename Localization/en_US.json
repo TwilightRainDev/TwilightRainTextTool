@@ -328,5 +328,7 @@
   "LintRule_repeated-verbatim_Title": "Verbatim repetition",
   "LintRule_repeated-verbatim_Detail": "Identical to line {0}, column {1}",
   "LintRule_repeated-token-run_Title": "Repeated run",
-  "LintRule_repeated-token-run_Detail": "「{0}」repeated {1} times"
+  "LintRule_repeated-token-run_Detail": "「{0}」repeated {1} times",
+  "LintRule_fiction-sensation-tics_Title": "Sensation cliché",
+  "LintRule_fiction-sensation-tics_Detail": "Feelings written as ready-made noun phrases: falling into an ice cave, mind going blank, a puppet on strings. The reader gets a label, not anything concrete. Real writers also use these, so this rule only hints"
 }

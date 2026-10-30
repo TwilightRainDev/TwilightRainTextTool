@@ -48,6 +48,17 @@ public class RepeatedVerbatimTests
     }
 
     [Fact]
+    public void 同一处原文被逐句贴回时并成一条()
+    {
+        // 一大段被原样贴回：句子级命中全指向同一处，并成一条并写清句数
+        var text = "他推开门的时候，屋里已经没有人了。\n桌上那杯茶摸起来还温着。\n窗外的雨下得又急又密，打在铁皮上。\n\n中间插一句别的话。\n他推开门的时候，屋里已经没有人了。\n桌上那杯茶摸起来还温着。\n窗外的雨下得又急又密，打在铁皮上。";
+        var hits = Hits(text);
+
+        var hit = Assert.Single(hits);
+        Assert.Contains("共 3 句", hit.Detail);
+    }
+
+    [Fact]
     public void 差一个字的近似复述不报()
     {
         var text = 段 + "\n" + 段.Replace("几乎", "险些");

@@ -501,7 +501,8 @@ public sealed class AiToneLintService
     /// <summary>
     /// repeated-verbatim 逐字重复：完全相同的段落或句子再次出现时报出来。
     /// 只比逐字相同（去首尾空白后完全相等），近似复述不在此列——那要相似度阈值，
-    /// 误伤对象是排比、副歌式的刻意反复。段重复时不再逐句报：同一段报一遍就够。
+    /// 误伤对象是排比、副歌式的刻意反复。段重复时不再逐句报；句子级的多处重复
+    /// 若都指向同一处原文，并成一条：一次贴回一大段，逐句各报一处只会把报告淹掉。
     /// </summary>
     private void ScanRepeatedVerbatim(string text, List<(int Offset, string Text)> paragraphs,
         LintReport report, LineStarts lineStarts)
@@ -509,7 +510,7 @@ public sealed class AiToneLintService
         var firstSeen = new Dictionary<string, (int Line, int Col)>(StringComparer.Ordinal);
         var repeatedRanges = new List<(int Start, int End)>();
 
-        void Report(int offset, string body)
+        void Report(int offset, string body, string? detail = null)
         {
             var (line, col) = lineStarts.Locate(offset);
             var (firstLine, firstCol) = firstSeen[body];
@@ -519,7 +520,7 @@ public sealed class AiToneLintService
                 Title = _text.Get("LintRule_repeated-verbatim_Title", "逐字重复"),
                 Line = line, Col = col, Length = body.Length,
                 Match = body, Snippet = Snippet(text, offset, body.Length),
-                Detail = _text.Get("LintRule_repeated-verbatim_Detail",
+                Detail = detail ?? _text.Get("LintRule_repeated-verbatim_Detail",
                     "与第 {0} 行第 {1} 列逐字相同", firstLine, firstCol),
             });
         }
@@ -533,17 +534,57 @@ public sealed class AiToneLintService
             repeatedRanges.Add((offset, offset + body.Length));
         }
 
-        // 句子级的首现表单独一份：段与句的长度不同，同一段的两份不会互相冒充
-        firstSeen.Clear();
+        // 句子级的首现表单独一份：段与句的长度不同，同一段的两份不会互相冒充。
+        // 首现位置要连偏移一起记：判「连着的几句是不是同一段的两份」，靠的是两边的间隔对得上。
+        var firstAt = new Dictionary<string, int>(StringComparer.Ordinal);
+        var repeats = new List<(int Offset, int Length, int Source)>();
         foreach (var (offset, body) in SentenceBlocks(text))
         {
             if (body.Length < MinRepeatSentenceChars) continue;
             if (repeatedRanges.Any(r => offset >= r.Start && offset < r.End)) continue;
-            if (firstSeen.TryAdd(body, lineStarts.Locate(offset)))
-                continue;
-            Report(offset, body);
+            if (firstAt.TryAdd(body, offset)) continue;
+            repeats.Add((offset, body.Length, firstAt[body]));
+        }
+
+        // 把连着的重复并成一段：贴回一长段时，逐句各报一处只会把报告淹掉
+        int k = 0;
+        while (k < repeats.Count)
+        {
+            int start = repeats[k].Offset, sourceStart = repeats[k].Source;
+            int end = start + repeats[k].Length, sourceEnd = sourceStart + repeats[k].Length;
+            int count = 1;
+            while (k + 1 < repeats.Count)
+            {
+                var next = repeats[k + 1];
+                int gap = next.Offset - end;
+                int sourceGap = next.Source - sourceEnd;
+                if (gap > RepeatJoinGap || sourceGap != gap) break;
+                end = next.Offset + next.Length;
+                sourceEnd = next.Source + next.Length;
+                count++;
+                k++;
+            }
+
+            var (line, col) = lineStarts.Locate(start);
+            var (sourceLine, sourceCol) = lineStarts.Locate(sourceStart);
+            report.Hits.Add(new LintHit
+            {
+                Id = "repeated-verbatim", Group = "structure", Severity = "warn",
+                Title = _text.Get("LintRule_repeated-verbatim_Title", "逐字重复"),
+                Line = line, Col = col, Length = end - start,
+                Match = text[start..end], Snippet = Snippet(text, start, Math.Min(end - start, 40)),
+                Detail = count > 1
+                    ? _text.Get("LintRule_repeated-verbatim_GroupDetail",
+                        "从这一句起共 {0} 句与第 {1} 行第 {2} 列起逐字相同", count, sourceLine, sourceCol)
+                    : _text.Get("LintRule_repeated-verbatim_Detail",
+                        "与第 {0} 行第 {1} 列逐字相同", sourceLine, sourceCol),
+            });
+            k++;
         }
     }
+
+    /// <summary>并段时容许的间隔：句与句之间只该有标点或换行，隔得再远就不算同一段被贴回。</summary>
+    private const int RepeatJoinGap = 2;
 
     /// <summary>按句末标点切句，带上原文偏移，供逐字比对定位用。</summary>
     private static IEnumerable<(int Offset, string Text)> SentenceBlocks(string text)

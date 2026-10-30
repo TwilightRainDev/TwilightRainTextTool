@@ -385,7 +385,8 @@ public class GenreTierTests
     }
 
     [Fact]
-    public void 未知档位即抛()    {
+    public void 未知档位即抛()
+    {
         var ex = Assert.Throws<ArgumentException>(() =>
             LintRunner.Run(new[] { ("a.txt", "干净的一段话。") }, null, null, "poetry"));
 

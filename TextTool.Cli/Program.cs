@@ -461,7 +461,7 @@ public static class Program
     private static void PrintLintHelp() =>
         Console.WriteLine("""
             lint 选项：
-              --json                以 JSON 输出（契约见 README.md 的「命令行（CLI）」节）
+              --json                以 JSON 输出（顶层 Version 与 Reports；命中带 Id、Line、Col、Snippet）
               --only <Id,...>       只跑指定规则，如 --only parallel-contrast,cliche-words
               --min-severity <info|warn>  只输出 warn 及以上（统计项不受影响）
               --genre <doc|fiction|agent> 按文本类型选规则：doc = 编程文档，fiction = 小说，

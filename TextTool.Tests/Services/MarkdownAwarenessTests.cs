@@ -43,7 +43,7 @@ public class MarkdownAwarenessTests
     }
 
     [Fact]
-    public void markdown里的加粗列表项不报行内标题()
+    public void Markdown语境下的加粗列表项不报行内标题()
     {
         // 空行分隔 → markdown 语境；「- **要点**：」是标准写法
         const string text = "## 结论\n\n- **判定**：命中是真命中\n- **出处**：记忆条\n\n以上。";

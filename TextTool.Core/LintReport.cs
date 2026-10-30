@@ -91,9 +91,8 @@ public sealed class LintReportSet
     private static readonly JsonSerializerOptions Options = new()
     {
         WriteIndented = true,
-        // 中文照原样输出，不转 \uXXXX；HTML 敏感字符与 UTF-7 的 + 仍按默认编码器转义——
-        // 完整转义面以 README 的 CLI 契约节为准，本处不复述成第三份副本。
-        // UnsafeRelaxedJsonEscaping 会把它们一起放开，是另一个方向的过头
+        // 中文照原样输出，不转 \uXXXX。仍转义的只有这一组：< > & ' " 与 +（UTF-7 前缀），
+        // 其余字符都放开。UnsafeRelaxedJsonEscaping 会把这一组也放开，那是另一个方向的过头。
         Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
     };
 

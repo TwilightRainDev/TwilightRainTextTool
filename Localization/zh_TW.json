@@ -325,6 +325,8 @@
   "LintGroupSyntax": "句法與結構",
   "LintGroupStructure": "篇章結構",
   "LintGroupStatistics": "統計特徵",
+  "LintRule_choppy-clauses_Title": "短句硬連",
+  "LintRule_choppy-clauses_Detail": "這一段切成 {0} 個短促分句，平均 {1} 字，靠分號與破折號硬接——成分全省了，讀者得自己補主語和賓語",
   "LintRule_repeated-verbatim_Title": "逐字重複",
   "LintRule_repeated-verbatim_Detail": "與第 {0} 行第 {1} 列逐字相同",
   "LintRule_repeated-token-run_Title": "複讀串",

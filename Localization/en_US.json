@@ -325,6 +325,8 @@
   "LintGroupSyntax": "Syntax",
   "LintGroupStructure": "Structure",
   "LintGroupStatistics": "Statistics",
+  "LintRule_choppy-clauses_Title": "Clauses chain-sawed together",
+  "LintRule_choppy-clauses_Detail": "{0} clipped clauses averaging {1} characters, joined by semicolons and dashes: the subject and object are gone, so the reader has to fill them in",
   "LintRule_repeated-verbatim_Title": "Verbatim repetition",
   "LintRule_repeated-verbatim_Detail": "Identical to line {0}, column {1}",
   "LintRule_repeated-token-run_Title": "Repeated run",

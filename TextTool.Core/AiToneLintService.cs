@@ -84,7 +84,7 @@ public sealed class AiToneLintService
 
     /// <summary>代码内算法规则的 Id 全集（数据规则之外的 mixed-quote-style/mixed-bracket-width 与 paragraph-length-uniform-explicit-numbering）。</summary>
     public static readonly IReadOnlyList<string> AlgorithmRuleIds =
-        new[] { "mixed-quote-style", "mixed-bracket-width", "paragraph-length-uniform", "sentence-length-uniform", "repeated-paragraph-opening", "exclamation-density", "ordinal-skeleton", "explicit-numbering", "short-sentence-run", "repeated-token-run" };
+        new[] { "mixed-quote-style", "mixed-bracket-width", "paragraph-length-uniform", "sentence-length-uniform", "repeated-paragraph-opening", "exclamation-density", "ordinal-skeleton", "explicit-numbering", "short-sentence-run", "repeated-token-run", "choppy-clauses" };
 
     /// <summary>算法规则与给定数据规则的 Id 并集（--only 的校验集）。</summary>
     public static IReadOnlyCollection<string> AllRuleIds(IEnumerable<LintRule> rules)
@@ -101,12 +101,16 @@ public sealed class AiToneLintService
     private void ScanDocumentScope(CompiledRule rule, string text, LintReport report,
         LineStarts lineStarts)
     {
+        // 同一处只报一次：两张词表都可能盖住同一个词（如「砍一刀」与「这一刀」），
+        // 同一位置同一长度命中两遍，读者看到的是同一条证据被数了两次。
+        var seen = new HashSet<(int Index, int Length)>();
         foreach (var (regex, hint) in rule.Patterns)
         {
             var matches = regex.Matches(text);
             if (matches.Count < rule.Rule.MinCount) continue;
             foreach (Match m in matches)
-                report.Hits.Add(Hit(rule.Rule, lineStarts, text, m.Index, m.Length, m.Value, hint));
+                if (seen.Add((m.Index, m.Length)))
+                    report.Hits.Add(Hit(rule.Rule, lineStarts, text, m.Index, m.Length, m.Value, hint));
         }
     }
 
@@ -122,12 +126,15 @@ public sealed class AiToneLintService
             int windowStart = rule.Rule.TailChars is int tail && p.Text.Length > tail
                 ? p.Text.Length - tail
                 : 0;
+            // 同一处只报一次，理由同 ScanDocumentScope
+            var seen = new HashSet<(int Index, int Length)>();
             foreach (var (regex, hint) in rule.Patterns)
             {
                 var matches = regex.Matches(p.Text, windowStart);
                 if (matches.Count < rule.Rule.MinCount) continue;
                 foreach (Match m in matches)
-                    report.Hits.Add(Hit(rule.Rule, lineStarts, text, p.Offset + m.Index, m.Length, m.Value, hint));
+                    if (seen.Add((m.Index, m.Length)))
+                        report.Hits.Add(Hit(rule.Rule, lineStarts, text, p.Offset + m.Index, m.Length, m.Value, hint));
             }
         }
     }
@@ -324,6 +331,53 @@ public sealed class AiToneLintService
 
         ScanRepeatedVerbatim(text, paragraphs, report, lineStarts);
         ScanRepeatedTokenRun(text, paragraphs, report, lineStarts);
+        ScanChoppyClauses(text, paragraphs, report, lineStarts, genre);
+    }
+
+    /// <summary>短句硬连的门限：一段里凑够这么多分句、平均这么短，就算把话切碎了硬接。</summary>
+    internal const int ChoppyClauseMinCount = 8;
+    internal const int ChoppyClauseMaxMeanChars = 5;
+
+    /// <summary>切分句的标点：句末、逗号、顿号、分号、冒号与破折号都算一处停顿。</summary>
+    private static readonly char[] ClauseBreaks = { '。', '！', '？', '；', '，', '、', '：', '\n', '—', '\r' };
+
+    /// <summary>
+    /// choppy-clauses 短句硬连：该断的地方用分号、破折号硬接，一长句里七八个短促分句，
+    /// 主语宾语全给省掉，读者得自己把话补全。
+    ///
+    /// 判的是句子形状，不是用词：分句数与平均句长两个都要够门槛。单看分号或单看顿号都会误伤，
+    /// 正常的中文并列与列举满篇都是顿号；号列表（首先、其次、一、二、三）也不算，那是结构，不是硬接。
+    /// 小说不跑：短句在叙事里是正常手法。
+    /// </summary>
+    private void ScanChoppyClauses(string text, List<(int Offset, string Text)> paragraphs,
+        LintReport report, LineStarts lineStarts, string? genre)
+    {
+        if (string.Equals(genre, "fiction", StringComparison.OrdinalIgnoreCase)) return;
+
+        foreach (var (offset, body) in paragraphs)
+        {
+            if (!body.Contains('；') && !body.Contains("——")) continue;
+            if (OrdinalSkeleton.IsMatch(body)) continue;
+            var clauses = body.Split(ClauseBreaks, StringSplitOptions.RemoveEmptyEntries)
+                .Select(c => c.Trim()).Where(c => c.Length > 0).ToList();
+            if (clauses.Count < ChoppyClauseMinCount) continue;
+            double mean = clauses.Average(c => (double)c.Length);
+            if (mean > ChoppyClauseMaxMeanChars) continue;
+
+            var (line, col) = lineStarts.Locate(offset);
+            string head = body.Trim();
+            if (head.Length > 30) head = head[..30];
+            report.Hits.Add(new LintHit
+            {
+                Id = "choppy-clauses", Group = "structure", Severity = "info",
+                Title = _text.Get("LintRule_choppy-clauses_Title", "短句硬连"),
+                Line = line, Col = col, Length = head.Length,
+                Match = head, Snippet = Snippet(text, offset, head.Length),
+                Detail = _text.Get("LintRule_choppy-clauses_Detail",
+                    "这一段切成 {0} 个短促分句，平均 {1} 字，靠分号与破折号硬接——成分全省了，读者得自己补主语和宾语",
+                    clauses.Count, Math.Round(mean, 1)),
+            });
+        }
     }
 
     /// <summary>复读串阈值：同一单元同段连写这么多遍算复读。</summary>

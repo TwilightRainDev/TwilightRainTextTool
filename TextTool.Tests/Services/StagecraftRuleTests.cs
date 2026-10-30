@@ -41,7 +41,7 @@ public class StagecraftRuleTests
     {
         var text = "并不是因为我露出了马脚，而是因为你——太敏锐了！——敏锐到让人直呼内行。";
 
-        var hits = Hits(text, "agent", 破折号连用);
+        var hits = Hits(text, "fiction", 破折号连用);
         Assert.Equal(2, hits.Count);
         Assert.All(hits, h => Assert.Equal("——", h.Match));
     }
@@ -50,7 +50,7 @@ public class StagecraftRuleTests
     public void 一处破折号与分段的破折号都不报()
     {
         // 正常的插入语一处就够；两处分散在不同段落也不算连用
-        Assert.Empty(Hits("他停了一下——也许是犹豫，然后走了。", "agent", 破折号连用));
-        Assert.Empty(Hits("他停了一下——也许是犹豫。\n然后他走了——没回头。", "agent", 破折号连用));
+        Assert.Empty(Hits("他停了一下——也许是犹豫，然后走了。", "fiction", 破折号连用));
+        Assert.Empty(Hits("他停了一下——也许是犹豫。\n然后他走了——没回头。", "fiction", 破折号连用));
     }
 }

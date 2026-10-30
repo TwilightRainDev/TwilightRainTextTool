@@ -99,7 +99,7 @@ public class LintRuleStoreTests
         // 顺序即分组：通用规则在前，小说与智能体的专属规则垫后。档位是过滤器，规则全表只有这一份。
         // 条数不写进名字也不写进注释：加一条规则就要改一处数字，而中文数字又搜不到。
         Assert.Equal(
-            new[] { "repeated-punctuation", "ellipsis-style", "mixed-punctuation-width", "dash-and-tilde", "dash-run", "tilde-run", "invisible-characters", "emoji-and-symbols", "foreign-script-mix",
+            new[] { "repeated-punctuation", "ellipsis-style", "mixed-punctuation-width", "dash-and-tilde", "dash-run", "dash-pause-in-reply", "tilde-run", "invisible-characters", "emoji-and-symbols", "foreign-script-mix",
                     "cliche-words", "ai-frequent-words", "vague-attribution", "training-cutoff-disclaimer", "chatbot-artifacts", "sycophancy", "filler-phrases",
                     "parallel-contrast", "paragraph-ordinals", "elevated-ending", "stacked-modifiers", "copula-avoidance", "inline-title-list", "forced-reversal", "accounting-cliche",
                     "adverb-overuse", "violent-verbs", "hedging-ending", "disclaimer-stack", "anthropomorphic-subject", "doc-process-residue", "assistant-persona", "meta-commentary-marker",

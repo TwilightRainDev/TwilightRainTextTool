@@ -49,6 +49,15 @@ public sealed class LintReport
     public List<LintNote> Notes { get; set; } = new();
 
     /// <summary>
+    /// 基线那份的命中处数。null 表示这次没给基线，Hits 就是整篇的命中；
+    /// 给了基线时 Hits 只含新增位置，这个数供人读报告开头那一行对照用。
+    /// 没给基线时整个字段不出现在 JSON 里：不带 --baseline 的调用输出与升版前一致。
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore(
+        Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public int? BaselineHits { get; set; }
+
+    /// <summary>
     /// 规则 Id 到折叠密度的对照，由引擎按规则表填好，只供人读渲染用。
     /// 不进 --json 契约：机器要的是全部位置，折叠是读者的负担问题。
     /// </summary>
@@ -74,6 +83,7 @@ public sealed class LintReport
             File = File,
             Chars = Chars,
             ParagraphMode = ParagraphMode,
+            BaselineHits = BaselineHits,
             // 折叠口径随报告一起过来：过滤只该裁掉命中，不该让人读视图换一种渲染方式
             CollapseAtDensity = new Dictionary<string, int>(CollapseAtDensity, StringComparer.OrdinalIgnoreCase),
             Notes = Notes
@@ -92,9 +102,10 @@ public sealed class LintReport
 /// <summary>多文件输出的统一包装，消费者不必按文件数分支。</summary>
 public sealed class LintReportSet
 {
-    /// <summary>契约版本。3：规则 Id 由短码改为语义化 slug（如 `parallel-contrast`）。
+    /// <summary>契约版本。4：新增 --baseline 差分，报告多出基线处数这一字段，命中只剩新增位置。
+    /// 3：规则 Id 由短码改为语义化 slug（如 `parallel-contrast`）。
     /// 2：行尾为 LF、HTML 敏感字符转义、Hits 保证按 (Line, Col) 有序、新增 ParagraphMode 字段。</summary>
-    public int Version { get; set; } = 3;
+    public int Version { get; set; } = 4;
     public List<LintReport> Reports { get; set; } = new();
 
     private static readonly JsonSerializerOptions Options = new()

@@ -370,5 +370,15 @@
   "LintRule_agent-flattery_Title": "先誇提問者",
   "LintRule_agent-flattery_Detail": "拿「你很敏銳」「你說到點子上」開場：誇的是提問的人，不是問題本身。真人長篇裡同類說法只有一處",
   "LintRule_agent-conclusion-preamble_Title": "結論前置口號",
-  "LintRule_agent-conclusion-preamble_Detail": "「一句話總結」「讓我直接告訴您結論」這類口號連著出現：口號本身不提供資訊，讀者要的是那句話說完整"
+  "LintRule_agent-conclusion-preamble_Detail": "「一句話總結」「讓我直接告訴您結論」這類口號連著出現：口號本身不提供資訊，讀者要的是那句話說完整",
+  "LintRule_no-debt-declaration_Title": "無債宣告或空節留痕",
+  "LintRule_no-debt-declaration_Detail": "把「暫無」「已清零」「無未解決項」寫進正文，等於給不存在的東西留一塊牌子：讀者打開這一頁是要知道此刻還剩哪幾項，不是讀一份清零證明。沒剩就不寫這一行，表格空著就是空著。",
+  "LintRule_completion-log_Title": "完工記錄或過程敘述",
+  "LintRule_completion-log_Detail": "正文裡記「已經改了、已經修過、本輪做完、驗收通過」：讀者要拿到的是此刻成立的規矩，做完的過程屬於變更記錄，留在正文裡只會在壓縮或轉述之後把人引回舊狀態。",
+  "LintRule_supersession_Title": "取代或版本變更敘事",
+  "LintRule_supersession_Detail": "正文裡對照「原來是 A，現在改成 B」：讀者只需要知道現在是什麼。舊值一旦寫進來，壓縮或轉述之後很容易被當成現行值引用，而寫下舊值的人也早就不在場。",
+  "LintRule_tombstone-of-deletion_Title": "為刪掉的東西立碑",
+  "LintRule_tombstone-of-deletion_Detail": "為刪掉的東西立碑：「原檔已清」「盤上已無」「不在這裡」。讀者拿到的是碑文，不是他要找的內容；東西沒了就照沒了寫，去向值得交代就寫進變更記錄，那裡才是查得到的地方。",
+  "LintRule_re-report-suppression_Title": "防復報的碑",
+  "LintRule_re-report-suppression_Detail": "在正文裡預先聲明「這不是缺陷」「別再當債收」「既定邊界」：下一個讀者讀到的是禁令，不是判據。把邊界寫成條件句——什麼情況下不判——比立碑更能讓人自己判斷，也不需要知道上一個讀者報過什麼。"
 }

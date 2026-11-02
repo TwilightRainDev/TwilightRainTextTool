@@ -102,7 +102,9 @@ public class LintRuleStoreTests
             new[] { "repeated-punctuation", "ellipsis-style", "mixed-punctuation-width", "dash-and-tilde", "dash-run", "dash-pause-in-reply", "tilde-run", "invisible-characters", "emoji-and-symbols", "foreign-script-mix", "char-face",
                     "cliche-words", "deck-speak", "ai-frequent-words", "vague-attribution", "training-cutoff-disclaimer", "chatbot-artifacts", "sycophancy", "filler-phrases",
                     "parallel-contrast", "triadic-parallel", "paragraph-ordinals", "elevated-ending", "stacked-modifiers", "fiction-modifier-chain", "copula-avoidance", "inline-title-list", "forced-reversal", "accounting-cliche",
-                    "adverb-overuse", "violent-verbs", "hedging-ending", "disclaimer-stack", "anthropomorphic-subject", "doc-process-residue", "assistant-persona", "meta-commentary-marker",
+                    "adverb-overuse", "violent-verbs", "hedging-ending", "disclaimer-stack", "anthropomorphic-subject", "doc-process-residue",
+                    "no-debt-declaration", "completion-log", "supersession", "tombstone-of-deletion", "re-report-suppression",
+                    "assistant-persona", "meta-commentary-marker",
                     "fiction-body-tics", "fiction-physio-tics", "fiction-sensation-tics", "fiction-synonym-chain", "fiction-atmosphere-props", "fiction-dominant-register",
                     "fiction-filler-modifiers", "fiction-dead-metaphor", "fiction-emotion-telling", "fiction-vague-nominalization", "fiction-vague-simile", "fiction-community-taste", "fiction-proportion-eyes",
                     "fiction-text-self-reference", "fiction-dialogue-reference", "fiction-narrator-formula", "fiction-metaphor-lexicon", "latin-word-in-cjk",
@@ -113,6 +115,33 @@ public class LintRuleStoreTests
                     "agent-truncated-path", "numbered-reference", "agent-conclusion-first", "agent-permission-ask",
                     "agent-one-char-commitment", "agent-agreement-opener", "agent-deliberation-leak", "agent-reassurance-pile", "agent-self-intro", "agent-error-paste", "agent-flattery", "agent-conclusion-preamble" },
             ids);
+    }
+
+    [Fact]
+    public void Validate_Patterns与字面字段都为空即抛()
+    {
+        // 一条规则两种模式都不给就是空判据：它永远不报，却占着规则表的位置，加载期就该拦下
+        var rule = Rule("cliche-words");
+        rule.Patterns = new List<string>();
+        rule.LiteralPatterns = new List<string>();
+
+        var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
+
+        Assert.Contains("至少给一条词面或正则", ex.Message);
+    }
+
+    [Fact]
+    public void Merge_字面字段随外部规则一起覆盖()
+    {
+        // 按 Id 覆盖是整条替换：漏克隆一个字段，用户改一条规则时会把它的词表悄悄清空
+        var builtIn = new List<LintRule> { Rule("cliche-words") };
+        builtIn[0].LiteralPatterns = new List<string> { "内置词面" };
+        var external = new List<LintRule> { Rule("cliche-words", "覆盖") };
+        external[0].LiteralPatterns = new List<string> { "外部词面" };
+
+        var merged = LintRuleStore.Merge(builtIn, external);
+
+        Assert.Equal(new[] { "外部词面" }, merged[0].LiteralPatterns!);
     }
 
     [Fact]

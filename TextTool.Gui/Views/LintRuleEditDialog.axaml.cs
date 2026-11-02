@@ -91,8 +91,8 @@ public partial class LintRuleEditDialog : Window
     }
 
     /// <summary>
-    /// 表单 → 规则。只挑界面上开放的字段，其余照抄原规则：
-    /// 范围、段末字数、打断权这些不是本窗能改的，抄错一处就是悄悄改了判据行为。
+    /// 表单 → 规则。以原规则为底只能改界面上开放的那几项（见 <see cref="LintRuleEdit"/>）：
+    /// 词面表、范围、段末字数、密度门限、打断权不是本窗能改的，一律原样带回去。
     /// </summary>
     private LintRule? ReadForm(out string? error)
     {
@@ -134,25 +134,17 @@ public partial class LintRuleEditDialog : Window
 
         // 建议改法与词条一一对齐，词条被改过之后它就对不上了，
         // 所以改过的规则一律不带建议：宁可少一条，也不要一条错位的。
-        return new LintRule
+        return LintRuleEdit.Rebuild(_rule, edited =>
         {
-            Id = _rule.Id,
-            Group = _rule.Group,
-            Title = title,
-            Kind = KindBox.SelectedIndex == 0 ? "literal" : "regex",
-            Patterns = patterns,
-            Scope = _rule.Scope,
-            Genres = genres,
-            TailChars = _rule.TailChars,
-            MinCount = minCount,
-            Severity = SeverityBox.SelectedIndex == 0 ? "info" : "warn",
-            BlocksReply = _rule.BlocksReply,
-            ReplyMinCount = _rule.ReplyMinCount,
-            SkipInMarkdown = _rule.SkipInMarkdown,
-            Detail = (DetailBox.Text ?? string.Empty).Trim(),
-            Hints = null,
-            SuggestScheme = _rule.SuggestScheme,
-        };
+            edited.Title = title;
+            edited.Kind = KindBox.SelectedIndex == 0 ? "literal" : "regex";
+            edited.Patterns = patterns;
+            edited.Genres = genres;
+            edited.MinCount = minCount;
+            edited.Severity = SeverityBox.SelectedIndex == 0 ? "info" : "warn";
+            edited.Detail = (DetailBox.Text ?? string.Empty).Trim();
+            edited.Hints = null;
+        });
     }
 
     // ================================================================

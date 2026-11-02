@@ -13,4 +13,9 @@
     <ProjectReference Include="..\TextTool.Core\TextTool.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- 命令行选项与退出码的测试直接调 Program.Main，读基线的助手也要能断言报错文字。 -->
+    <InternalsVisibleTo Include="TextTool.Tests" />
+  </ItemGroup>
+
 </Project>

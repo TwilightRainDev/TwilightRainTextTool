@@ -9,13 +9,18 @@ public static class LintRunner
     /// 规则表。默认从磁盘加载；标定命令一次加载、逐文件复用，测试注入探针规则，
     /// 两条路径共用同一个引擎实例来源，不另写一套判定。
     /// </param>
+    /// <param name="baseline">
+    /// 写前那一份。给了它，报告只含比它多出来的命中，每条规则另给一行新增数；
+    /// 不给就是整篇命中。基线只配单份输入：一次差分只能回答「这一份比那份多了什么」。
+    /// </param>
     public static LintReportSet Run(
         IReadOnlyList<(string File, string Text)> inputs,
         IReadOnlyCollection<string>? onlyIds,
         string? minSeverity,
         string? genre = null,
         ILintText? lintText = null,
-        IReadOnlyList<LintRule>? rules = null)
+        IReadOnlyList<LintRule>? rules = null,
+        (string File, string Text)? baseline = null)
     {
         if (inputs is null || inputs.Count == 0)
             throw new ArgumentException("lint 需要至少一个输入");
@@ -37,10 +42,26 @@ public static class LintRunner
                 throw new ArgumentException($"未知规则 Id：{string.Join(", ", unknown)}");
         }
 
-        var service = new AiToneLintService(ActiveRules(table, genre, onlyIds), lintText);
+        if (baseline is not null && inputs.Count != 1)
+            throw new ArgumentException("--baseline 只配一个输入文件：一次差分只回答「这一份比那份多了什么」");
+
+        var active = ActiveRules(table, genre, onlyIds);
+        var service = new AiToneLintService(active, lintText);
         var reportSet = new LintReportSet();
-        foreach (var (file, text) in inputs)
-            reportSet.Reports.Add(service.Scan(text, file, genre).Filter(onlyIds, minSeverity));
+        if (baseline is null)
+        {
+            foreach (var (file, text) in inputs)
+                reportSet.Reports.Add(service.Scan(text, file, genre).Filter(onlyIds, minSeverity));
+            return reportSet;
+        }
+
+        // 同一份规则表扫两遍：基线那份只用来数词面，报告本身不给读者看。
+        // 两遍共用一个引擎实例，规则编译、繁简归一这些只做一次。
+        var counts = LintBaseline.Count(service.Scan(
+            baseline.Value.Text, baseline.Value.File, genre, LintScanRole.Baseline));
+        var body = service.Scan(inputs[0].Text, inputs[0].File, genre, LintScanRole.Compared);
+        LintBaseline.Apply(body, counts, active, lintText);
+        reportSet.Reports.Add(body.Filter(onlyIds, minSeverity));
         return reportSet;
     }
 

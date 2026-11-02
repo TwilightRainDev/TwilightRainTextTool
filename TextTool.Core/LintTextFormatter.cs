@@ -53,6 +53,11 @@ public static class LintTextFormatter
         ILintText t = text ?? ChineseLintText.Instance;
         var sb = new StringBuilder();
 
+        // 给了基线时先说清下面这些数是跟谁比的：只列新增位置时，读者第一眼会以为命中变少了
+        if (report.BaselineHits is int baselineHits)
+            sb.AppendLine(t.Get(
+                "LintBaselineHeader", "相对基线新增 {0} 处，基线 {1} 处", report.Hits.Count, baselineHits));
+
         if (report.Hits.Count > 0)
         {
             foreach (var group in report.Hits.GroupBy(h => $"{h.Id} {h.Title}"))

@@ -370,5 +370,15 @@
   "LintRule_agent-flattery_Title": "先夸提问者",
   "LintRule_agent-flattery_Detail": "拿「你很敏锐」「你说到点子上」开场：夸的是提问的人，不是问题本身，答案往往紧接着就空。真人长篇里同类说法只有一处",
   "LintRule_agent-conclusion-preamble_Title": "结论前置口号",
-  "LintRule_agent-conclusion-preamble_Detail": "「一句话总结」「让我直接告诉您结论」这类口号连着出现：口号本身不提供信息，读者要的是那句话说完整。真人长篇里「一句话总结」只在一本里出现过两次"
+  "LintRule_agent-conclusion-preamble_Detail": "「一句话总结」「让我直接告诉您结论」这类口号连着出现：口号本身不提供信息，读者要的是那句话说完整。真人长篇里「一句话总结」只在一本里出现过两次",
+  "LintRule_no-debt-declaration_Title": "无债宣告或空节留痕",
+  "LintRule_no-debt-declaration_Detail": "把「暂无」「已清零」「无未解决项」写进正文，等于给不存在的东西留一块牌子：读者打开这一页是要知道此刻还剩哪几项，不是读一份清零证明。没剩就不写这一行，表格空着就是空着。",
+  "LintRule_completion-log_Title": "完工记录或过程叙述",
+  "LintRule_completion-log_Detail": "正文里记「已经改了、已经修过、本轮做完、验收通过」：读者要拿到的是此刻成立的规矩，做完的过程属于变更记录，留在正文里只会在压缩或转述之后把人引回旧状态。",
+  "LintRule_supersession_Title": "取代或版本变更叙事",
+  "LintRule_supersession_Detail": "正文里对照「原来是 A，现在改成 B」：读者只需要知道现在是什么。旧值一旦写进来，压缩或转述之后很容易被当成现行值引用，而写下旧值的人也早就不在场。",
+  "LintRule_tombstone-of-deletion_Title": "为删掉的东西立碑",
+  "LintRule_tombstone-of-deletion_Detail": "为删掉的东西立碑：「原档已清」「盘上已无」「不在这里」。读者拿到的是碑文，不是他要找的内容；东西没了就照没了写，去向值得交代就写进变更记录，那里才是查得到的地方。",
+  "LintRule_re-report-suppression_Title": "防复报的碑",
+  "LintRule_re-report-suppression_Detail": "在正文里预先声明「这不是缺陷」「别再当债收」「既定边界」：下一个读者读到的是禁令，不是判据。把边界写成条件句——什么情况下不判——比立碑更能让人自己判断，也不需要知道上一个读者报过什么。"
 }

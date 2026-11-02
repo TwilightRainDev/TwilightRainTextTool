@@ -124,7 +124,7 @@ public class LintReportTests
     {
         var json = new LintReportSet { Reports = new List<LintReport> { Sample() } }.ToJson();
 
-        Assert.Contains("\"Version\": 3", json);
+        Assert.Contains("\"Version\": 4", json);
         Assert.Contains("\"Reports\"", json);
         Assert.Contains("\"Match\": \"赋能\"", json);
         Assert.DoesNotContain("\\u8D4B", json);   // 中文未被转义成 \uXXXX
@@ -146,9 +146,9 @@ public class LintReportTests
     }
 
     [Fact]
-    public void ToJson_契约版本为3()
+    public void ToJson_契约版本为4()
     {
-        Assert.Contains("\"Version\": 3", new LintReportSet().ToJson());
+        Assert.Contains("\"Version\": 4", new LintReportSet().ToJson());
     }
 
     [Fact]

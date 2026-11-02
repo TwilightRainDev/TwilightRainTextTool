@@ -370,5 +370,15 @@
   "LintRule_agent-flattery_Title": "Praising the asker",
   "LintRule_agent-flattery_Detail": "Opening with \"you are sharp\" praises the person, not the question, and the answer that follows is usually empty",
   "LintRule_agent-conclusion-preamble_Title": "Announcing the conclusion",
-  "LintRule_agent-conclusion-preamble_Detail": "\"In one sentence\" and \"let me tell you the conclusion\" back to back: the announcement carries no information; write the sentence instead"
+  "LintRule_agent-conclusion-preamble_Detail": "\"In one sentence\" and \"let me tell you the conclusion\" back to back: the announcement carries no information; write the sentence instead",
+  "LintRule_no-debt-declaration_Title": "No-debt declaration",
+  "LintRule_no-debt-declaration_Detail": "Announcing \"nothing pending\", \"all cleared\", \"none outstanding\" inside the body leaves a plaque for something that is not there: the reader wants to know what is still pending, not to read a clearance certificate. If nothing is left, drop the line; an empty table is empty.",
+  "LintRule_completion-log_Title": "Completion log",
+  "LintRule_completion-log_Detail": "Recording \"already changed\", \"fixed last round\", \"acceptance passed\" in the body: the reader needs the rule as it stands now; how it got there belongs in the change log, and leaving it here guides later readers back to the old state after any compression or paraphrase.",
+  "LintRule_supersession_Title": "Supersession narrative",
+  "LintRule_supersession_Detail": "Setting \"was A, now B\" against each other in the body: the reader needs to know what it is now. Once the old value is written down it is easy to quote as current after compression or paraphrase, and whoever wrote it is long gone.",
+  "LintRule_tombstone-of-deletion_Title": "Tombstone for deleted things",
+  "LintRule_tombstone-of-deletion_Detail": "A tombstone for something deleted -- \"original cleared\", \"no longer on disk\", \"not here\". The reader gets an epitaph instead of the content; write what is missing as missing, and put the destination in the change log where it can be looked up.",
+  "LintRule_re-report-suppression_Title": "Monument against re-reporting",
+  "LintRule_re-report-suppression_Detail": "Declaring \"not a defect\", \"stop counting this as debt\", \"agreed boundary\" up front: the next reader gets a prohibition, not a criterion. State the boundary as a condition -- when it does not apply -- so they can judge for themselves without knowing what a previous reader reported."
 }

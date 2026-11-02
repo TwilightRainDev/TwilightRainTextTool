@@ -14,7 +14,7 @@ namespace TextTool.Cli;
 ///   texttool replace &lt;file...&gt; [--scheme &lt;name&gt;]
 ///   texttool vn &lt;file...&gt; [--scheme &lt;name...&gt;] [--max-para N] [--reformat-only|--punct-only]
 ///   texttool join &lt;directory&gt; [--pattern &quot;*.txt&quot;] [--output &lt;name&gt;]
-///   texttool lint &lt;file...&gt; [--only &lt;id...&gt;] [--min-severity warn] [--genre doc|fiction|agent] [--json]
+///   texttool lint &lt;file...&gt; [--only &lt;id...&gt;] [--min-severity warn] [--genre doc|fiction|agent] [--baseline &lt;file&gt;] [--json]
 ///   texttool calibrate --human &lt;directory&gt; --ai &lt;directory&gt; [--genre doc|fiction|agent] [--json]
 ///   texttool reply-check [--json] [&lt;file&gt;|-]
 ///   texttool update [--check]
@@ -345,7 +345,7 @@ public static class Program
 
             var files = new List<string>();
             bool json = false;
-            string? only = null, minSeverity = null, genre = null;
+            string? only = null, minSeverity = null, genre = null, baselineFile = null;
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -355,6 +355,7 @@ public static class Program
                     case "--only": only = ParseValue(args, ref i, "--only"); break;
                     case "--min-severity": minSeverity = ParseValue(args, ref i, "--min-severity"); break;
                     case "--genre": genre = ParseValue(args, ref i, "--genre"); break;
+                    case "--baseline": baselineFile = ParseValue(args, ref i, "--baseline"); break;
                     case "--help" or "-h": PrintLintHelp(); return 0;
                     default: files.Add(args[i]); break;
                 }
@@ -374,7 +375,8 @@ public static class Program
                 inputs.Add((file == "-" ? "(stdin)" : file, text));
             }
 
-            var reportSet = LintRunner.Run(inputs, onlyIds, minSeverity, genre);
+            var reportSet = LintRunner.Run(inputs, onlyIds, minSeverity, genre,
+                baseline: baselineFile is null ? null : (baselineFile, ReadBaseline(baselineFile)));
 
             // 两条分支共用同一个纯函数，行尾/报告间隔/尾换行的契约只在 LintOutput 里维护
             Console.Write(LintOutput.Render(reportSet, json));
@@ -395,6 +397,26 @@ public static class Program
             throw new ArgumentException($"文件不存在：{file}");
         var encoding = EncodingDetector.DetectStrict(file);
         return File.ReadAllText(file, encoding.Encoding);
+    }
+
+    /// <summary>
+    /// 基线那份。读不到时报错要说清是基线，不能只说「文件不存在」：
+    /// 一次带 --baseline 的调用涉及两个路径，读者改错哪一个都能停住，但得知这是哪一个。
+    /// </summary>
+    internal static string ReadBaseline(string file)
+    {
+        if (!File.Exists(file))
+            throw new ArgumentException($"基线文件读不到：{file}");
+        try
+        {
+            var encoding = EncodingDetector.DetectStrict(file);
+            return File.ReadAllText(file, encoding.Encoding);
+        }
+        catch (Exception ex)
+            when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            throw new ArgumentException($"基线文件读不到：{file}（{ex.Message}）", ex);
+        }
     }
 
     /// <summary>stdin 按 UTF-8 读原始字节，不受控制台码页影响。</summary>
@@ -535,8 +557,12 @@ public static class Program
               --genre <doc|fiction|agent> 按文本类型选规则：doc = 编程文档，fiction = 小说，
                                           agent = 智能体回复（读者要能一句句读懂，不受团队行话与代号）；
                                           不给则跑全部规则（与加档位之前一致）
+              --baseline <文件>     只报相对这份稿子多出来的命中，每条规则给一行新增处数
 
-            输入：文件路径可多个；传 - 表示从 stdin 读。
+            输入：文件路径可多个；传 - 表示从 stdin 读。带 --baseline 时只能给一个输入。
+
+            --baseline 的用法：写前那一份当基线、写后那一份当输入，行号按写后那份算。
+            存量命中不再列出，退出码只看新增：改写没有让任何判据变多就是 0。
 
             退出码（与其它子命令不同）：0 = 无命中，1 = 有命中，2 = 用法/读取错误。
             命中判定基于过滤后的集合，因此 --min-severity warn 即「只在有 warn 时退 1」。

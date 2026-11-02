@@ -23,7 +23,15 @@ public sealed class AiToneLintService
     private string RuleText(string id, string field, string fallback) =>
         _text.Get($"LintRule_{id}_{field}", fallback);
 
-    public LintReport Scan(string text, string fileName, string? genre = null)
+    /// <summary>
+    /// 扫描一份稿子。
+    /// </summary>
+    /// <param name="role">
+    /// 这份稿子在比较里站什么位置。只有 delta 密度基准读它：净增要写前写后两稿才算得出来，
+    /// 单扫一份时那条门限无从判定，报用法错而不是退回全文口径。
+    /// </param>
+    public LintReport Scan(string text, string fileName, string? genre = null,
+        LintScanRole role = LintScanRole.Standalone)
     {
         // 判据按简体字面写，繁体稿直接比对不响：先备一份繁转简的副本专门拿去匹配。
         // 归一串保证与原文等长，两份串的下标、长度、行列完全通用，报告里的位置与片段仍取原文。
@@ -44,7 +52,7 @@ public sealed class AiToneLintService
             if (rule.Rule.Scope == "paragraph")
                 ScanParagraphScope(rule, source, report, mode, lineStarts);
             else
-                ScanDocumentScope(rule, source, report, lineStarts);
+                ScanDocumentScope(rule, source, report, lineStarts, role);
         }
 
         ScanAlgorithmRules(source, mode, report, lineStarts, genre);
@@ -104,7 +112,7 @@ public sealed class AiToneLintService
     public static IReadOnlyCollection<string> AllRuleIds() => AllRuleIds(LintRuleStore.Load());
 
     private void ScanDocumentScope(CompiledRule rule, ScanText source, LintReport report,
-        LineStarts lineStarts)
+        LineStarts lineStarts, LintScanRole role)
     {
         var candidates = new List<(int Index, int Length, string? Hint)>();
         foreach (var (regex, hint) in rule.Patterns)
@@ -116,7 +124,7 @@ public sealed class AiToneLintService
         }
 
         var kept = DropOverlaps(candidates);
-        if (!MeetsDensity(rule.Rule, kept.Count, source.Matching.Length)) return;
+        if (!MeetsDensity(rule, kept.Count, source.Matching.Length, role)) return;
 
         foreach (var (index, length, hint) in kept)
             report.Hits.Add(Hit(rule.Rule, lineStarts, source, index, length, hint));
@@ -125,11 +133,26 @@ public sealed class AiToneLintService
     /// <summary>
     /// 密度门限：词表规则按千字处数判，不按绝对次数。
     /// 算的是去重后的处数——同一处被两条模式各咬一口不是两处证据。
+    ///
+    /// 分母按规则写的基准取：document 用全文长度；delta 的净增处数要差分之后才知道，
+    /// 这里先全放行，由 LintBaseline.Apply 按「净增处数除以写后千字数」再筛一次。
     /// </summary>
-    private static bool MeetsDensity(LintRule rule, int hits, int chars)
+    private static bool MeetsDensity(CompiledRule rule, int hits, int chars, LintScanRole role)
     {
-        if (rule.MinDensityPerKChar is not int density) return true;
-        return hits * 1000.0 / Math.Max(chars, 1) >= density;
+        if (rule.Density is not { } density) return true;
+        if (density.Basis == LintDensity.BasisDocument)
+            return hits * 1000.0 / Math.Max(chars, 1) >= density.Min;
+        if (density.Basis == LintDensity.BasisDelta)
+        {
+            if (role == LintScanRole.Standalone)
+                throw new ArgumentException(
+                    $"规则 {rule.Rule.Id} 的触发密度按净增算（Basis=delta），这次扫描没有基线：" +
+                    "同一份稿子算不出净增，带 --baseline 再跑");
+            return true;
+        }
+        // 加载时已校验过取值，能走到这里的只剩尚未实现的那两种基准
+        throw new NotImplementedException(
+            $"规则 {rule.Rule.Id} 的密度基准 {density.Basis} 尚未实现：先用 document 或 delta");
     }
 
     private void ScanParagraphScope(CompiledRule rule, ScanText source, LintReport report,
@@ -1022,18 +1045,55 @@ public sealed class AiToneLintService
         public required LintRule Rule { get; init; }
         public required List<(Regex Regex, string? Hint)> Patterns { get; init; }
 
-        public static CompiledRule Create(LintRule rule) => new()
+        /// <summary>折算过的密度门限：旧写法的规则在这里变成 document 基准，判定处只认一个口。</summary>
+        public LintDensity? Density { get; init; }
+
+        public static CompiledRule Create(LintRule rule)
         {
-            Rule = rule,
-            Patterns = rule.Patterns.Select((p, i) =>
+            var density = rule.EffectiveDensity;
+            // 尚未实现的基准在编译时就报：等扫到命中才报，会被读成「这份稿子没问题」，
+            // 而真相是这条门限根本没算过
+            if (density is not null
+                && density.Basis is LintDensity.BasisParagraph or LintDensity.BasisWindow)
+                throw new NotImplementedException(
+                    $"规则 {rule.Id} 的密度基准 {density.Basis} 尚未实现：先用 document 或 delta");
+
+            // 词面在前、正则在后的顺序就是 Hints 的下标顺序：
+            // 改词面的人写在前面的几条建议，与规则文件里两个列表的书写次序一致。
+            var sources = (rule.LiteralPatterns ?? new List<string>())
+                .Select(literal => (Pattern: literal, Escaped: true))
+                .Concat(rule.Patterns.Select(pattern => (Pattern: pattern, Escaped: rule.Kind == "literal")));
+            return new()
             {
-                // literal 经 Regex.Escape 走同一条匹配路径；regex 原文经 RegexGuard 构造
-                var regex = rule.Kind == "literal"
-                    ? RegexGuard.Create(Regex.Escape(p))
-                    : RegexGuard.Create(p);
-                string? hint = rule.Hints is not null && i < rule.Hints.Count ? rule.Hints[i] : null;
-                return (regex, hint);
-            }).ToList(),
-        };
+                Rule = rule,
+                Density = density,
+                Patterns = sources.Select((source, i) =>
+                {
+                    // 字面串与 literal 规则都经 Regex.Escape 走同一条匹配路径；
+                    // 只有 regex 规则的正则原文才交给引擎解释
+                    var regex = source.Escaped
+                        ? RegexGuard.Create(Regex.Escape(source.Pattern))
+                        : RegexGuard.Create(source.Pattern);
+                    string? hint = rule.Hints is not null && i < rule.Hints.Count ? rule.Hints[i] : null;
+                    return (regex, hint);
+                }).ToList(),
+            };
+        }
     }
+}
+
+/// <summary>
+/// 一份稿子在基线比较里站的位置。净增是两稿之间的事，单扫一份无从判定；
+/// 「没基线」与「这是基线那一篇」对读者是两件事，所以分开说，不拿同一个空值抵掉。
+/// </summary>
+public enum LintScanRole
+{
+    /// <summary>单独一份稿子，手上没有基线。</summary>
+    Standalone,
+
+    /// <summary>基线那一篇：它自己没有净增可比，delta 门限不判。</summary>
+    Baseline,
+
+    /// <summary>要对基线的正文那一篇：delta 门限留到差分之后按净增判。</summary>
+    Compared,
 }

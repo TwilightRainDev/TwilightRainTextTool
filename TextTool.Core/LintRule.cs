@@ -17,6 +17,13 @@ public class LintRule
     /// <summary>多条模式——repeated-punctuation 有 2 条正则、cliche-words 有 26 条词，单串装不下。</summary>
     public List<string> Patterns { get; set; } = new();
     /// <summary>
+    /// 纯字面子串：写什么就找什么，`已.*完成` 也按这六个字面字符找，不会被当成正则。
+    /// 一条判据常常既要几个固定说法又要一类结构，而 Kind 只能取一个值，
+    /// 所以固定说法写这里、结构写 Patterns。两个列表都非空时按「词面在前、正则在后」编译，
+    /// 这个顺序也是 Hints 的下标顺序。
+    /// </summary>
+    public List<string>? LiteralPatterns { get; set; }
+    /// <summary>
     /// 段落在 markdown 语境下跳过本规则。行内标题列表这类判据只对纯文本文档成立，
     /// markdown 的「- **要点**：」是标准写法，不是 AI 痕迹。
     /// </summary>
@@ -52,14 +59,30 @@ public class LintRule
     /// </summary>
     public int? CollapseAtDensity { get; set; }
     /// <summary>
-    /// 触发密度门限（每千字命中处数）：全文命中处数除以千字字数，不到本值一条都不报。
-    /// 只对 Scope=document 有效。
+    /// 触发密度门限：哪种分母下的每千字命中处数，不到本值一条都不报。只对 Scope=document 有效。
     ///
     /// 词表类规则要用它而不是 MinCount：一个「石头」在万字稿里是正常用词，同一套比喻
     /// 千字里出现五次才是病灶。按绝对次数定门限，长文的正常用词会随篇幅一起堆过门限，
     /// 短文里的真问题又永远凑不够次数。
     /// </summary>
+    public LintDensity? Density { get; set; }
+    /// <summary>
+    /// 旧写法：只表达「全文每千字多少处」，等价于 Density = { Basis: "document", Min: 本值 }。
+    /// 保留它是为了让已写好的规则文件与外部配置照旧生效；两种写法只能出现一种，
+    /// 同时写分不清哪个算数，加载即报错。新写规则用 Density。
+    /// </summary>
     public int? MinDensityPerKChar { get; set; }
+
+    /// <summary>
+    /// 实际生效的密度门限。旧写法在这里折算成 document 基准，调用方只认这一个入口，
+    /// 两种写法因此走同一条判定路径、给出同一个结果。
+    /// 不进 JSON：它由另外两个字段算出来，写回规则文件等于凭空多出一份可能自相矛盾的配置。
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public LintDensity? EffectiveDensity => Density
+        ?? (MinDensityPerKChar is int legacy
+            ? new LintDensity { Basis = LintDensity.BasisDocument, Min = legacy }
+            : null);
     /// <summary>
     /// 默认不勾选：不点名就不跑，点名才跑。给「只在特定文体里才是毛病」的判据用。
     ///
@@ -69,9 +92,63 @@ public class LintRule
     /// </summary>
     public bool DefaultOff { get; set; }
     public string Detail { get; set; } = "";
-    /// <summary>与 Patterns 下标对齐的建议改法（可空）。</summary>
+    /// <summary>
+    /// 与「词面 + 正则」合并后的下标对齐的建议改法（可空）。
+    /// 两种模式混着写时，条数按合计算，少一条加载就会失败。
+    /// </summary>
     public List<string>? Hints { get; set; }
     public string? SuggestScheme { get; set; }
+
+    /// <summary>
+    /// 逐字段复制，两个模式列表各自开新表：规则表按 Id 覆盖时要整条替换，
+    /// 共用一份列表等于改一条规则时把别处的词表一起改了。
+    /// 新增字段不补进来，覆盖或界面保存一次就会把它悄悄清空。
+    /// </summary>
+    public LintRule Clone() => new()
+    {
+        Id = Id, Group = Group, Title = Title, Kind = Kind,
+        Patterns = new List<string>(Patterns),
+        LiteralPatterns = LiteralPatterns is null ? null : new List<string>(LiteralPatterns),
+        Scope = Scope,
+        Genres = new List<string>(Genres), BlocksReply = BlocksReply,
+        ReplyMinCount = ReplyMinCount,
+        TailChars = TailChars, MinCount = MinCount, Severity = Severity,
+        CollapseAtDensity = CollapseAtDensity,
+        Density = Density is null
+            ? null
+            : new LintDensity { Basis = Density.Basis, Min = Density.Min, Window = Density.Window },
+        MinDensityPerKChar = MinDensityPerKChar,
+        DefaultOff = DefaultOff,
+        SkipInMarkdown = SkipInMarkdown,
+        Detail = Detail, Hints = Hints is null ? null : new List<string>(Hints),
+        SuggestScheme = SuggestScheme,
+    };
+}
+
+/// <summary>
+/// 触发密度门限的分母与下限。
+///
+/// 决定分母是有代价的：全文每千字几处，判的是「这份稿子整体上有多爱用这套词」；
+/// 净增每千字几处，判的是「这次改写有没有让它变多」。前者要整篇才成立，后者要两稿才成立。
+/// </summary>
+public sealed class LintDensity
+{
+    public const string BasisDocument = "document";
+    public const string BasisParagraph = "paragraph";
+    public const string BasisWindow = "window";
+    public const string BasisDelta = "delta";
+
+    /// <summary>
+    /// 分母取哪段文本。取值集合见 <see cref="LintRuleStore.DensityBases"/>。
+    /// 目前只实现 document 与 delta：另外两个先认取值、留报错，不静默按 document 算。
+    /// </summary>
+    public string Basis { get; set; } = BasisDocument;
+
+    /// <summary>该基准下每千字命中的下限。小于等于 0 是配置错：门限为 0 等于没配。</summary>
+    public double Min { get; set; }
+
+    /// <summary>Basis=window 时的窗口长度（字）。其它基准写它没有意义，加载即报错。</summary>
+    public int? Window { get; set; }
 }
 
 /// <summary>
@@ -90,6 +167,16 @@ public static class LintRuleStore
     /// 拼错一个字母的档位（novel、agents）不会报错，规则会在所有档位下静默不跑，所以只列这一次。
     /// </summary>
     public static readonly IReadOnlyList<string> GenreIds = new[] { "doc", "fiction", "agent" };
+
+    /// <summary>
+    /// 密度基准取值全集。校验认这四个，实现只做了 document 与 delta：
+    /// paragraph 与 window 写进配置会加载通过、扫到这条规则时响亮报「尚未实现」，
+    /// 而不是悄悄按全文算出一个看着合理的数。
+    /// </summary>
+    public static readonly IReadOnlyList<string> DensityBases = new[]
+    {
+        LintDensity.BasisDocument, LintDensity.BasisParagraph, LintDensity.BasisWindow, LintDensity.BasisDelta,
+    };
 
     public static List<LintRule> Load()
     {
@@ -141,7 +228,7 @@ public static class LintRuleStore
     /// <summary>外部规则按 Id 覆盖内置（覆盖后仍排原位置），新 Id 追加在末尾。Id 大小写不敏感。</summary>
     internal static List<LintRule> Merge(List<LintRule> builtIn, List<LintRule> external)
     {
-        var result = builtIn.Select(Clone).ToList();
+        var result = builtIn.Select(rule => rule.Clone()).ToList();
         // 字典直接存下标：覆盖写回原位置，位置不变；
         // 若同 Id 的外部规则第二次进来仍能命中同一位置，不再依赖 IndexOf（那会因对象已被换掉而返回 -1）。
         // 比较口径与 Validate / ValidateNoAlgorithmIdCollision / 下游 --only 一致，均为大小写不敏感。
@@ -152,12 +239,12 @@ public static class LintRuleStore
         {
             if (index.TryGetValue(rule.Id, out int at))
             {
-                result[at] = Clone(rule);
+                result[at] = rule.Clone();
             }
             else
             {
                 // 外部侧同样 Clone：合并结果与调用方的对象脱钩，两侧对称
-                result.Add(Clone(rule));
+                result.Add(rule.Clone());
                 index[rule.Id] = result.Count - 1;
             }
         }
@@ -209,16 +296,44 @@ public static class LintRuleStore
                 throw new ArgumentException($"规则 {rule.Id} 的 Severity 非法：{rule.Severity}");
             // 显式 null 会被 System.Text.Json 写回属性，模型上的 = new() 默认值挡不住，
             // 不在这里拦就会变成 NullReferenceException 而非清晰的校验报错
-            if (rule.Patterns is null || rule.Patterns.Count == 0)
-                throw new ArgumentException($"规则 {rule.Id} 的 Patterns 为空");
+            if (rule.Patterns is null)
+                throw new ArgumentException($"规则 {rule.Id} 的 Patterns 为 null");
             if (rule.Patterns.Any(string.IsNullOrEmpty))
                 throw new ArgumentException($"规则 {rule.Id} 的 Patterns 含空串");
+            // 空串字面会命中任意位置，写进来是配置错，不是「暂时留空」
+            if (rule.LiteralPatterns is not null && rule.LiteralPatterns.Any(string.IsNullOrEmpty))
+                throw new ArgumentException($"规则 {rule.Id} 的 LiteralPatterns 含空串");
+            if (rule.Patterns.Count == 0 && (rule.LiteralPatterns is null || rule.LiteralPatterns.Count == 0))
+                throw new ArgumentException($"规则 {rule.Id} 至少给一条词面或正则");
             if (rule.CollapseAtDensity is <= 0)
                 throw new ArgumentException($"规则 {rule.Id} 的折叠密度必须为正整数");
             if (rule.MinDensityPerKChar is <= 0)
                 throw new ArgumentException($"规则 {rule.Id} 的触发密度必须为正整数");
-            // 段落级拿不到全文长度，密度算不出每千字：写在这里等于配了一个永远不生效的门限
-            if (rule.MinDensityPerKChar is not null && rule.Scope != "document")
+            // 两种写法同时出现时哪个算数说不清，读者会以为自己改的那份生效了
+            if (rule.Density is not null && rule.MinDensityPerKChar is not null)
+                throw new ArgumentException(
+                    $"规则 {rule.Id} 的触发密度写了两种：Density 与 MinDensityPerKChar 只能留一种");
+            if (rule.Density is not null)
+            {
+                var density = rule.Density;
+                if (!DensityBases.Contains(density.Basis))
+                    throw new ArgumentException(
+                        $"规则 {rule.Id} 的密度基准非法：{density.Basis}（可选 {string.Join("、", DensityBases)}）");
+                if (density.Min <= 0)
+                    throw new ArgumentException($"规则 {rule.Id} 的触发密度必须为正数");
+                if (density.Window is <= 0)
+                    throw new ArgumentException($"规则 {rule.Id} 的窗口长度必须为正整数");
+                // 写了窗口基准却没给窗口长度，算出来的是一整篇的密度，而不是窗口里的
+                if (density.Basis == LintDensity.BasisWindow && density.Window is null)
+                    throw new ArgumentException($"规则 {rule.Id} 的密度基准为 window，但没有给窗口长度");
+                // 写了窗口却按别的基准算，读者会以为窗口生效了
+                if (density.Window is not null && density.Basis != LintDensity.BasisWindow)
+                    throw new ArgumentException(
+                        $"规则 {rule.Id} 的 Window 仅在密度基准为 window 时有效");
+            }
+            // 段落级拿不到全文长度，密度算不出每千字：写在这里等于配了一个永远不生效的门限。
+            // paragraph 基准的分母是段内字数，那条约束等它实现时再一起放开。
+            if (rule.EffectiveDensity is { Basis: not LintDensity.BasisParagraph } && rule.Scope != "document")
                 throw new ArgumentException($"规则 {rule.Id} 的触发密度仅在 Scope=document 时有效");
             if (rule.MinCount < 1)
                 throw new ArgumentException($"规则 {rule.Id} 的 MinCount 必须 >= 1");
@@ -226,8 +341,12 @@ public static class LintRuleStore
                 throw new ArgumentException($"规则 {rule.Id} 的 TailChars 必须为正整数");
             if (rule.TailChars is not null && rule.Scope != "paragraph")
                 throw new ArgumentException($"规则 {rule.Id} 的 TailChars 仅在 Scope=paragraph 时有效");
-            if (rule.Hints is not null && rule.Hints.Count != rule.Patterns.Count)
-                throw new ArgumentException($"规则 {rule.Id} 的 Hints 长度与 Patterns 不一致");
+            // 词面与正则混排时，改法按合并后的顺序排，条数也只能按合计对：
+            // 少一条的后果是后面的建议整体错位，读者照错的建议改稿。
+            int totalPatterns = rule.Patterns.Count + (rule.LiteralPatterns?.Count ?? 0);
+            if (rule.Hints is not null && rule.Hints.Count != totalPatterns)
+                throw new ArgumentException(
+                    $"规则 {rule.Id} 的 Hints 长度与词面加正则合计不一致：{rule.Hints.Count} 条建议对 {totalPatterns} 条模式");
             if (rule.Kind == "regex")
                 foreach (var pattern in rule.Patterns)
                     try { RegexGuard.Create(pattern); }
@@ -237,18 +356,4 @@ public static class LintRuleStore
                     }
         }
     }
-
-    private static LintRule Clone(LintRule r) => new()
-    {
-        Id = r.Id, Group = r.Group, Title = r.Title, Kind = r.Kind,
-        Patterns = new List<string>(r.Patterns), Scope = r.Scope,
-        Genres = new List<string>(r.Genres), BlocksReply = r.BlocksReply,
-        ReplyMinCount = r.ReplyMinCount,
-        TailChars = r.TailChars, MinCount = r.MinCount, Severity = r.Severity,
-        CollapseAtDensity = r.CollapseAtDensity, MinDensityPerKChar = r.MinDensityPerKChar,
-        DefaultOff = r.DefaultOff,
-        SkipInMarkdown = r.SkipInMarkdown,
-        Detail = r.Detail, Hints = r.Hints is null ? null : new List<string>(r.Hints),
-        SuggestScheme = r.SuggestScheme,
-    };
 }

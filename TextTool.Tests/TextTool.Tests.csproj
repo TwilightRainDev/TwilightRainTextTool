@@ -23,6 +23,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TextTool.Core\TextTool.Core.csproj" />
+    <!-- 退出码与命令行输出是 lint 对外契约的一部分，只能经 Program.Main 验。 -->
+    <ProjectReference Include="..\TextTool.Cli\TextTool.Cli.csproj" />
   </ItemGroup>
 
 </Project>

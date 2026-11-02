@@ -20,7 +20,7 @@ public sealed class ReplyShapeScanner
     /// </summary>
     public static readonly IReadOnlyList<string> RuleIds = new[]
     {
-        "agent-code-list", "agent-truncated-path", "emoji-and-symbols", "violent-verbs",
+        "agent-code-list", "agent-truncated-path", "emoji-and-symbols", "char-face", "violent-verbs",
         "agent-process-jargon", "agent-smoke-jargon", "agent-test-jargon",
         "agent-conclusion-first", "agent-permission-ask",
     };

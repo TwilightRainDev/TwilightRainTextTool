@@ -161,6 +161,9 @@ public class LintRuleStoreTests
         Assert.Equal(new[] { "fiction" }, rules["fiction-atmosphere-props"].Genres);
         Assert.Equal(new[] { "fiction" }, rules["fiction-dominant-register"].Genres);
         Assert.Equal(new[] { "fiction" }, rules["latin-word-in-cjk"].Genres);
+        // 这条在真人小说库上每千字 0.108 处，一本动画改编小说 2582 处，全是专名与拼音替换，
+        // 默认开着会把报告淹掉：默认不勾选，用户点名才跑
+        Assert.True(rules["latin-word-in-cjk"].DefaultOff);
         Assert.Equal(new[] { "fiction" }, rules["fiction-bold-template"].Genres);
         Assert.Equal(new[] { "fiction" }, rules["fiction-machine-numbers"].Genres);
         // 加粗模板是提醒级以上的硬信号（出版正文不排标记），数值只到提醒

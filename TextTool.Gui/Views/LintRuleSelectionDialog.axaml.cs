@@ -135,7 +135,8 @@ public sealed partial class LintRuleSelectionDialog : Window
         {
             foreach (LintRule rule in _rules)
             {
-                if (previous.Count == 0 || !previous.Contains(rule.Id))
+                // 上次勾过就沿用；新出现的判据按默认走，标了默认不勾选的先不勾
+                if (previous.Contains(rule.Id) || !rule.DefaultOff)
                     _checked.Add(rule.Id);
             }
         }

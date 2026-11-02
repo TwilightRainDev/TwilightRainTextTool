@@ -42,8 +42,12 @@ public class GenreTierTests
     private const string 简介模板 = "synopsis-formula";
     private const string 全半角混排 = "mixed-punctuation-width";
 
-    private static List<LintHit> Hits(string text, string? genre, string id) =>
-        LintRunner.Run(new[] { ("样本.txt", text) }, null, null, genre)
+    /// <param name="onlyNaming">
+    /// 点名跑这一条。默认不点名——默认不勾选的判据只有点名才跑，
+    /// 想验证「它在这一档会报」就必须点名，否则验到的是「它没被点名」。
+    /// </param>
+    private static List<LintHit> Hits(string text, string? genre, string id, bool onlyNaming = false) =>
+        LintRunner.Run(new[] { ("样本.txt", text) }, onlyNaming ? new[] { id } : null, null, genre)
             .Reports[0].Hits.Where(h => h.Id == id).ToList();
 
     [Theory]
@@ -117,8 +121,9 @@ public class GenreTierTests
     [Fact]
     public void 中文夹英文词只在小说档报()
     {
-        // 同人译名与品牌名也会命中，所以只到提醒级，且不进文档档与智能体档
-        Assert.NotEmpty(Hits("他 subtly 退开半步。", "fiction", 中文夹英文));
+        // 同人译名与品牌名也会命中，所以只到提醒级，且不进文档档与智能体档；
+        // 这一档里也只有点名才跑，见 DefaultOffRuleTests
+        Assert.NotEmpty(Hits("他 subtly 退开半步。", "fiction", 中文夹英文, onlyNaming: true));
         Assert.Empty(Hits("他 subtly 退开半步。", "agent", 中文夹英文));
     }
 

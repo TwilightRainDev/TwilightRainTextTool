@@ -45,7 +45,10 @@ public static class LintRunner
     }
 
     /// <summary>
-    /// 按档位挑出参与扫描的规则。留空 Genres 的规则各档都跑；不给档位就是整张表。
+    /// 按档位挑出参与扫描的规则。留空 Genres 的规则各档都跑；不给档位就是整张表（默认不勾选的除外）。
+    ///
+    /// 标了 DefaultOff 的判据只有被 --only 点名才跑：这类判据在真人语料上还没守住误报门限，
+    /// 默认关着比删掉强——想用的人点得到，不想用的人永远看不到它。
     ///
     /// 被档位挡掉的规则与 --only 同时点名时必须报错，否则用户看到的是「零命中」，
     /// 而真相是「这条规则不在这个档」，两种沉默完全不同。
@@ -55,8 +58,9 @@ public static class LintRunner
         IReadOnlyList<LintRule> rules, string? genre, IReadOnlyCollection<string>? namedByOnly = null)
     {
         ValidateGenre(genre);
+        bool Named(LintRule r) => namedByOnly?.Contains(r.Id, StringComparer.OrdinalIgnoreCase) ?? false;
         if (genre is null)
-            return rules.ToList();
+            return rules.Where(r => !r.DefaultOff || Named(r)).ToList();
 
         if (namedByOnly is not null)
         {
@@ -72,6 +76,7 @@ public static class LintRunner
 
         return rules
             .Where(r => r.Genres.Count == 0 || r.Genres.Contains(genre, StringComparer.OrdinalIgnoreCase))
+            .Where(r => !r.DefaultOff || Named(r))
             .ToList();
     }
 

@@ -60,6 +60,14 @@ public class LintRule
     /// 短文里的真问题又永远凑不够次数。
     /// </summary>
     public int? MinDensityPerKChar { get; set; }
+    /// <summary>
+    /// 默认不勾选：不点名就不跑，点名才跑。给「只在特定文体里才是毛病」的判据用。
+    ///
+    /// 命令行不给 --only 时这类判据整批跳过；界面里它们初始处于未勾状态，
+    /// 用户勾上就进 --only 名单照跑。判据本身的误报门限没过真人语料时，
+    /// 与其删掉，不如默认关着让人自己开。
+    /// </summary>
+    public bool DefaultOff { get; set; }
     public string Detail { get; set; } = "";
     /// <summary>与 Patterns 下标对齐的建议改法（可空）。</summary>
     public List<string>? Hints { get; set; }
@@ -238,6 +246,7 @@ public static class LintRuleStore
         ReplyMinCount = r.ReplyMinCount,
         TailChars = r.TailChars, MinCount = r.MinCount, Severity = r.Severity,
         CollapseAtDensity = r.CollapseAtDensity, MinDensityPerKChar = r.MinDensityPerKChar,
+        DefaultOff = r.DefaultOff,
         SkipInMarkdown = r.SkipInMarkdown,
         Detail = r.Detail, Hints = r.Hints is null ? null : new List<string>(r.Hints),
         SuggestScheme = r.SuggestScheme,

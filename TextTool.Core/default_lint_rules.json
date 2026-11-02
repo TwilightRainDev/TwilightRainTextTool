@@ -1051,7 +1051,8 @@
       "fiction"
     ],
     "Severity": "info",
-    "Detail": "中文句子里夹一个英文副词或形容词（他 subtly 退开半步）——同人译名与品牌名也会命中，这条只提醒"
+    "Detail": "中文句子里夹一个英文副词或形容词（他 subtly 退开半步）——同人译名与品牌名也会命中，这条只提醒",
+    "DefaultOff": true
   },
   {
     "Id": "fiction-bold-template",

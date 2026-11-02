@@ -51,6 +51,15 @@ public class LintRule
     /// 只对「同一模板反复」那几条开放：标点、隐形字符这类位置是给人照着改的，不折叠。
     /// </summary>
     public int? CollapseAtDensity { get; set; }
+    /// <summary>
+    /// 触发密度门限（每千字命中处数）：全文命中处数除以千字字数，不到本值一条都不报。
+    /// 只对 Scope=document 有效。
+    ///
+    /// 词表类规则要用它而不是 MinCount：一个「石头」在万字稿里是正常用词，同一套比喻
+    /// 千字里出现五次才是病灶。按绝对次数定门限，长文的正常用词会随篇幅一起堆过门限，
+    /// 短文里的真问题又永远凑不够次数。
+    /// </summary>
+    public int? MinDensityPerKChar { get; set; }
     public string Detail { get; set; } = "";
     /// <summary>与 Patterns 下标对齐的建议改法（可空）。</summary>
     public List<string>? Hints { get; set; }
@@ -198,6 +207,11 @@ public static class LintRuleStore
                 throw new ArgumentException($"规则 {rule.Id} 的 Patterns 含空串");
             if (rule.CollapseAtDensity is <= 0)
                 throw new ArgumentException($"规则 {rule.Id} 的折叠密度必须为正整数");
+            if (rule.MinDensityPerKChar is <= 0)
+                throw new ArgumentException($"规则 {rule.Id} 的触发密度必须为正整数");
+            // 段落级拿不到全文长度，密度算不出每千字：写在这里等于配了一个永远不生效的门限
+            if (rule.MinDensityPerKChar is not null && rule.Scope != "document")
+                throw new ArgumentException($"规则 {rule.Id} 的触发密度仅在 Scope=document 时有效");
             if (rule.MinCount < 1)
                 throw new ArgumentException($"规则 {rule.Id} 的 MinCount 必须 >= 1");
             if (rule.TailChars is <= 0)
@@ -223,7 +237,7 @@ public static class LintRuleStore
         Genres = new List<string>(r.Genres), BlocksReply = r.BlocksReply,
         ReplyMinCount = r.ReplyMinCount,
         TailChars = r.TailChars, MinCount = r.MinCount, Severity = r.Severity,
-        CollapseAtDensity = r.CollapseAtDensity,
+        CollapseAtDensity = r.CollapseAtDensity, MinDensityPerKChar = r.MinDensityPerKChar,
         SkipInMarkdown = r.SkipInMarkdown,
         Detail = r.Detail, Hints = r.Hints is null ? null : new List<string>(r.Hints),
         SuggestScheme = r.SuggestScheme,

@@ -101,15 +101,17 @@ public class LintRuleStoreTests
         Assert.Equal(
             new[] { "repeated-punctuation", "ellipsis-style", "mixed-punctuation-width", "dash-and-tilde", "dash-run", "dash-pause-in-reply", "tilde-run", "invisible-characters", "emoji-and-symbols", "foreign-script-mix", "char-face",
                     "cliche-words", "deck-speak", "ai-frequent-words", "vague-attribution", "training-cutoff-disclaimer", "chatbot-artifacts", "sycophancy", "filler-phrases",
-                    "parallel-contrast", "paragraph-ordinals", "elevated-ending", "stacked-modifiers", "fiction-modifier-chain", "copula-avoidance", "inline-title-list", "forced-reversal", "accounting-cliche",
+                    "parallel-contrast", "triadic-parallel", "paragraph-ordinals", "elevated-ending", "stacked-modifiers", "fiction-modifier-chain", "copula-avoidance", "inline-title-list", "forced-reversal", "accounting-cliche",
                     "adverb-overuse", "violent-verbs", "hedging-ending", "disclaimer-stack", "anthropomorphic-subject", "doc-process-residue", "assistant-persona", "meta-commentary-marker",
                     "fiction-body-tics", "fiction-physio-tics", "fiction-sensation-tics", "fiction-synonym-chain", "fiction-atmosphere-props", "fiction-dominant-register",
-                    "fiction-filler-modifiers", "fiction-dead-metaphor", "fiction-emotion-telling", "fiction-vague-nominalization", "fiction-vague-simile", "fiction-community-taste", "fiction-proportion-eyes", "latin-word-in-cjk",
+                    "fiction-filler-modifiers", "fiction-dead-metaphor", "fiction-emotion-telling", "fiction-vague-nominalization", "fiction-vague-simile", "fiction-community-taste", "fiction-proportion-eyes",
+                    "fiction-text-self-reference", "fiction-dialogue-reference", "fiction-narrator-formula", "fiction-metaphor-lexicon", "latin-word-in-cjk",
                     "fiction-bold-template", "fiction-machine-numbers", "synopsis-formula",
                     "trailer-ending", "outline-residue", "synopsis-register", "connective-scene-shift",
                     "agent-commit-hash", "agent-code-list", "agent-path-list", "agent-cli-option",
                     "agent-smoke-jargon", "agent-test-jargon", "agent-process-jargon", "agent-inline-code",
-                    "agent-truncated-path", "numbered-reference", "agent-conclusion-first", "agent-permission-ask" },
+                    "agent-truncated-path", "numbered-reference", "agent-conclusion-first", "agent-permission-ask",
+                    "agent-one-char-commitment", "agent-agreement-opener", "agent-deliberation-leak", "agent-reassurance-pile" },
             ids);
     }
 
@@ -150,8 +152,10 @@ public class LintRuleStoreTests
         Assert.Equal(new[] { "doc" }, rules["stacked-modifiers"].Genres);
         // 真人小说每万字 2.1 处、AI 小说 0 处：段末升华在小说档只制造噪声
         Assert.Equal(new[] { "doc" }, rules["elevated-ending"].Genres);
+        Assert.Equal(1, rules["triadic-parallel"].MinDensityPerKChar);
         Assert.Empty(rules["adverb-overuse"].Genres);
-        Assert.Empty(rules["violent-verbs"].Genres);
+        // 暴力说法是为「把改代码写成砍切钉咬」立的；小说里的刀口与撕咬是字面义，进小说档只会把战斗场面全报出来
+        Assert.Equal(new[] { "doc", "agent" }, rules["violent-verbs"].Genres);
         Assert.Equal(new[] { "fiction" }, rules["fiction-body-tics"].Genres);
         Assert.Equal(new[] { "fiction" }, rules["fiction-physio-tics"].Genres);
         Assert.Equal(new[] { "fiction" }, rules["fiction-atmosphere-props"].Genres);
@@ -167,6 +171,22 @@ public class LintRuleStoreTests
         Assert.Equal(new[] { "fiction" }, rules["fiction-emotion-telling"].Genres);
         Assert.Equal(new[] { "fiction" }, rules["fiction-vague-nominalization"].Genres);
         Assert.Equal(new[] { "doc" }, rules["anthropomorphic-subject"].Genres);
+        // 两条靠每千字密度判：单处是正常用词，篇幅一长正常用词也会堆起来，绝对次数定不了门限
+        Assert.Equal(new[] { "fiction" }, rules["fiction-text-self-reference"].Genres);
+        Assert.Equal(2, rules["fiction-text-self-reference"].MinDensityPerKChar);
+        Assert.Equal(new[] { "fiction" }, rules["fiction-dialogue-reference"].Genres);
+        Assert.Equal(3, rules["fiction-dialogue-reference"].MinDensityPerKChar);
+        Assert.Equal(new[] { "fiction" }, rules["fiction-narrator-formula"].Genres);
+        Assert.Equal(3, rules["fiction-narrator-formula"].MinDensityPerKChar);
+        Assert.Equal(new[] { "fiction" }, rules["fiction-metaphor-lexicon"].Genres);
+        Assert.Equal(5, rules["fiction-metaphor-lexicon"].MinDensityPerKChar);
+        Assert.Equal(new[] { "agent" }, rules["agent-one-char-commitment"].Genres);
+        Assert.Equal(2, rules["agent-one-char-commitment"].MinCount);
+        Assert.Equal(3, rules["agent-one-char-commitment"].MinDensityPerKChar);
+        Assert.Equal(new[] { "agent" }, rules["agent-agreement-opener"].Genres);
+        Assert.Equal(new[] { "agent" }, rules["agent-deliberation-leak"].Genres);
+        Assert.Equal(new[] { "agent" }, rules["agent-reassurance-pile"].Genres);
+        Assert.Equal(2, rules["agent-reassurance-pile"].MinCount);
 
         // 能不能打断：裸代号、截断路径、行话族、结论先行、正文求许可都标了；装饰符号按默认只提醒
         Assert.True(rules["agent-code-list"].BlocksReply);
@@ -235,6 +255,28 @@ public class LintRuleStoreTests
 
         var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
         Assert.Contains("agent", ex.Message);
+    }
+
+    [Fact]
+    public void Validate_触发密度小于一即抛()
+    {
+        var rule = Rule("cliche-words");
+        rule.MinDensityPerKChar = 0;
+
+        var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
+        Assert.Contains("触发密度", ex.Message);
+    }
+
+    [Fact]
+    public void Validate_段落级配触发密度即抛()
+    {
+        // 段落级拿不到全文长度，密度算不出每千字；放过去就是配了一个永不生效的门限
+        var rule = Rule("cliche-words");
+        rule.Scope = "paragraph";
+        rule.MinDensityPerKChar = 2;
+
+        var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.Validate(new List<LintRule> { rule }));
+        Assert.Contains("仅在 Scope=document 时有效", ex.Message);
     }
 
     [Fact]

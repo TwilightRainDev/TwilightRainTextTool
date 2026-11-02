@@ -394,6 +394,23 @@
     "CollapseAtDensity": 10
   },
   {
+    "Id": "triadic-parallel",
+    "Group": "syntax",
+    "Title": "三项并列排比",
+    "Kind": "regex",
+    "Patterns": [
+      "(.)[^、，。；：！？\\n]{1,7}、(?:\\1[^、，。；：！？\\n]{1,7}、)+\\1[^、，。；：！？\\n]{1,7}"
+    ],
+    "Scope": "document",
+    "MinCount": 1,
+    "MinDensityPerKChar": 1,
+    "Severity": "info",
+    "Detail": "三项以上并列，每项以同一个字开头：最简单、最直接、最不绕弯子。排比撑起来的是口气，不是内容，读者读完只记得节奏。真人长篇每千字最高 0.10 处，这类稿子 8.5 处",
+    "Hints": [
+      "三项减到两项，或者用一句话直接说完"
+    ]
+  },
+  {
     "Id": "paragraph-ordinals",
     "Group": "syntax",
     "Title": "段内序数词",
@@ -555,7 +572,11 @@
       "绊(?:了一下|住)"
     ],
     "Severity": "info",
-    "Detail": "把改代码写成砍、切、钉、咬——攻击性口癖顶替了具体动作，读者读到的是狠话而不是改动。护栏挡「一刀切」「咬定」「咬合」「最阴凉」"
+    "Detail": "把改代码写成砍、切、钉、咬——攻击性口癖顶替了具体动作，读者读到的是狠话而不是改动。只收编程文档与智能体回复：小说里的刀口与撕咬是字面义，收进小说档只会把战斗场面全报出来。护栏挡「一刀切」「咬定」「咬合」「最阴凉」",
+    "Genres": [
+      "doc",
+      "agent"
+    ]
   },
   {
     "Id": "hedging-ending",
@@ -935,6 +956,88 @@
     ],
     "Severity": "warn",
     "Detail": "把情绪按分数切块（一分不屑、两分不满、三分凉薄）：读者拿到的是饼图的图例，不是一个人。社区把这种写法叫扇形统计图式眼神，同段凑够两处才报"
+  },
+  {
+    "Id": "fiction-text-self-reference",
+    "Group": "syntax",
+    "Title": "回头指自己写的字",
+    "Kind": "regex",
+    "Patterns": [
+      "(?:这段|这篇|这行|那篇|那段)(?:文字|文章|字|八股|稿)",
+      "(?:文章|文字|句式|结尾|段落)(?:里写|里说|本身|的写法)",
+      "满屏|通篇|全文|八股"
+    ],
+    "Genres": [
+      "fiction"
+    ],
+    "Scope": "document",
+    "MinDensityPerKChar": 2,
+    "Severity": "info",
+    "Detail": "故事里回头指自己那几行字——读者跟着人物走，不是替你校稿。实测人类长篇每千字 0.01 处，这类稿子 8.8 处",
+    "Hints": [
+      "删掉指涉，只写被指的那件事",
+      "把「那段八股」换成人物此刻看见的东西",
+      "换成人物手上的动作或说出的话"
+    ]
+  },
+  {
+    "Id": "fiction-dialogue-reference",
+    "Group": "syntax",
+    "Title": "台词里反复指那句话",
+    "Kind": "regex",
+    "Patterns": [
+      "这句(?:话)?|这话|那句(?:话)?|半句"
+    ],
+    "Genres": [
+      "fiction"
+    ],
+    "Scope": "document",
+    "MinCount": 2,
+    "MinDensityPerKChar": 3,
+    "Severity": "info",
+    "Detail": "人物反复点评对方刚说的那句话，而不是接着做事或接话——对话变成了对语言的核对。实测人类长篇每千字最高 0.44 处，这类稿子 8 到 20 处",
+    "Hints": [
+      "换成接住那句话的动作或回答"
+    ]
+  },
+  {
+    "Id": "fiction-narrator-formula",
+    "Group": "syntax",
+    "Title": "说书人的开合语",
+    "Kind": "regex",
+    "Patterns": [
+      "(?:(?<=^)|(?<=[。！？”\\n]))[ \\t]*(?:诗曰|话说|且说|却说|单说|看官|话休絮烦|说时迟|有分教|且看下文|且听下回分解|不在话下|正是：)"
+    ],
+    "Genres": [
+      "fiction"
+    ],
+    "Scope": "document",
+    "MinCount": 3,
+    "MinDensityPerKChar": 3,
+    "Severity": "info",
+    "Detail": "说书人的开合语在一篇里连排：话本的标签被一次贴全。真话本把这些标记分摊在每一回的开头与结尾，水浒传全书每千字 0.79 处、最密的一回 1.86 处；这类稿子 7.9 处。判据只认句首或段首的标记，正文里的「话说了一半」不算",
+    "Hints": [
+      "一处开头或结尾留一个标记就够，其余删掉"
+    ]
+  },
+  {
+    "Id": "fiction-metaphor-lexicon",
+    "Group": "lexis",
+    "Title": "同一套比喻词",
+    "Kind": "regex",
+    "Patterns": [
+      "石子|石头|手术刀|齿轮|镜子|潮水|羽毛|提线木偶|涟漪|巨浪|神明|小兽|大石"
+    ],
+    "Genres": [
+      "fiction"
+    ],
+    "Scope": "document",
+    "MinDensityPerKChar": 5,
+    "Severity": "info",
+    "Detail": "这几个喻体被写过太多遍了：读者见过上千次，拿到的是模板不是画面。实测人类长篇每千字最多 0.32 处，这类稿子 18.7 处",
+    "Hints": [
+      "换成本书里出现过的东西，或者直接写那件事，不要比"
+    ]
   },
   {
     "Id": "latin-word-in-cjk",
@@ -1324,5 +1427,80 @@
     "Severity": "info",
     "BlocksReply": true,
     "Detail": "向人做决定该走问卷工具：正文里问一句既没选项也不落记录，还占掉一轮，所以命中即打回。只认求拍板的形状，不认顺口的客套"
+  },
+  {
+    "Id": "agent-one-char-commitment",
+    "Group": "syntax",
+    "Title": "单字动词表承诺",
+    "Kind": "regex",
+    "Patterns": [
+      "[我你](?:不)?(?:认|接|记|留|跟|拦|懂|办|收|应)(?:了)?(?=[。！？、，；])"
+    ],
+    "Genres": [
+      "agent"
+    ],
+    "Scope": "document",
+    "MinCount": 2,
+    "MinDensityPerKChar": 3,
+    "Severity": "info",
+    "Detail": "「我认」「我接」「我跟」连着用，承诺变成本能反应；读者要的是认下哪一条、接到什么、跟到哪里"
+  },
+  {
+    "Id": "agent-agreement-opener",
+    "Group": "lexis",
+    "Title": "开口先认同",
+    "Kind": "regex",
+    "Patterns": [
+      "(?:(?<=^)|(?<=[。！？\\n”」]))[ \\t]*(?:你说得对|你说得没错|你说得不错|确实如此|你说得有道理)"
+    ],
+    "Genres": [
+      "agent"
+    ],
+    "Scope": "document",
+    "MinCount": 1,
+    "Severity": "info",
+    "Detail": "回复另起一句先认同，再讲自己的话：认同成了开场白，读者想知道的是后面那半句有没有内容。判据只认句首与段首，正文里的转述不算；真人小说里这种句首认同每千字不到 0.002 处",
+    "Hints": [
+      "把认同删掉，直接说后面那半句"
+    ]
+  },
+  {
+    "Id": "agent-deliberation-leak",
+    "Group": "syntax",
+    "Title": "把推演写进回复",
+    "Kind": "regex",
+    "Patterns": [
+      "用户(?:提出|说|问|想要|希望|需要)|需要(?:谨慎)?(?:回应|决定|确认|判断)|让我(?:先)?(?:想想|确认|梳理)|我们要不要"
+    ],
+    "Genres": [
+      "agent"
+    ],
+    "Scope": "document",
+    "MinCount": 1,
+    "Severity": "info",
+    "Detail": "回复里出现「用户在问什么」「需要决定回答长度」「让我想想」这类自问自答：把内部推演摊开给读者看。读者要的是答案，不是推演过程",
+    "Hints": [
+      "删掉推演，只留结论"
+    ]
+  },
+  {
+    "Id": "agent-reassurance-pile",
+    "Group": "lexis",
+    "Title": "接住式安抚",
+    "Kind": "regex",
+    "Patterns": [
+      "稳稳地?接住|接住你|彻底开悟|问到(?:了)?(?:问题的)?核心|太清醒了|不用(?:硬撑|向我解释)|我完全理解你|一步(?:步)?说清楚"
+    ],
+    "Genres": [
+      "agent"
+    ],
+    "Scope": "document",
+    "MinCount": 2,
+    "MinDensityPerKChar": 3,
+    "Severity": "info",
+    "Detail": "「稳稳地接住你」「你问到核心」「彻底开悟」这类安抚句连着来：读者要的是答案，不是被安顿。真人长篇 4696 万字里这几种说法合计只有 8 处，一篇回复里连着来就是话术",
+    "Hints": [
+      "把安抚句删掉，直接说结论"
+    ]
   }
 ]

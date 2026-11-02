@@ -17,6 +17,29 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!--
+      繁转简靠 OpenCC 的词库完成：规则表按简体字面写死，繁体稿要先归一才对得上，
+      而「著作」与「穿着」这类只有按词看才分得清的字，逐字对照表必然读错一个。
+      包许可是 Apache-2.0，词库源自 OpenCC（同为 Apache-2.0），分词用的是 jieba.NET（MIT）。
+
+      包里的内容不跟着走：整包带 18 MB 的结巴词表加 1.1 MB 词典，图形界面下载包会从 9.4 MB 涨到
+      15 MB，破掉下载包 10 MB 的预算。转换走最大匹配分词，结巴词表一个字都不读，所以只留词典，
+      输出目录里多出 1.1 MB（压缩后约 0.7 MB）。它跟 dll 同目录，资源路径按程序所在目录拼，
+      见 TraditionalChinese.cs。
+    -->
+    <PackageReference Include="OpenCCNET" Version="1.1.0" ExcludeAssets="contentFiles" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      显式列出版本号：这条路径依赖包的目录结构，包升级时要跟着改。
+      库要求 14 份词典文件齐全，只筛文件、不筛内容。
+    -->
+    <None Include="$(NuGetPackageRoot)openccnet/1.1.0/contentFiles/any/netstandard2.0/Dictionary/*.txt"
+          Link="Dictionary/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- 测试需断言 store 的嵌入式资源名常量，使其在查询串写错时真正失败 -->
     <InternalsVisibleTo Include="TextTool.Tests" />
   </ItemGroup>

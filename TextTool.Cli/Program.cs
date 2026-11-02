@@ -15,6 +15,7 @@ namespace TextTool.Cli;
 ///   texttool vn &lt;file...&gt; [--scheme &lt;name...&gt;] [--max-para N] [--reformat-only|--punct-only]
 ///   texttool join &lt;directory&gt; [--pattern &quot;*.txt&quot;] [--output &lt;name&gt;]
 ///   texttool lint &lt;file...&gt; [--only &lt;id...&gt;] [--min-severity warn] [--genre doc|fiction|agent] [--json]
+///   texttool calibrate --human &lt;directory&gt; --ai &lt;directory&gt; [--genre doc|fiction|agent] [--json]
 ///   texttool reply-check [--json] [&lt;file&gt;|-]
 ///   texttool update [--check]
 /// </summary>
@@ -50,6 +51,7 @@ public static class Program
                 "vn" => RunVn(args[1..]),
                 "join" => RunJoin(args[1..]),
                 "lint" => RunLint(args[1..]),
+                "calibrate" => RunCalibrate(args[1..]),
                 "reply-check" => RunReplyCheck(args[1..]),
                 "update" => RunUpdate(args[1..]),
                 "help" or "--help" or "-h" => PrintUsage(),
@@ -404,6 +406,58 @@ public static class Program
     }
 
     /// <summary>
+    /// calibrate：人类文本与模型文本两侧各跑一遍规则，按规则汇总命中与每千字密度。
+    /// 退出码只有 0 与 2：这张表本身不是判定，跑完就算成功；缺参数、目录不存在、
+    /// 档位拼错都是用法问题，用 2，与 lint 对用法错误的口径一致。
+    /// </summary>
+    private static int RunCalibrate(string[] args)
+    {
+        try
+        {
+            // 表里有中文标题，Windows 控制台默认 GBK 码页可能编不出其中的字
+            try { Console.OutputEncoding = new UTF8Encoding(false); }
+            catch (Exception ex) when (ex is IOException or SecurityException or ArgumentException) { }
+
+            string? human = null, ai = null, genre = null;
+            bool json = false;
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                switch (args[i])
+                {
+                    case "--human": human = ParseValue(args, ref i, "--human"); break;
+                    case "--ai": ai = ParseValue(args, ref i, "--ai"); break;
+                    case "--genre": genre = ParseValue(args, ref i, "--genre"); break;
+                    case "--json": json = true; break;
+                    case "--help" or "-h": PrintCalibrateHelp(); return 0;
+                    default:
+                        throw new ArgumentException(
+                            $"未知参数：{args[i]}（calibrate 只收 --human、--ai、--genre、--json）");
+                }
+            }
+
+            // 缺的参数一次说全：两个都没给时逐条提示，会让人多跑一遍。
+            var missing = new List<string>();
+            if (human is null) missing.Add("--human <目录>");
+            if (ai is null) missing.Add("--ai <目录>");
+            if (missing.Count > 0)
+            {
+                Console.Error.WriteLine($"错误：calibrate 缺少 {string.Join(" 与 ", missing)}");
+                return 2;
+            }
+
+            var result = LintCalibration.RunDirectories(human!, ai!, genre);
+            Console.Write(json ? result.ToJson() + "\n" : result.Render());
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"错误：{ex.Message}");
+            return 2;
+        }
+    }
+
+    /// <summary>
     /// reply-check：回复里「离开文件就看不懂」的写法，一行一处。
     /// 回答闸把它当工具调用，输出因此是稳定契约：人读一行一处，JSON 带版本号。
     /// 退出码与 lint 一致：0 = 无命中，1 = 有命中，2 = 用法/读取错误。
@@ -456,6 +510,20 @@ public static class Program
             围栏代码块里的内容整块跳过：那是引用的原文，不是回复的措辞。
 
             退出码与 lint 一致：0 = 没有命中，1 = 有命中，2 = 用法或读取错误。
+            """);
+
+    private static void PrintCalibrateHelp() =>
+        Console.WriteLine("""
+            calibrate 选项：
+              --human <目录>        人类写的文本目录（递归收 .txt）
+              --ai <目录>           模型写的文本目录（递归收 .txt）
+              --genre <doc|fiction|agent>  只跑该档规则；不给则整张规则表都跑
+              --json                以 JSON 输出（Version 1：Genre、Human、Ai、SeparableCount、Rules）
+
+            判定：人类侧零命中、模型侧有命中记「可分」；两侧都有命中且模型侧每千字命中
+            达到人类侧三倍记「弱」；其余记「不可分」。密度用未取整的值算，表里只取两位小数。
+
+            退出码：0 = 跑完，2 = 用法或读取错误（缺 --human/--ai、目录不存在、没有 .txt、档位拼错）。
             """);
 
     private static void PrintLintHelp() =>
@@ -519,6 +587,7 @@ public static class Program
               texttool vn <文件...> [选项]        视觉小说排版
               texttool join <目录> [选项]         文件拼接
               texttool lint <文件...> [选项]        AI 味检查（只报不改）
+              texttool calibrate [选项]            规则标定：人类文本与模型文本两侧对比
               texttool reply-check [选项] [文件]    回复里读者解不开的写法（只报不改）
               texttool update [--check]           自更新（--check 仅检查）
 

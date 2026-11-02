@@ -380,5 +380,7 @@
   "LintRule_tombstone-of-deletion_Title": "Tombstone for deleted things",
   "LintRule_tombstone-of-deletion_Detail": "A tombstone for something deleted -- \"original cleared\", \"no longer on disk\", \"not here\". The reader gets an epitaph instead of the content; write what is missing as missing, and put the destination in the change log where it can be looked up.",
   "LintRule_re-report-suppression_Title": "Monument against re-reporting",
-  "LintRule_re-report-suppression_Detail": "Declaring \"not a defect\", \"stop counting this as debt\", \"agreed boundary\" up front: the next reader gets a prohibition, not a criterion. State the boundary as a condition -- when it does not apply -- so they can judge for themselves without knowing what a previous reader reported."
+  "LintRule_re-report-suppression_Detail": "Declaring \"not a defect\", \"stop counting this as debt\", \"agreed boundary\" up front: the next reader gets a prohibition, not a criterion. State the boundary as a condition -- when it does not apply -- so they can judge for themselves without knowing what a previous reader reported.",
+  "LintBaselineHeader": "{0} hits beyond the baseline, {1} in the baseline",
+  "LintNote_baseline": "{0} hits beyond the baseline"
 }

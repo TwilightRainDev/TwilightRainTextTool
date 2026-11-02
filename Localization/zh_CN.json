@@ -380,5 +380,7 @@
   "LintRule_tombstone-of-deletion_Title": "为删掉的东西立碑",
   "LintRule_tombstone-of-deletion_Detail": "为删掉的东西立碑：「原档已清」「盘上已无」「不在这里」。读者拿到的是碑文，不是他要找的内容；东西没了就照没了写，去向值得交代就写进变更记录，那里才是查得到的地方。",
   "LintRule_re-report-suppression_Title": "防复报的碑",
-  "LintRule_re-report-suppression_Detail": "在正文里预先声明「这不是缺陷」「别再当债收」「既定边界」：下一个读者读到的是禁令，不是判据。把边界写成条件句——什么情况下不判——比立碑更能让人自己判断，也不需要知道上一个读者报过什么。"
+  "LintRule_re-report-suppression_Detail": "在正文里预先声明「这不是缺陷」「别再当债收」「既定边界」：下一个读者读到的是禁令，不是判据。把边界写成条件句——什么情况下不判——比立碑更能让人自己判断，也不需要知道上一个读者报过什么。",
+  "LintBaselineHeader": "相对基线新增 {0} 处，基线 {1} 处",
+  "LintNote_baseline": "相对基线新增 {0} 处"
 }

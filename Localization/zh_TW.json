@@ -380,5 +380,7 @@
   "LintRule_tombstone-of-deletion_Title": "為刪掉的東西立碑",
   "LintRule_tombstone-of-deletion_Detail": "為刪掉的東西立碑：「原檔已清」「盤上已無」「不在這裡」。讀者拿到的是碑文，不是他要找的內容；東西沒了就照沒了寫，去向值得交代就寫進變更記錄，那裡才是查得到的地方。",
   "LintRule_re-report-suppression_Title": "防復報的碑",
-  "LintRule_re-report-suppression_Detail": "在正文裡預先聲明「這不是缺陷」「別再當債收」「既定邊界」：下一個讀者讀到的是禁令，不是判據。把邊界寫成條件句——什麼情況下不判——比立碑更能讓人自己判斷，也不需要知道上一個讀者報過什麼。"
+  "LintRule_re-report-suppression_Detail": "在正文裡預先聲明「這不是缺陷」「別再當債收」「既定邊界」：下一個讀者讀到的是禁令，不是判據。把邊界寫成條件句——什麼情況下不判——比立碑更能讓人自己判斷，也不需要知道上一個讀者報過什麼。",
+  "LintBaselineHeader": "相對基線新增 {0} 處，基線 {1} 處",
+  "LintNote_baseline": "相對基線新增 {0} 處"
 }

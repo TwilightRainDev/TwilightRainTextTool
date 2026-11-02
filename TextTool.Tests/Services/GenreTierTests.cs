@@ -131,6 +131,8 @@ public class GenreTierTests
     [InlineData("砍一刀就能把这段改完。")]
     [InlineData("这一刀最狠，直接补一刀就行。")]
     [InlineData("这个报错咬了我一下。")]
+    [InlineData("同一个问题咬过我两次。")]
+    [InlineData("这坑咬住不放。")]
     [InlineData("这是最阴的一类，把接口钉死了。")]
     public void 暴力动词在文档档也报(string text)
     {

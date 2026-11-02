@@ -111,7 +111,7 @@ public class LintRuleStoreTests
                     "agent-commit-hash", "agent-code-list", "agent-path-list", "agent-cli-option",
                     "agent-smoke-jargon", "agent-test-jargon", "agent-process-jargon", "agent-inline-code",
                     "agent-truncated-path", "numbered-reference", "agent-conclusion-first", "agent-permission-ask",
-                    "agent-one-char-commitment", "agent-agreement-opener", "agent-deliberation-leak", "agent-reassurance-pile" },
+                    "agent-one-char-commitment", "agent-agreement-opener", "agent-deliberation-leak", "agent-reassurance-pile", "agent-self-intro", "agent-error-paste", "agent-flattery", "agent-conclusion-preamble" },
             ids);
     }
 
@@ -187,6 +187,12 @@ public class LintRuleStoreTests
         Assert.Equal(new[] { "agent" }, rules["agent-deliberation-leak"].Genres);
         Assert.Equal(new[] { "agent" }, rules["agent-reassurance-pile"].Genres);
         Assert.Equal(2, rules["agent-reassurance-pile"].MinCount);
+        // 报错话术在博客与智能体回复里都出现，其余三条只对回复生效
+        Assert.Equal(new[] { "doc", "agent" }, rules["agent-error-paste"].Genres);
+        Assert.Equal(2, rules["agent-error-paste"].MinCount);
+        Assert.Equal(new[] { "agent" }, rules["agent-self-intro"].Genres);
+        Assert.Equal(new[] { "agent" }, rules["agent-flattery"].Genres);
+        Assert.Equal(2, rules["agent-conclusion-preamble"].MinCount);
 
         // 能不能打断：裸代号、截断路径、行话族、结论先行、正文求许可都标了；装饰符号按默认只提醒
         Assert.True(rules["agent-code-list"].BlocksReply);

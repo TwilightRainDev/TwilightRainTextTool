@@ -362,5 +362,13 @@
   "LintRule_terminology-pile_Title": "術語與意象堆砌",
   "LintRule_terminology-pile_Detail": "全篇這類詞每千字 {0} 處，引號外的都算——術語替掉了具體的觀察，讀者拿到的是名詞，不是看見的東西；真人長篇每千字最高 0.05 處",
   "LintRule_agent-reassurance-pile_Title": "接住式安撫",
-  "LintRule_agent-reassurance-pile_Detail": "「穩穩地接住你」「你問到核心」「徹底開悟」這類安撫句連著來：讀者要的是答案，不是被安頓。真人長篇 4696 萬字裡這幾種說法合計只有 8 處，一篇回覆裡連著來就是話術"
+  "LintRule_agent-reassurance-pile_Detail": "「穩穩地接住你」「你問到核心」「徹底開悟」這類安撫句連著來：讀者要的是答案，不是被安頓。真人長篇 4696 萬字裡這幾種說法合計只有 8 處，一篇回覆裡連著來就是話術",
+  "LintRule_agent-self-intro_Title": "自報家門",
+  "LintRule_agent-self-intro_Detail": "回覆開頭先交代自己是什麼、再聲明誠實：讀者關心的是答案，交代身分不增加可信度",
+  "LintRule_agent-error-paste_Title": "介面報錯話術",
+  "LintRule_agent-error-paste_Detail": "稿子裡出現介面報錯的原話，說明這段是拿對話框裡的文字拼的，不是寫出來的。真人長篇 4884 萬字裡一句都沒有",
+  "LintRule_agent-flattery_Title": "先誇提問者",
+  "LintRule_agent-flattery_Detail": "拿「你很敏銳」「你說到點子上」開場：誇的是提問的人，不是問題本身。真人長篇裡同類說法只有一處",
+  "LintRule_agent-conclusion-preamble_Title": "結論前置口號",
+  "LintRule_agent-conclusion-preamble_Detail": "「一句話總結」「讓我直接告訴您結論」這類口號連著出現：口號本身不提供資訊，讀者要的是那句話說完整"
 }

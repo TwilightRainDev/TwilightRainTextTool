@@ -362,5 +362,13 @@
   "LintRule_terminology-pile_Title": "Pile of terms and images",
   "LintRule_terminology-pile_Detail": "{0} such terms per 1k characters outside quotation marks: the terms replace concrete observation, so the reader gets nouns instead of anything seen. Human novels stay under 0.05 per 1k characters",
   "LintRule_agent-reassurance-pile_Title": "Reassurance stacked on reassurance",
-  "LintRule_agent-reassurance-pile_Detail": "'I've got you', 'you've hit the core of it', 'you'll see clearly now' one after another: the reader wants an answer, not to be soothed. Human novels of 47 million characters use these phrasings 8 times in total"
+  "LintRule_agent-reassurance-pile_Detail": "'I've got you', 'you've hit the core of it', 'you'll see clearly now' one after another: the reader wants an answer, not to be soothed. Human novels of 47 million characters use these phrasings 8 times in total",
+  "LintRule_agent-self-intro_Title": "Announcing what it is",
+  "LintRule_agent-self-intro_Detail": "Opening by stating what it is and that it is being honest: the reader wants the answer. Human novels use the Chinese phrase for \"as an assistant\" twice, meaning a helper, not this self-description",
+  "LintRule_agent-error-paste_Title": "Server error strings",
+  "LintRule_agent-error-paste_Detail": "Verbatim API error text means the passage was assembled from chat-window output rather than written. None appears in 48.8 million characters of human novels",
+  "LintRule_agent-flattery_Title": "Praising the asker",
+  "LintRule_agent-flattery_Detail": "Opening with \"you are sharp\" praises the person, not the question, and the answer that follows is usually empty",
+  "LintRule_agent-conclusion-preamble_Title": "Announcing the conclusion",
+  "LintRule_agent-conclusion-preamble_Detail": "\"In one sentence\" and \"let me tell you the conclusion\" back to back: the announcement carries no information; write the sentence instead"
 }

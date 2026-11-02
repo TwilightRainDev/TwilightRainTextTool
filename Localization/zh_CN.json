@@ -362,5 +362,13 @@
   "LintRule_terminology-pile_Title": "术语与意象堆砌",
   "LintRule_terminology-pile_Detail": "全篇这类词每千字 {0} 处，引号外的都算——术语替掉了具体的观察，读者拿到的是名词，不是看见的东西；真人长篇每千字最高 0.05 处",
   "LintRule_agent-reassurance-pile_Title": "接住式安抚",
-  "LintRule_agent-reassurance-pile_Detail": "「稳稳地接住你」「你问到核心」「彻底开悟」这类安抚句连着来：读者要的是答案，不是被安顿。真人长篇 4696 万字里这几种说法合计只有 8 处，一篇回复里连着来就是话术"
+  "LintRule_agent-reassurance-pile_Detail": "「稳稳地接住你」「你问到核心」「彻底开悟」这类安抚句连着来：读者要的是答案，不是被安顿。真人长篇 4696 万字里这几种说法合计只有 8 处，一篇回复里连着来就是话术",
+  "LintRule_agent-self-intro_Title": "自报家门",
+  "LintRule_agent-self-intro_Detail": "回复开头先交代自己是什么、再声明诚实：读者关心的是答案，交代身份不增加可信度。真人长篇里「作为助手」出现过两次，那种用法指具体帮工，不是这道判据要收的自称",
+  "LintRule_agent-error-paste_Title": "接口报错话术",
+  "LintRule_agent-error-paste_Detail": "稿子里出现接口报错的原话，说明这段是拿对话界面里的文字拼的，不是写出来的。真人长篇 4884 万字里一句都没有",
+  "LintRule_agent-flattery_Title": "先夸提问者",
+  "LintRule_agent-flattery_Detail": "拿「你很敏锐」「你说到点子上」开场：夸的是提问的人，不是问题本身，答案往往紧接着就空。真人长篇里同类说法只有一处",
+  "LintRule_agent-conclusion-preamble_Title": "结论前置口号",
+  "LintRule_agent-conclusion-preamble_Detail": "「一句话总结」「让我直接告诉您结论」这类口号连着出现：口号本身不提供信息，读者要的是那句话说完整。真人长篇里「一句话总结」只在一本里出现过两次"
 }

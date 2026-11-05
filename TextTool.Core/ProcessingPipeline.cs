@@ -99,11 +99,13 @@ public static class ProcessingPipeline
         }
 
         // Step 5: 标点替换（内存操作）
+        // 这里逐行调用，看不到整份稿子的头尾，博文结构遮罩开不了，因此传 false：
+        // 行合并本来就按行搬运，博文稿不归这个命令管。
         bool replaceApplied = false;
         if (postProcess.ApplyReplace && postProcess.Rules.Count > 0)
         {
             for (int i = 0; i < lines.Count; i++)
-                lines[i] = PunctuationReplacer.Apply(lines[i], postProcess.Rules);
+                lines[i] = PunctuationReplacer.Apply(lines[i], postProcess.Rules, protectBlogRegions: false);
             replaceApplied = true;
         }
 

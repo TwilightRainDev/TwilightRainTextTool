@@ -35,9 +35,11 @@ public sealed class AiToneLintService
     {
         // 判据按简体字面写，繁体稿直接比对不响：先备一份繁转简的副本专门拿去匹配。
         // 归一串保证与原文等长，两份串的下标、长度、行列完全通用，报告里的位置与片段仍取原文。
+        // 博文结构（头部字段、三冒号指令行、代码块、公式、链接地址）在归一份里遮成空格，
+        // 规则与统计都碰不到它们，位置仍按原文算。
         var source = new ScanText(text);
         string mode = DetectParagraphMode(text);
-        var report = new LintReport { File = fileName, Chars = text.Length, ParagraphMode = mode };
+        var report = new LintReport { File = fileName, Chars = source.Chars, ParagraphMode = mode };
         // 折叠阈值随报告带出：渲染层不查规则表，界面与命令行两处看到的折叠口径因此一致
         foreach (var rule in _rules)
             if (rule.Rule.CollapseAtDensity is int density)
@@ -124,7 +126,7 @@ public sealed class AiToneLintService
         }
 
         var kept = DropOverlaps(candidates);
-        if (!MeetsDensity(rule, kept.Count, source.Matching.Length, role)) return;
+        if (!MeetsDensity(rule, kept.Count, source.Chars, role)) return;
 
         foreach (var (index, length, hint) in kept)
             report.Hits.Add(Hit(rule.Rule, lineStarts, source, index, length, hint));
@@ -974,20 +976,28 @@ public sealed class AiToneLintService
     /// 一份待扫文本的两面：原文交回读者，归一字面交给规则。
     /// 归一按词换字，但保证与原文等长、逐位对齐，命中位置因此不必换算：
     /// 匹配得到的 (index, length) 直接在原文里切，拿到的是用户自己交来的那几个字。
+    ///
+    /// 博文结构在归一份里先遮成空格：匹配不到词，整行被遮的地方当空行，篇幅统计因此只算正文。
+    /// 原文原样留着，Match 与 Snippet 取到的仍是用户写的那些字。
     /// </summary>
     private readonly struct ScanText
     {
         public ScanText(string text)
         {
             Original = text;
-            Matching = TraditionalChinese.ToSimplified(text);
+            var mask = BlogMarkdownMask.Create(text);
+            Matching = TraditionalChinese.ToSimplified(mask is null ? text : mask.Apply(text));
+            Chars = text.Length - (mask?.MaskedChars ?? 0);
         }
 
         /// <summary>用户原文。行列、Match、Snippet 都从它取。</summary>
         public string Original { get; }
 
-        /// <summary>繁转简后的副本，只给匹配与统计看。</summary>
+        /// <summary>繁转简后的副本，只给匹配与统计看。博文结构在这里是空格。</summary>
         public string Matching { get; }
+
+        /// <summary>正文字数：原文长度扣掉博文结构那部分。密度门限与报告里的字数都按它算。</summary>
+        public int Chars { get; }
 
         /// <summary>原文的一段连续切片：Match 与说明文字里要引用用户字面的地方用它。</summary>
         public string Slice(int index, int length) => Original.Substring(index, length);

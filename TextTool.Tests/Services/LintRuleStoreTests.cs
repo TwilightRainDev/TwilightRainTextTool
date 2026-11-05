@@ -105,7 +105,7 @@ public class LintRuleStoreTests
                     "adverb-overuse", "violent-verbs", "hedging-ending", "disclaimer-stack", "anthropomorphic-subject", "doc-process-residue",
                     "no-debt-declaration", "completion-log", "supersession", "tombstone-of-deletion", "re-report-suppression",
                     "assistant-persona", "meta-commentary-marker",
-                    "fiction-body-tics", "fiction-physio-tics", "fiction-sensation-tics", "fiction-synonym-chain", "fiction-atmosphere-props", "fiction-dominant-register",
+                    "fiction-body-tics", "fiction-physio-tics", "fiction-permission-consoling", "fiction-choice-diagnosis", "fiction-beat-action", "fiction-sensation-tics", "fiction-synonym-chain", "fiction-atmosphere-props", "fiction-dominant-register",
                     "fiction-filler-modifiers", "fiction-dead-metaphor", "fiction-emotion-telling", "fiction-vague-nominalization", "fiction-vague-simile", "fiction-community-taste", "fiction-proportion-eyes",
                     "fiction-text-self-reference", "fiction-dialogue-reference", "fiction-narrator-formula", "fiction-metaphor-lexicon", "latin-word-in-cjk",
                     "fiction-bold-template", "fiction-machine-numbers", "synopsis-formula",

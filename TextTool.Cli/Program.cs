@@ -345,7 +345,7 @@ public static class Program
 
             var files = new List<string>();
             bool json = false;
-            string? only = null, minSeverity = null, genre = null, baselineFile = null;
+            string? only = null, minSeverity = null, genre = null, baselineFile = null, logFile = null;
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -356,6 +356,7 @@ public static class Program
                     case "--min-severity": minSeverity = ParseValue(args, ref i, "--min-severity"); break;
                     case "--genre": genre = ParseValue(args, ref i, "--genre"); break;
                     case "--baseline": baselineFile = ParseValue(args, ref i, "--baseline"); break;
+                    case "--log": logFile = ParseValue(args, ref i, "--log"); break;
                     case "--help" or "-h": PrintLintHelp(); return 0;
                     default: files.Add(args[i]); break;
                 }
@@ -380,6 +381,13 @@ public static class Program
 
             // 两条分支共用同一个纯函数，行尾/报告间隔/尾换行的契约只在 LintOutput 里维护
             Console.Write(LintOutput.Render(reportSet, json));
+
+            // 命中日志另存一份：留档与脚本读的是全部位置，不受人读报告的折叠与分组影响
+            if (logFile is not null)
+            {
+                HitLog.Append(logFile, reportSet);
+                Console.Error.WriteLine($"[日志] 命中追加到 {logFile}");
+            }
 
             bool anyHit = reportSet.Reports.Any(r => r.Hits.Count > 0);
             return anyHit ? 1 : 0;
@@ -558,6 +566,8 @@ public static class Program
                                           agent = 智能体回复（读者要能一句句读懂，不受团队行话与代号）；
                                           不给则跑全部规则（与加档位之前一致）
               --baseline <文件>     只报相对这份稿子多出来的命中，每条规则给一行新增处数
+              --log <文件>          把命中追加写成一行一条的 JSON 日志：留档、跑全库统计时用；
+                                    日志里只有 ASCII 与汉字，别的字符转成 \uXXXX
 
             输入：文件路径可多个；传 - 表示从 stdin 读。带 --baseline 时只能给一个输入。
 

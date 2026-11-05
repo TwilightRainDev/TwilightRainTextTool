@@ -51,15 +51,16 @@ public static class LintRunner
         if (baseline is null)
         {
             foreach (var (file, text) in inputs)
-                reportSet.Reports.Add(service.Scan(text, file, genre).Filter(onlyIds, minSeverity));
+                reportSet.Reports.Add(service.Scan(text, file, genre, respectBlogDefaults: onlyIds is null)
+                    .Filter(onlyIds, minSeverity));
             return reportSet;
         }
 
         // 同一份规则表扫两遍：基线那份只用来数词面，报告本身不给读者看。
         // 两遍共用一个引擎实例，规则编译、繁简归一这些只做一次。
         var counts = LintBaseline.Count(service.Scan(
-            baseline.Value.Text, baseline.Value.File, genre, LintScanRole.Baseline));
-        var body = service.Scan(inputs[0].Text, inputs[0].File, genre, LintScanRole.Compared);
+            baseline.Value.Text, baseline.Value.File, genre, LintScanRole.Baseline, onlyIds is null));
+        var body = service.Scan(inputs[0].Text, inputs[0].File, genre, LintScanRole.Compared, onlyIds is null);
         LintBaseline.Apply(body, counts, active, lintText);
         reportSet.Reports.Add(body.Filter(onlyIds, minSeverity));
         return reportSet;

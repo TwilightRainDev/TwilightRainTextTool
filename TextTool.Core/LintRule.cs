@@ -28,6 +28,13 @@ public class LintRule
     /// markdown 的「- **要点**：」是标准写法，不是 AI 痕迹。
     /// </summary>
     public bool SkipInMarkdown { get; set; }
+    /// <summary>
+    /// 博文稿不跑本判据。只在没指定档位的博文稿上生效：指定了 --genre 就等于告诉工具按谁的尺子量，照跑。
+    /// 给两类判据用：一是历史叙事那五条，博文正文讲的就是过程，全篇都是这类词（护栏在博文路径上也不拿它提醒）；
+    /// 二是越界字符，博文用箭头画流程、用颜文字收尾，那是正文内容，不是排版事故。
+    /// 博文按 <see cref="BlogMarkdownMask.IsBlogPost"/> 认，不是只要带头部字段就算。
+    /// </summary>
+    public bool SkipInBlog { get; set; }
     /// <summary>document 或 paragraph。</summary>
     public string Scope { get; set; } = "document";
     /// <summary>
@@ -120,6 +127,7 @@ public class LintRule
         MinDensityPerKChar = MinDensityPerKChar,
         DefaultOff = DefaultOff,
         SkipInMarkdown = SkipInMarkdown,
+        SkipInBlog = SkipInBlog,
         Detail = Detail, Hints = Hints is null ? null : new List<string>(Hints),
         SuggestScheme = SuggestScheme,
     };

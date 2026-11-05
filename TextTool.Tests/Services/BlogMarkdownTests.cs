@@ -12,12 +12,12 @@ public class BlogMarkdownTests
     private const string 破折号 = "dash-and-tilde";
 
     /// <summary>正文的骨架：头部字段加一段正文，各条用例只换中间那截。</summary>
-    private static string 博文(string body) => $"---\ntitle: 标题\n---\n\n{body}";
+    private static string 博文(string body) => $"---\ntitle: 标题\ndate: 2026-08-01 10:00:00\n---\n\n{body}";
 
     private static bool 整段被遮(string text, string fragment)
     {
         var mask = BlogMarkdownMask.Create(text);
-        Assert.NotNull(mask);
+        Assert.True(mask.IsBlogPost);
         int start = text.IndexOf(fragment, StringComparison.Ordinal);
         Assert.True(start >= 0, $"样本里找不到「{fragment}」");
         for (int i = start; i < start + fragment.Length; i++)
@@ -28,7 +28,7 @@ public class BlogMarkdownTests
     private static bool 有字被遮(string text, string fragment)
     {
         var mask = BlogMarkdownMask.Create(text);
-        Assert.NotNull(mask);
+        Assert.True(mask.IsBlogPost);
         int start = text.IndexOf(fragment, StringComparison.Ordinal);
         Assert.True(start >= 0, $"样本里找不到「{fragment}」");
         for (int i = start; i < start + fragment.Length; i++)
@@ -39,6 +39,10 @@ public class BlogMarkdownTests
     private static LintReport 扫(string text, string id) =>
         LintRunner.Run(new[] { ("样本.md", text) }, new[] { id }, null).Reports[0];
 
+    /// <summary>不点名、不给档位地跑一遍：这是人打开一份博文时的默认口径。</summary>
+    private static List<LintHit> 默认跑(string text) =>
+        LintRunner.Run(new[] { ("样本.md", text) }, null, null).Reports[0].Hits.ToList();
+
     // ---------------------------------------------------------------
     //  遮罩自带的口径
     // ---------------------------------------------------------------
@@ -46,9 +50,9 @@ public class BlogMarkdownTests
     [Fact]
     public void 头部字段整段被遮_正文不受影响()
     {
-        const string text = "---\ntitle: 标题\nexcerpt: 摘要\n---\n\n正文第一段。";
+        const string text = "---\ntitle: 标题\ndate: 2026-08-01 10:00:00\nexcerpt: 摘要\n---\n\n正文第一段。";
 
-        Assert.True(整段被遮(text, "title: 标题\nexcerpt: 摘要"));
+        Assert.True(整段被遮(text, "title: 标题\ndate: 2026-08-01 10:00:00\nexcerpt: 摘要"));
         Assert.False(有字被遮(text, "正文第一段。"));
     }
 
@@ -58,7 +62,33 @@ public class BlogMarkdownTests
         // 纯文本也拿 --- 当分隔线，这种稿子遮一遮就等于整段不检查了
         const string text = "---\n正文第一段。\n---\n\n正文第二段。";
 
-        Assert.Null(BlogMarkdownMask.Create(text));
+        var mask = BlogMarkdownMask.Create(text);
+
+        Assert.False(mask.IsBlogPost);
+        Assert.Equal(0, mask.MaskedChars);
+    }
+
+    [Fact]
+    public void 头部字段只有标题没日期不算博文()
+    {
+        // 文档站的头部字段长这样，它们该按文档检查，代码块里的文件名是指名道姓的证据
+        const string text = "---\ntitle: 接口说明\ntags:\n  - api\n---\n\n正文用 `npm run dev` 启动。";
+
+        var mask = BlogMarkdownMask.Create(text);
+
+        Assert.False(mask.IsBlogPost);
+        Assert.Equal(0, mask.MaskedChars);
+    }
+
+    [Fact]
+    public void 三冒号指令行本身就够认出博文()
+    {
+        string text = "正文第一段。\n\n:::admon[note]\n块里的正文。\n:::\n";
+
+        var mask = BlogMarkdownMask.Create(text);
+
+        Assert.True(mask.IsBlogPost);
+        Assert.True(整段被遮(text, ":::admon[note]"));
     }
 
     [Fact]
@@ -100,11 +130,15 @@ public class BlogMarkdownTests
     }
 
     [Fact]
-    public void 没有博文结构的稿子不建遮罩()
+    public void 没有博文结构的稿子一个字都不遮()
     {
-        const string text = "普通的一段话。\n\n另一段。";
+        // 文档与智能体回复里的行内代码是指名道姓的证据，不能因为「像代码」就遮掉
+        const string text = "普通的一段话。\n\n改 `LintRule.cs` 的 `Genres` 字段。";
 
-        Assert.Null(BlogMarkdownMask.Create(text));
+        var mask = BlogMarkdownMask.Create(text);
+
+        Assert.False(mask.IsBlogPost);
+        Assert.Equal(0, mask.MaskedChars);
     }
 
     // ---------------------------------------------------------------
@@ -114,7 +148,7 @@ public class BlogMarkdownTests
     [Fact]
     public void 头部字段里的重复标点不报()
     {
-        var report = 扫("---\ntitle: 标题。。\n---\n\n正文照常。。", 重复标点);
+        var report = 扫("---\ntitle: 标题。。\ndate: 2026-08-01 10:00:00\n---\n\n正文照常。。", 重复标点);
 
         var hit = Assert.Single(report.Hits);
         Assert.Contains("正文照常", hit.Snippet);
@@ -150,13 +184,55 @@ public class BlogMarkdownTests
     public void 字数只算正文()
     {
         // 头部字段与代码块长短都不动字数：两边各自只改被遮的那一段，正文字数应当相同
-        var shortTitle = 扫("---\ntitle: 标题\n---\n\n正文。", 重复标点);
-        var longTitle = 扫("---\ntitle: 一个长到离谱的标题，长到把字数撑出几十个字去\n---\n\n正文。", 重复标点);
-        var shortCode = 扫("---\ntitle: 标题\n---\n\n```\n短\n```\n\n正文。", 重复标点);
-        var longCode = 扫("---\ntitle: 标题\n---\n\n```\n很长很长很长的一段代码放在这里\n```\n\n正文。", 重复标点);
+        var shortTitle = 扫("---\ntitle: 标题\ndate: 2026-08-01 10:00:00\n---\n\n正文。", 重复标点);
+        var longTitle = 扫("---\ntitle: 一个长到离谱的标题，长到把字数撑出几十个字去\ndate: 2026-08-01 10:00:00\n---\n\n正文。", 重复标点);
+        var shortCode = 扫("---\ntitle: 标题\ndate: 2026-08-01 10:00:00\n---\n\n```\n短\n```\n\n正文。", 重复标点);
+        var longCode = 扫("---\ntitle: 标题\ndate: 2026-08-01 10:00:00\n---\n\n```\n很长很长很长的一段代码放在这里\n```\n\n正文。", 重复标点);
 
         Assert.Equal(shortTitle.Chars, longTitle.Chars);
         Assert.Equal(shortCode.Chars, longCode.Chars);
+    }
+
+
+    // ---------------------------------------------------------------
+    //  博文默认口径：几条判据不跑，点名或给档位就恢复
+    // ---------------------------------------------------------------
+
+    [Fact]
+    public void 博文默认不报历史痕迹_给了档位就报()
+    {
+        string text = 博文("这一轮它改了两边。\n\n已修复的问题列在上面。");
+
+        Assert.DoesNotContain(默认跑(text), h => h.Id == "completion-log");
+        var doc = LintRunner.Run(new[] { ("样本.md", text) }, null, null, "doc").Reports[0];
+        Assert.Contains(doc.Hits, h => h.Id == "completion-log");
+    }
+
+    [Fact]
+    public void 博文默认不报越界字符()
+    {
+        string text = 博文("流水线是 读文件 → 合并 → 写输出。");
+
+        Assert.DoesNotContain(默认跑(text), h => h.Id == "char-face");
+    }
+
+    [Fact]
+    public void 不是博文的稿子照常报这些判据()
+    {
+        const string text = "流水线是 读文件 → 合并 → 写输出。\n这一轮改了两边。";
+
+        Assert.Contains(默认跑(text), h => h.Id == "char-face");
+    }
+
+    [Fact]
+    public void markdown里的加粗不报_纯文本照报()
+    {
+        // 段落口径靠空行比例判：博文里空行分段，纯文本稿一行接一行
+        string markdown = 博文("**这一句加粗了。**\n\n下一段。");
+        const string plain = "一句加粗：**这一句加粗了。**\n第二行。";
+
+        Assert.Empty(扫(markdown, "fiction-bold-template").Hits);
+        Assert.NotEmpty(扫(plain, "fiction-bold-template").Hits);
     }
 
     // ---------------------------------------------------------------
@@ -166,7 +242,7 @@ public class BlogMarkdownTests
     [Fact]
     public void 标点替换不动头部字段与代码块()
     {
-        const string text = "---\ntitle: 标题。。\n---\n\n```\n代码里。。\n```\n\n正文。。";
+        const string text = "---\ntitle: 标题。。\ndate: 2026-08-01 10:00:00\n---\n\n```\n代码里。。\n```\n\n正文。。";
         var rules = new List<ReplaceRule> { new() { Find = "。。", Replace = "。" } };
 
         string replaced = PunctuationReplacer.Apply(text, rules);

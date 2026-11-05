@@ -154,6 +154,7 @@
   },
   {
     "Id": "char-face",
+    "SkipInBlog": true,
     "Group": "punctuation",
     "Title": "越界字符",
     "Kind": "regex",
@@ -659,6 +660,7 @@
   },
   {
     "Id": "no-debt-declaration",
+    "SkipInBlog": true,
     "Group": "lexis",
     "Title": "无债宣告或空节留痕",
     "Kind": "regex",
@@ -706,6 +708,7 @@
   },
   {
     "Id": "completion-log",
+    "SkipInBlog": true,
     "Group": "lexis",
     "Title": "完工记录或过程叙述",
     "Kind": "regex",
@@ -775,6 +778,7 @@
   },
   {
     "Id": "supersession",
+    "SkipInBlog": true,
     "Group": "lexis",
     "Title": "取代或版本变更叙事",
     "Kind": "regex",
@@ -852,6 +856,7 @@
   },
   {
     "Id": "tombstone-of-deletion",
+    "SkipInBlog": true,
     "Group": "lexis",
     "Title": "为删掉的东西立碑",
     "Kind": "regex",
@@ -919,6 +924,7 @@
   },
   {
     "Id": "re-report-suppression",
+    "SkipInBlog": true,
     "Group": "lexis",
     "Title": "防复报的碑",
     "Kind": "regex",
@@ -1421,6 +1427,7 @@
   },
   {
     "Id": "fiction-bold-template",
+    "SkipInMarkdown": true,
     "Group": "punctuation",
     "Title": "正文里的加粗模板",
     "Kind": "regex",

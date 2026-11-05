@@ -30,15 +30,22 @@ public sealed class AiToneLintService
     /// 这份稿子在比较里站什么位置。只有 delta 密度基准读它：净增要写前写后两稿才算得出来，
     /// 单扫一份时那条门限无从判定，报用法错而不是退回全文口径。
     /// </param>
+    /// <param name="respectBlogDefaults">
+    /// 博文稿上那几条标了 SkipInBlog 的判据跑不跑。点名指定规则时为 false：
+    /// 用户把规则名写出来就是要看它，博文的默认口径不该把他的点名吃掉。
+    /// </param>
     public LintReport Scan(string text, string fileName, string? genre = null,
-        LintScanRole role = LintScanRole.Standalone)
+        LintScanRole role = LintScanRole.Standalone, bool respectBlogDefaults = true)
     {
         // 判据按简体字面写，繁体稿直接比对不响：先备一份繁转简的副本专门拿去匹配。
         // 归一串保证与原文等长，两份串的下标、长度、行列完全通用，报告里的位置与片段仍取原文。
-        // 博文结构（头部字段、三冒号指令行、代码块、公式、链接地址）在归一份里遮成空格，
+        // markdown 结构（头部字段、指令行、代码块、公式、链接地址）在归一份里遮成空格，
         // 规则与统计都碰不到它们，位置仍按原文算。
         var source = new ScanText(text);
         string mode = DetectParagraphMode(text);
+        // 博文稿只有显式指定了档位才吃那几条标了 SkipInBlog 的判据：
+        // 不指定档位等于让三张尺子一起上，那几条在博文上会把报告淹掉。
+        bool blogDefault = source.IsBlogPost && genre is null && respectBlogDefaults;
         var report = new LintReport { File = fileName, Chars = source.Chars, ParagraphMode = mode };
         // 折叠阈值随报告带出：渲染层不查规则表，界面与命令行两处看到的折叠口径因此一致
         foreach (var rule in _rules)
@@ -50,6 +57,8 @@ public sealed class AiToneLintService
         foreach (var rule in _rules)
         {
             if (rule.Rule.SkipInMarkdown && mode == "markdown")
+                continue;
+            if (rule.Rule.SkipInBlog && blogDefault)
                 continue;
             if (rule.Rule.Scope == "paragraph")
                 ScanParagraphScope(rule, source, report, mode, lineStarts);
@@ -986,8 +995,9 @@ public sealed class AiToneLintService
         {
             Original = text;
             var mask = BlogMarkdownMask.Create(text);
-            Matching = TraditionalChinese.ToSimplified(mask is null ? text : mask.Apply(text));
-            Chars = text.Length - (mask?.MaskedChars ?? 0);
+            Matching = TraditionalChinese.ToSimplified(mask.Apply(text));
+            Chars = text.Length - mask.MaskedChars;
+            IsBlogPost = mask.IsBlogPost;
         }
 
         /// <summary>用户原文。行列、Match、Snippet 都从它取。</summary>
@@ -998,6 +1008,9 @@ public sealed class AiToneLintService
 
         /// <summary>正文字数：原文长度扣掉博文结构那部分。密度门限与报告里的字数都按它算。</summary>
         public int Chars { get; }
+
+        /// <summary>这份稿子按博文处理：头部字段里有 title 与 date，或者有 <c>::</c> 指令行。</summary>
+        public bool IsBlogPost { get; }
 
         /// <summary>原文的一段连续切片：Match 与说明文字里要引用用户字面的地方用它。</summary>
         public string Slice(int index, int length) => Original.Substring(index, length);

@@ -30,7 +30,6 @@ public static class PunctuationReplacer
     {
         var mask = protectBlogRegions ? BlogMarkdownMask.Create(text) : null;
         if (mask is null || mask.MaskedChars == 0) return ApplyRules(text, rules);
-
         // 按遮罩切段：没遮的地方套规则，遮住的地方原封不动拼回去。
         // 规则原本就在一条串上连着套，按段套与整串套在段内等价；
         // 跨段才成立的替换（一条规则横跨代码块边界）不做，那本来也不是标点该管的事。

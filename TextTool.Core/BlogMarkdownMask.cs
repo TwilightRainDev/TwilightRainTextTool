@@ -1,21 +1,15 @@
 namespace TextTool.Services;
 
 /// <summary>
-/// 博文稿的结构遮罩：标出 markdown 里不属于正文的那些字符，检查与标点替换都不碰它们。
+/// 博文稿的结构遮罩：认出这份稿子是不是博文，并标出其中不属于正文的那些字符。
 ///
-/// 认哪些区域，按本博客的写法定：
-/// <list type="bullet">
-/// <item>开头的头部字段：第一行是 <c>---</c>，到下一个 <c>---</c> 或 <c>...</c> 收尾。题目、摘要、标签在这里。</item>
-/// <item>三冒号指令行：<c>:::admon[...]</c>、<c>:::fold[...]</c>、<c>::card{...}</c>、收尾的 <c>:::</c>。
-/// 只遮这一行本身，指令包着的正文照样算正文。</item>
-/// <item>围栏代码块（``` 与 ~~~）整段，含两头的围栏行；行内代码连反引号一起。</item>
-/// <item>公式：<c>$...$</c>、<c>$$...$$</c>，以及整行的 <c>$$</c> 块。</item>
-/// <item>链接与图片的地址部分：<c>]()</c> 里那一段，方括号里的文字留着；自动链接整条。</item>
-/// <item>引用式链接定义整行、HTML 注释整段。</item>
-/// </list>
+/// 先认博文：头部字段里同时有 <c>title</c> 与 <c>date</c> 两行键值，或者出现过以 <c>::</c> 开头的行。
+/// 这两个条件是 Hexo 与本站主题各自的招牌，普通 markdown 文档不会同时占。
+/// 光凭「有头部字段」不行：VuePress、Docusaurus 那类文档站也有头部字段，而它们该按文档检查。
 ///
-/// 判断一份稿子是不是博文：出现头部字段或三冒号指令行才算，两样都没有就不是博文，
-/// 调用方拿到的遮罩为 null，后续行为与不认博文时完全一致。所以普通 txt 稿子一个字都不会变。
+/// 认成博文之后才遮，遮这五类：开头的头部字段整段、以 <c>::</c> 开头的整行（指令行与收尾行）、
+/// 围栏代码块与行内代码、<c>$...$</c> 与 <c>$$...$$</c> 公式、链接与图片的地址（连同引用式链接定义整行）。
+/// 不是博文的稿子一个字都不遮，检查与替换按整篇来，行内代码里的文件名照旧能被判据看到。
 ///
 /// 遮罩与原文等长、逐位对齐，换行不动：命中的位置、行列、Match 仍按原文取，
 /// 段落切分也照原文的换行进行，被遮住的字符只当空格看。
@@ -24,28 +18,37 @@ public sealed class BlogMarkdownMask
 {
     private readonly bool[] _masked;
 
-    private BlogMarkdownMask(bool[] masked)
+    private BlogMarkdownMask(bool[] masked, bool isBlogPost)
     {
         _masked = masked;
+        IsBlogPost = isBlogPost;
         int count = 0;
         foreach (bool bit in masked)
             if (bit) count++;
         MaskedChars = count;
     }
 
-    /// <summary>被遮住的字符数，换行也算在内。<see cref="AiToneLintService"/> 用它从字数里扣掉。</summary>
+    /// <summary>被遮住的字符数，换行也算在内。字数统计用它从原文长度里扣。</summary>
     public int MaskedChars { get; }
 
     /// <summary>
-    /// 读一份稿子，认出博文结构并建遮罩。不像博文时返回 null。
+    /// 这份稿子按博文处理：头部字段里有 title 与 date，或者出现过 <c>::</c> 指令行。
+    /// 不是博文时 <see cref="MaskedChars"/> 为 0，调用方按整篇处理。
     /// </summary>
-    public static BlogMarkdownMask? Create(string text)
+    public bool IsBlogPost { get; }
+
+    /// <summary>
+    /// 读一份稿子，建遮罩。不是博文时返回空遮罩（<see cref="MaskedChars"/> 为 0），调用方不必判空。
+    /// </summary>
+    public static BlogMarkdownMask Create(string text)
     {
-        if (string.IsNullOrEmpty(text)) return null;
+        if (string.IsNullOrEmpty(text)) return new BlogMarkdownMask(Array.Empty<bool>(), false);
 
         var masked = new bool[text.Length];
-        bool sawStructure = false;
         bool inFrontMatter = false;
+        bool hasTitle = false;
+        bool hasDate = false;
+        bool sawDirective = false;
         bool inFence = false;
         char fenceChar = '\0';
         int fenceLength = 0;
@@ -65,6 +68,8 @@ public sealed class BlogMarkdownMask
             if (inFrontMatter)
             {
                 wholeLine = true;
+                hasTitle |= IsKey(trimmed, "title");
+                hasDate |= IsKey(trimmed, "date");
                 if (trimmed is "---" or "...") inFrontMatter = false;
             }
             else if (inFence)
@@ -82,12 +87,10 @@ public sealed class BlogMarkdownMask
                 wholeLine = true;
                 if (trimmed.Contains("$$", StringComparison.Ordinal)) inMathBlock = false;
             }
-            else if (lineNo == 0 && IsFrontMatterDelimiter(trimmed))
+            else if (lineNo == 0 && IsFrontMatterDelimiter(trimmed) && LooksLikeFrontMatter(text, lineEnd))
             {
                 wholeLine = true;
                 inFrontMatter = true;
-                // 开头一个 --- 不算证据：纯文本也拿 --- 当分隔线，所以还要看这段里有没有键值行
-                sawStructure |= LooksLikeFrontMatter(text, lineEnd);
             }
             else if (OpensFence(trimmed, out fenceChar, out fenceLength))
             {
@@ -103,7 +106,7 @@ public sealed class BlogMarkdownMask
             else if (trimmed.StartsWith("::", StringComparison.Ordinal))
             {
                 wholeLine = true;
-                sawStructure = true;
+                sawDirective = true;
             }
             else if (IsReferenceDefinition(trimmed))
             {
@@ -122,7 +125,9 @@ public sealed class BlogMarkdownMask
             if (pos >= text.Length) break;
         }
 
-        return sawStructure ? new BlogMarkdownMask(masked) : null;
+        bool isBlog = (hasTitle && hasDate) || sawDirective;
+        // 不是博文就一点不遮：行内代码、围栏代码块里的字对文档与回复是有用的证据
+        return new BlogMarkdownMask(isBlog ? masked : Array.Empty<bool>(), isBlog);
     }
 
     /// <summary>
@@ -131,6 +136,9 @@ public sealed class BlogMarkdownMask
     /// </summary>
     public string Apply(string text)
     {
+        // 不是博文时遮罩是空的，长度对不上：原样交回，调用方不必先问 IsBlogPost
+        if (_masked.Length != text.Length) return text;
+
         var buffer = new char[text.Length];
         for (int i = 0; i < text.Length; i++)
         {
@@ -140,7 +148,7 @@ public sealed class BlogMarkdownMask
         return new string(buffer);
     }
 
-    /// <summary>这个位置是不是被遮住的区域。给需要自己看原文的调用方用。</summary>
+    /// <summary>这个位置是不是被遮住的区域。</summary>
     public bool IsMasked(int index) => index >= 0 && index < _masked.Length && _masked[index];
 
     private static void Mask(bool[] masked, int from, int to)
@@ -149,9 +157,17 @@ public sealed class BlogMarkdownMask
             masked[i] = true;
     }
 
-    /// <summary>首行是 --- 才算头部字段。字节序标记不算字。</summary>
+    /// <summary>首行是 --- 才算头部字段的开头。字节序标记不算字。</summary>
     private static bool IsFrontMatterDelimiter(string trimmed) =>
         trimmed.TrimStart('\uFEFF').Trim() == "---";
+
+    /// <summary>这一行是不是给定的键值行，<c>title: 标题</c> 与 <c>title : 标题</c> 都算。</summary>
+    private static bool IsKey(string trimmed, string key)
+    {
+        if (!trimmed.StartsWith(key, StringComparison.OrdinalIgnoreCase)) return false;
+        string rest = trimmed[key.Length..];
+        return rest.StartsWith(':') || rest.TrimStart().StartsWith(':');
+    }
 
     /// <summary>
     /// 收尾分隔符之前有没有 YAML 键值行（<c>title: 标题</c> 这种）。

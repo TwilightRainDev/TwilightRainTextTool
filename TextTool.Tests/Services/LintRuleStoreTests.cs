@@ -102,7 +102,7 @@ public class LintRuleStoreTests
             new[] { "repeated-punctuation", "ellipsis-style", "mixed-punctuation-width", "dash-and-tilde", "dash-run", "dash-pause-in-reply", "tilde-run", "invisible-characters", "emoji-and-symbols", "foreign-script-mix", "char-face",
                     "cliche-words", "deck-speak", "ai-frequent-words", "vague-attribution", "training-cutoff-disclaimer", "chatbot-artifacts", "sycophancy", "filler-phrases",
                     "parallel-contrast", "triadic-parallel", "paragraph-ordinals", "elevated-ending", "stacked-modifiers", "fiction-modifier-chain", "copula-avoidance", "inline-title-list", "forced-reversal", "accounting-cliche",
-                    "adverb-overuse", "violent-verbs", "hedging-ending", "disclaimer-stack", "anthropomorphic-subject", "doc-process-residue",
+                    "adverb-overuse", "violent-verbs", "hedging-ending", "disclaimer-stack", "hedge-denial-pile", "anthropomorphic-subject", "doc-process-residue",
                     "no-debt-declaration", "completion-log", "supersession", "tombstone-of-deletion", "re-report-suppression",
                     "assistant-persona", "meta-commentary-marker",
                     "fiction-body-tics", "fiction-physio-tics", "fiction-permission-consoling", "fiction-choice-diagnosis", "fiction-beat-action", "fiction-sensation-tics", "fiction-synonym-chain", "fiction-atmosphere-props", "fiction-dominant-register",

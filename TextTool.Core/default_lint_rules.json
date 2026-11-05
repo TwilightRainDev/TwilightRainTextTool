@@ -608,6 +608,23 @@
     "Detail": "同一段里叠了三处以上免责——既不肯定也不否定，读者拿不到结论；单处免责是必要的分寸，叠起来才是推卸"
   },
   {
+    "Id": "hedge-denial-pile",
+    "Group": "syntax",
+    "Title": "叠着免责",
+    "Kind": "regex",
+    "Patterns": [
+      "(?:不代表|不意味着|不等于|不能证明|不能说明|不足以证明|不能断言|不能保证|不能排除)"
+    ],
+    "Genres": [
+      "agent",
+      "doc"
+    ],
+    "Scope": "paragraph",
+    "MinCount": 3,
+    "Severity": "warn",
+    "Detail": "一段里连着三处「不代表」「不意味着」「不能证明」——一句话后面挂三个否定，读者拿不到结论。人写不出这个节奏：要么给判断，要么明说不知道。单处是分寸，连着来才是躲"
+  },
+  {
     "Id": "anthropomorphic-subject",
     "Group": "syntax",
     "Title": "非活物做人的动作",

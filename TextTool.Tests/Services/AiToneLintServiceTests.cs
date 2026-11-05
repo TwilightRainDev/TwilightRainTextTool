@@ -373,6 +373,17 @@ public class AiToneLintServiceTests
     }
 
     [Fact]
+    public void Scan_省略号判据放过三个英文句点_只报中文句号连打()
+    {
+        // 工作区的文本要在老控制台上显示，那里没有单字符省略号的字形，三连点是通行写法
+        var dots = new AiToneLintService(LintRuleStore.Load()).Scan("等一下...我看看。", "t.md");
+        var periods = new AiToneLintService(LintRuleStore.Load()).Scan("等一下。。。我看看。", "t.md");
+
+        Assert.DoesNotContain(dots.Hits, h => h.Id == "ellipsis-style");
+        Assert.Contains(periods.Hits, h => h.Id == "ellipsis-style");
+    }
+
+    [Fact]
     public void Scan_同位置多规则命中保持引擎顺序()
     {
         var text = "反复。。。。";

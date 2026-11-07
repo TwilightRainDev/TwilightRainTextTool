@@ -10,7 +10,7 @@ namespace TextTool.Tests.Services;
 /// </summary>
 public class FictionDensityRuleTests
 {
-    private const string 指涉= "fiction-text-self-reference";
+    private const string 指涉 = "fiction-text-self-reference";
     private const string 喻体 = "fiction-metaphor-lexicon";
     private const string 台词指涉 = "fiction-dialogue-reference";
     private const string 说书套语 = "fiction-narrator-formula";

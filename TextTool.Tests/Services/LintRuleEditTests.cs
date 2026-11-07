@@ -92,6 +92,58 @@ public class LintRuleEditTests
         Assert.Equal(3, edited.LiteralPatterns!.Count);
     }
 
+    /// <summary>
+    /// 由代码计算的规则只开放文案与适用范围：重建后匹配方式、算法名、段内门限与空词表都得原样带回。
+    /// 这几项被表单改掉一个，要么写盘被挡下，要么悄悄指向另一段实现。
+    /// </summary>
+    [Fact]
+    public void 算法规则只改文案时计算方式原样带回()
+    {
+        using var dir = new TempDir();
+        var original = LintRuleStore.GetDefaultRules().First(rule => rule.Kind == LintRule.KindAlgorithm);
+
+        var edited = LintRuleEdit.Rebuild(original, rule =>
+        {
+            rule.Title = "改过的标题";
+            rule.Detail = "改过的说明";
+            rule.Severity = "warn";
+            rule.DefaultOff = true;
+            rule.Genres = new List<string> { "agent" };
+        });
+        LintRuleStore.SaveOverrides(new List<LintRule> { edited }, baseDir: dir.Path);
+
+        var saved = Assert.Single(LintRuleStore.LoadOverrides(baseDir: dir.Path));
+        Assert.Equal("改过的标题", saved.Title);
+        Assert.Equal("改过的说明", saved.Detail);
+        Assert.Equal("warn", saved.Severity);
+        Assert.True(saved.DefaultOff);
+        Assert.Equal(new[] { "agent" }, saved.Genres);
+        Assert.Equal(LintRule.KindAlgorithm, saved.Kind);
+        Assert.Equal(original.AlgorithmName, saved.AlgorithmName);
+        Assert.Equal(original.MinCount, saved.MinCount);
+        Assert.Empty(saved.Patterns);
+    }
+
+    /// <summary>
+    /// 给算法规则塞词表写在磁盘之外：报错点名是哪条规则、哪个字段，文件一个字节也不写。
+    /// 编辑窗把词表原样交给这一步，所以界面上看到的就是这句话。
+    /// </summary>
+    [Fact]
+    public void 算法规则加词表不落盘且报错点名()
+    {
+        using var dir = new TempDir();
+        var rule = LintRuleStore.GetDefaultRules()
+            .First(item => item.Kind == LintRule.KindAlgorithm).Clone();
+        rule.Patterns = new List<string> { "引号" };
+
+        var ex = Assert.Throws<ArgumentException>(
+            () => LintRuleStore.SaveOverrides(new List<LintRule> { rule }, baseDir: dir.Path));
+
+        Assert.Contains(rule.Id, ex.Message);
+        Assert.Contains("词表", ex.Message);
+        Assert.False(File.Exists(Path.Combine(dir.Path, LintRuleStore.OverrideFileName)));
+    }
+
     /// <summary>每个字段都填上值：任何一项没被带回，上面那条逐字段比对就会指出来。</summary>
     private static LintRule 完整规则() => new()
     {

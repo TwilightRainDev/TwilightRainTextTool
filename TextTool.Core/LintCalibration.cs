@@ -56,8 +56,8 @@ public static class LintCalibration
             {
                 Id = pair.Key,
                 Title = titles[pair.Key],
-                HumanHits = pair.Value.Human,
-                AiHits = pair.Value.Ai,
+                HumanHits = pair.Value._human,
+                AiHits = pair.Value._ai,
             })
             .ToList();
         foreach (var row in result.Rules)
@@ -100,13 +100,13 @@ public static class LintCalibration
             {
                 if (!tallies.TryGetValue(hit.Id, out var tally))
                 {
-                    // 算法规则（引号混用、复读串之类）不在规则表里，标题只能从命中里带出来
+                    // 兜底：生效规则里没有这条 Id，标题就从命中里带出来（会跑的规则上面已按表预建）
                     tally = new Tally();
                     tallies[hit.Id] = tally;
                     titles[hit.Id] = hit.Title;
                 }
-                if (aiSide) tally.Ai++;
-                else tally.Human++;
+                if (aiSide) tally._ai++;
+                else tally._human++;
             }
         }
         stats.PerKChar = LintTextFormatter.Density(stats.Hits, stats.Chars);
@@ -141,8 +141,8 @@ public static class LintCalibration
 
     private sealed class Tally
     {
-        public int Human;
-        public int Ai;
+        public int _human;
+        public int _ai;
     }
 }
 

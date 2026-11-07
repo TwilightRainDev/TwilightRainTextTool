@@ -10,6 +10,8 @@ public sealed record ReplyShapeHit(string Id, string Title, string Token, int Li
 
 /// <summary>
 /// 回复里机器词与越界字符的定位：每条判据一行一处，围栏代码块整块不看。
+/// 围栏行取 <see cref="MarkdownFenceTracker"/>：与博文遮罩、段落切分同一套认法，
+/// 四反引号块里的三反引号不算关门，整块都跳过。
 /// 判据与正则都取自规则表（<see cref="RuleIds"/>）。默认出现即算；规则表里标了回复门限的，
 /// 要同一段内凑够那个数才返回，不够的整段不提（单处行话既不值得打断也不值得提醒）。
 /// </summary>
@@ -48,9 +50,6 @@ public sealed class ReplyShapeScanner
     /// <summary>规则表缺条目或写法不符时抛 InvalidOperationException：位置错在配置，不在调用方。</summary>
     public static ReplyShapeScanner FromStore() => new(LintRuleStore.Load());
 
-    /// <summary>围栏线：整行只由三连反引号或三连波浪号开头，代码块的开与闭都靠它。</summary>
-    private static readonly Regex FenceLine = RegexGuard.Create(@"^[ \t]*(?:```|~~~)");
-
     public IReadOnlyList<ReplyShapeHit> Scan(string text)
     {
         var hits = new List<ReplyShapeHit>();
@@ -66,17 +65,14 @@ public sealed class ReplyShapeScanner
 
         // 同一行同一个片段只报一次：一段正文里同一个写法复述两遍，读者的问题只有一个
         var seen = new HashSet<string>(StringComparer.Ordinal);
-        bool inFence = false;
+        // 围栏与另外两处同一套认法：开门关门都要比字符与长度
+        var fence = new MarkdownFenceTracker();
         int line = 0;
         foreach (var raw in lines)
         {
             line++;
-            if (FenceLine.IsMatch(raw))
-            {
-                inFence = !inFence;
-                continue;
-            }
-            if (inFence) continue;
+            if (fence.Advance(raw)) continue;
+            if (fence.InFence) continue;
             foreach (var (id, title, blocks, _, patterns) in _shapes)
                 foreach (var pattern in patterns)
                     foreach (Match match in pattern.Matches(raw))

@@ -142,6 +142,63 @@ public class BlogMarkdownTests
     }
 
     // ---------------------------------------------------------------
+    //  遮罩的存储：一个字符一比特，逐位对齐
+    // ---------------------------------------------------------------
+
+    [Fact]
+    public void Apply_遮住的段按原文位置逐字换成空格()
+    {
+        // 遮罩按位存，一位差池就让报告的列号整体错开。这里不看遮罩自己怎么答，
+        // 直接按原文里找得到的片段算出该空哪些位置，再跟 Apply 的结果逐字对。
+        const string 头部 = "---\ntitle: 标题\ndate: 2026-08-01 10:00:00\n---\n\n";
+        string text = 头部 + "正文 " + new string('甲', 142)
+            + " `行内代码` 在这里，链接 [名字](https://example.com/a) 也在。";
+        string[] 遮住的片段 =
+        {
+            "---\ntitle: 标题\ndate: 2026-08-01 10:00:00\n---\n",
+            "`行内代码`",
+            "(https://example.com/a)",
+        };
+
+        // 行内代码从第 191 个字起，六个字跨过第 192 位的字边界：按位存的遮罩在这里最容易错一位。
+        Assert.Equal(191, text.IndexOf("`行内代码`", StringComparison.Ordinal));
+
+        var mask = BlogMarkdownMask.Create(text);
+        var applied = mask.Apply(text);
+        var 遮住 = new HashSet<int>();
+        foreach (string fragment in 遮住的片段)
+        {
+            int start = text.IndexOf(fragment, StringComparison.Ordinal);
+            Assert.True(start >= 0, $"样本里找不到「{fragment}」");
+            for (int i = start; i < start + fragment.Length; i++) 遮住.Add(i);
+        }
+
+        Assert.True(mask.IsBlogPost);
+        Assert.Equal(text.Length, applied.Length);
+        for (int i = 0; i < text.Length; i++)
+        {
+            char 期望 = 遮住.Contains(i) && text[i] is not ('\n' or '\r') ? ' ' : text[i];
+            Assert.Equal(期望, applied[i]);
+            Assert.Equal(遮住.Contains(i), mask.IsMasked(i));
+        }
+        // 换行也算在被遮的字符里，字数统计靠这个口径从原文长度里扣
+        Assert.Equal(遮住.Count, mask.MaskedChars);
+    }
+
+    [Fact]
+    public void Apply_不是博文时原样交回入参()
+    {
+        // 普通稿子一个字都不遮，也就不必另存一份：五十兆的稿子照抄一份就是五十兆。
+        const string text = "普通的一段话，没有头部字段，也没有指令行。\n\n第二段改 `LintRule.cs`。";
+
+        var mask = BlogMarkdownMask.Create(text);
+
+        Assert.False(mask.IsBlogPost);
+        Assert.Equal(0, mask.MaskedChars);
+        Assert.Same(text, mask.Apply(text));
+    }
+
+    // ---------------------------------------------------------------
     //  检查侧：博文结构里的字不报，正文照报
     // ---------------------------------------------------------------
 
@@ -225,7 +282,7 @@ public class BlogMarkdownTests
     }
 
     [Fact]
-    public void markdown里的加粗不报_纯文本照报()
+    public void Markdown_里的加粗不报_纯文本照报()
     {
         // 段落口径靠空行比例判：博文里空行分段，纯文本稿一行接一行
         string markdown = 博文("**这一句加粗了。**\n\n下一段。");

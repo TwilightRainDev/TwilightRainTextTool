@@ -205,7 +205,7 @@
       "本质上",
       "换言之",
       "不难发现",
-      "需要指出的是",
+      "需要指出(?:的是|[，,：:。])",
       "基于以上分析",
       "一方面.{0,20}另一方面",
       "这意味着",
@@ -341,7 +341,7 @@
       "抱歉[，,]\\s*(?:之前|上次|上一条|上一段|我(?:上一|刚才|这))"
     ],
     "Severity": "warn",
-    "Detail": "先抬高对方再说话：夸问题、夸眼力、把接话写成接住人。读者要的是答案，不是被托住。护栏挡「修好问题」这类正常搭配"
+    "Detail": "先抬高对方再说话：夸问题、夸眼力、把接话写成接住人。读者要的是答案，不是被托住。认的是紧跟叹号的「好问题」，与「修好问题」这类动宾搭配分不开，命中要自己看一眼"
   },
   {
     "Id": "filler-phrases",
@@ -542,6 +542,17 @@
     "Detail": "「算一笔账」式陈词滥调：用虚构动作引出数据"
   },
   {
+    "Id": "accounting-word-misuse",
+    "Group": "lexis",
+    "Title": "记事写成记账",
+    "Kind": "regex",
+    "Patterns": [
+      "值得[^。！？\\n]{0,4}记(?:上|下)?一笔"
+    ],
+    "Severity": "warn",
+    "Detail": "「记一笔」是记账的说法：笔数账目，记账才数一笔。记事写「值得一记」，不写「值得记一笔」。只收「值得…记一笔」这一形状，账面、支出、记仇这些真记账不动。工作区里这一形状只出现过一次，写它的是模型，人写的稿子里零处"
+  },
+  {
     "Id": "adverb-overuse",
     "Group": "statistics",
     "Title": "副词同段堆叠",
@@ -622,7 +633,7 @@
     "Scope": "paragraph",
     "MinCount": 3,
     "Severity": "warn",
-    "Detail": "一段里连着三处「不代表」「不意味着」「不能证明」——一句话后面挂三个否定，读者拿不到结论。人写不出这个节奏：要么给判断，要么明说不知道。单处是分寸，连着来才是躲"
+    "Detail": "一段里连着三处「不代表」「不意味着」「不能证明」——一句话后面挂三个否定，读者拿不到结论。真人也这么写：排比式论证里每处否定各带各的主语，这一层判据分不出来，命中要自己再看一眼；单处是分寸，连着来多半是躲"
   },
   {
     "Id": "anthropomorphic-subject",
@@ -1777,6 +1788,7 @@
     "Kind": "regex",
     "Patterns": [
       "要不要我",
+      "需不需要我",
       "要我(?:来|先|再|帮)",
       "只要你(?:回复|说|回答)",
       "如果你(?:愿意|需要|想)[^。！？\\n]{0,10}我[^。！？\\n]{0,3}可以",
@@ -1955,5 +1967,167 @@
     "Hints": [
       "删掉口号，直接写那句话"
     ]
+  },
+  {
+    "Id": "sentence-tempo",
+    "Group": "statistics",
+    "Title": "节拍化短句",
+    "Kind": "algorithm",
+    "AlgorithmName": "sentence-tempo",
+    "Genres": [],
+    "Severity": "info",
+    "Detail": "第 {0} 行起这一窗 {1} 句，平均 {2} 字，最长 {3} 字——一句都没说长，整段按节拍往下砸"
+  },
+  {
+    "Id": "fiction-simile-pile",
+    "Group": "syntax",
+    "Title": "一句里叠着比喻",
+    "Kind": "algorithm",
+    "AlgorithmName": "fiction-simile-pile",
+    "Genres": [
+      "fiction"
+    ],
+    "Severity": "info",
+    "Detail": "这一句 {0} 字里串了 {1} 个比喻——读者拿到的是一串喻体，不是一个画面；真人长篇里这种句子每千字不超过 0.08 句"
+  },
+  {
+    "Id": "terminology-pile",
+    "Group": "lexis",
+    "Title": "术语与意象堆砌",
+    "Kind": "algorithm",
+    "AlgorithmName": "terminology-pile",
+    "Genres": [
+      "fiction"
+    ],
+    "Severity": "info",
+    "Detail": "全篇这类词每千字 {0} 处，引号外的都算——术语替掉了具体的观察，读者拿到的是名词，不是看见的东西；真人长篇每千字最高 0.05 处"
+  },
+  {
+    "Id": "mixed-quote-style",
+    "Group": "punctuation",
+    "Title": "引号风格混用",
+    "Kind": "algorithm",
+    "AlgorithmName": "mixed-quote-style",
+    "Genres": [],
+    "Severity": "info",
+    "Detail": "全角与半角引号混用（同一套引号里嵌另一种不算）",
+    "SuggestScheme": "引号括号统一"
+  },
+  {
+    "Id": "mixed-bracket-width",
+    "Group": "punctuation",
+    "Title": "括号全半角混用",
+    "Kind": "algorithm",
+    "AlgorithmName": "mixed-bracket-width",
+    "Genres": [],
+    "Severity": "info",
+    "Detail": "半角 {0} 个 / 全角 {1} 个",
+    "SuggestScheme": "引号括号统一"
+  },
+  {
+    "Id": "paragraph-length-uniform",
+    "Group": "statistics",
+    "Title": "段落长度过于均一",
+    "Kind": "algorithm",
+    "AlgorithmName": "paragraph-length-uniform",
+    "Genres": [],
+    "Severity": "info",
+    "Detail": "段落长度过于均一（变异系数 {0}，{1} 段）——人写文本段落长短通常更参差"
+  },
+  {
+    "Id": "sentence-length-uniform",
+    "Group": "statistics",
+    "Title": "句长分布过于整齐",
+    "Kind": "algorithm",
+    "AlgorithmName": "sentence-length-uniform",
+    "Genres": [],
+    "Severity": "info",
+    "Detail": "句长分布过于整齐（变异系数 {0}，{1} 句）"
+  },
+  {
+    "Id": "short-sentence-run",
+    "Group": "statistics",
+    "Title": "连续短句",
+    "Kind": "algorithm",
+    "AlgorithmName": "short-sentence-run",
+    "Genres": [],
+    "Severity": "info",
+    "Detail": "连续 {0} 句都在 {1} 字以内——节拍化的碎片句，像在逐条填写动作与情绪"
+  },
+  {
+    "Id": "repeated-paragraph-opening",
+    "Group": "statistics",
+    "Title": "段首重复",
+    "Kind": "algorithm",
+    "AlgorithmName": "repeated-paragraph-opening",
+    "Genres": [],
+    "Severity": "info",
+    "Detail": "段首两字高度重复：{0}"
+  },
+  {
+    "Id": "exclamation-density",
+    "Group": "statistics",
+    "Title": "叹号密度偏高",
+    "Kind": "algorithm",
+    "AlgorithmName": "exclamation-density",
+    "Genres": [],
+    "Severity": "info",
+    "Detail": "叹号密度偏高：{0} 个 / {1} 字"
+  },
+  {
+    "Id": "ordinal-skeleton",
+    "Group": "statistics",
+    "Title": "序数词骨架",
+    "Kind": "algorithm",
+    "AlgorithmName": "ordinal-skeleton",
+    "Genres": [
+      "doc",
+      "agent"
+    ],
+    "Severity": "info",
+    "Detail": "序数词骨架「首先/其次/最后」出现 {0} 次——结构化排版的典型痕迹"
+  },
+  {
+    "Id": "explicit-numbering",
+    "Group": "statistics",
+    "Title": "显式序号标记",
+    "Kind": "algorithm",
+    "AlgorithmName": "explicit-numbering",
+    "Genres": [],
+    "Severity": "info",
+    "Detail": "显式序号标记 {0} 处——结构化排版的典型痕迹"
+  },
+  {
+    "Id": "repeated-verbatim",
+    "Group": "structure",
+    "Title": "逐字重复",
+    "Kind": "algorithm",
+    "AlgorithmName": "repeated-verbatim",
+    "Genres": [],
+    "Severity": "warn",
+    "Detail": "与第 {0} 行第 {1} 列逐字相同"
+  },
+  {
+    "Id": "repeated-token-run",
+    "Group": "structure",
+    "Title": "复读串",
+    "Kind": "algorithm",
+    "AlgorithmName": "repeated-token-run",
+    "Genres": [],
+    "Severity": "warn",
+    "Detail": "「{0}」连写 {1} 次"
+  },
+  {
+    "Id": "choppy-clauses",
+    "Group": "structure",
+    "Title": "短句硬连",
+    "Kind": "algorithm",
+    "AlgorithmName": "choppy-clauses",
+    "Genres": [
+      "doc",
+      "agent"
+    ],
+    "Severity": "info",
+    "Detail": "这一段切成 {0} 个短促分句，平均 {1} 字，靠分号与破折号硬接——成分全省了，读者得自己补主语和宾语"
   }
 ]

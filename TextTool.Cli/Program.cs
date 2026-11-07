@@ -14,7 +14,7 @@ namespace TextTool.Cli;
 ///   texttool replace &lt;file...&gt; [--scheme &lt;name&gt;]
 ///   texttool vn &lt;file...&gt; [--scheme &lt;name...&gt;] [--max-para N] [--reformat-only|--punct-only]
 ///   texttool join &lt;directory&gt; [--pattern &quot;*.txt&quot;] [--output &lt;name&gt;]
-///   texttool lint &lt;file...&gt; [--only &lt;id...&gt;] [--min-severity warn] [--genre doc|fiction|agent] [--baseline &lt;file&gt;] [--json]
+///   texttool lint &lt;file|dir...&gt; [--only &lt;id...&gt;] [--min-severity warn] [--genre doc|fiction|agent] [--baseline &lt;file&gt;] [--json]
 ///   texttool calibrate --human &lt;directory&gt; --ai &lt;directory&gt; [--genre doc|fiction|agent] [--json]
 ///   texttool reply-check [--json] [&lt;file&gt;|-]
 ///   texttool update [--check]
@@ -98,17 +98,10 @@ public static class Program
             ApplyReplace: false, TrimLeadingComma: trimComma,
             Rules: rules);
 
-        int success = 0;
         var writeMode = !overwrite && !backup ? WriteMode.NewFile
             : backup ? WriteMode.OverwriteWithBackup : WriteMode.Overwrite;
-        foreach (var file in files)
-        {
-            var encoding = EncodingDetector.DetectStrict(file);
-            var result = ProcessingPipeline.Run(file, encoding.Encoding, options, post, writeMode);
-            Console.WriteLine($"[成功] {Path.GetFileName(file)} → {result.OutputPath}");
-            success++;
-        }
-        return success == files.Count ? 0 : 1;
+        return RunPerFile(files, (file, encoding) =>
+            ProcessingPipeline.Run(file, encoding, options, post, writeMode).OutputPath);
     }
 
     private static int RunReplace(string[] args)
@@ -138,18 +131,14 @@ public static class Program
         if (rules.Count == 0)
             throw new ArgumentException("没有可用的替换规则（请先在 GUI 配置规则，或指定 --scheme）");
 
-        int success = 0;
-        foreach (var file in files)
+        return RunPerFile(files, (file, encoding) =>
         {
-            var encoding = EncodingDetector.DetectStrict(file);
-            string content = File.ReadAllText(file, encoding.Encoding);
+            string content = File.ReadAllText(file, encoding);
             string replaced = PunctuationReplacer.Apply(content, rules);
             string outputPath = PathHelper.GetProcessedPath(file);
             AtomicFile.WriteAllText(outputPath, replaced, new UTF8Encoding(true));
-            Console.WriteLine($"[成功] {Path.GetFileName(file)} → {Path.GetFileName(outputPath)}");
-            success++;
-        }
-        return success == files.Count ? 0 : 1;
+            return Path.GetFileName(outputPath);
+        });
     }
 
     private static int RunVn(string[] args)
@@ -209,11 +198,9 @@ public static class Program
             }
         }
 
-        int success = 0;
-        foreach (var file in files)
+        return RunPerFile(files, (file, encoding) =>
         {
-            var encoding = EncodingDetector.DetectStrict(file);
-            string content = File.ReadAllText(file, encoding.Encoding);
+            string content = File.ReadAllText(file, encoding);
 
             if (doReformat)
             {
@@ -226,7 +213,7 @@ public static class Program
                 catch (RegexMatchTimeoutException)
                 {
                     throw new InvalidOperationException(
-                        $"{Path.GetFileName(file)}：场景标记正则执行超时——所选方案的规则过于复杂，请编辑方案简化后重试");
+                        "场景标记正则执行超时——所选方案的规则过于复杂，请编辑方案简化后重试");
                 }
             }
             if (doFixPunct)
@@ -234,10 +221,41 @@ public static class Program
 
             string outputPath = PathHelper.GetProcessedPath(file);
             AtomicFile.WriteAllText(outputPath, content, new UTF8Encoding(true));
-            Console.WriteLine($"[成功] {Path.GetFileName(file)} → {Path.GetFileName(outputPath)}");
-            success++;
+            return Path.GetFileName(outputPath);
+        });
+    }
+
+    /// <summary>
+    /// 逐个文件跑一次处理：严格探测编码、处理、写盘，成功报一行 [成功]。
+    ///
+    /// 单个文件失败不中断，原因带文件名打到 stderr，接着跑下一份——
+    /// 与界面的批量执行同一语义，一份坏文件不该让整批停在那里。
+    /// 一份以上输入时印完整路径：同一批里不同目录下的同名文件，只印文件名分不清。
+    /// 退出码：全成功 0，有失败 1。
+    ///
+    /// process 收到源文件与它的编码，返回写到哪儿（供 [成功] 那行显示）。
+    /// </summary>
+    private static int RunPerFile(
+        IReadOnlyList<string> files, Func<string, Encoding, string> process)
+    {
+        bool failed = false;
+        bool many = files.Count > 1;
+        foreach (string file in files)
+        {
+            string label = many ? file : Path.GetFileName(file);
+            try
+            {
+                var encoding = EncodingDetector.DetectStrict(file);
+                string outputPath = process(file, encoding.Encoding);
+                Console.WriteLine($"[成功] {label} → {outputPath}");
+            }
+            catch (Exception ex)
+            {
+                failed = true;
+                Console.Error.WriteLine($"[失败] {label}：{ex.Message}");
+            }
         }
-        return success == files.Count ? 0 : 1;
+        return failed ? 1 : 0;
     }
 
     private static int RunUpdate(string[] args)
@@ -329,6 +347,7 @@ public static class Program
     /// <summary>
     /// lint：只报不改的 AI 味检查。
     /// 退出码与其它子命令不同：0 = 无命中，1 = 有命中，2 = 用法/读取错误。
+    /// 单份稿读不了不打断整批：原因连同路径打到 stderr，其余照常出报告，跑完再按读取错误退 2。
     /// </summary>
     private static int RunLint(string[] args)
     {
@@ -363,33 +382,133 @@ public static class Program
             }
 
             if (files.Count == 0)
-                throw new ArgumentException("lint 需要至少一个输入文件（- 表示 stdin）");
+                throw new ArgumentException("lint 需要至少一个输入文件或目录（- 表示 stdin）");
 
             var onlyIds = only is null
                 ? null
                 : only.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-            var inputs = new List<(string File, string Text)>();
-            foreach (var file in files)
+            // 展开时读不了的子目录报出来接着查其余的，不整次停下
+            var expanded = LintInputs.Collect(files, message => Console.Error.WriteLine(message));
+
+            // 一次差分只回答「这一份比那份多了什么」：先把目录摊平再数，
+            // 不要等整棵树读完才说这句
+            if (baselineFile is not null && expanded.Count != 1)
+                throw new ArgumentException(
+                    "--baseline 只配一个输入文件：一次差分只回答「这一份比那份多了什么」");
+
+            // 规则表加载、规则编译、档位筛选只做一次，逐份扫描复用同一个引擎。
+            // 校验没过的那一次先把错记下来，等读不上的那几份报完再抛：
+            // 一次调用里既有读不上的稿、又有拼错的规则时，读者先看到的仍是「哪几份读不上」。
+            LintSession? session = null;
+            Exception? setupError = null;
+            try
             {
-                string text = file == "-" ? ReadStdin() : ReadFileForLint(file);
-                inputs.Add((file == "-" ? "(stdin)" : file, text));
+                session = LintSession.Create(genre, onlyIds, minSeverity);
+            }
+            catch (Exception ex)
+                when (ex is ArgumentException or IOException or InvalidDataException
+                    or System.Text.Json.JsonException or FormatException or NotSupportedException)
+            {
+                setupError = ex;
             }
 
-            var reportSet = LintRunner.Run(inputs, onlyIds, minSeverity, genre,
-                baseline: baselineFile is null ? null : (baselineFile, ReadBaseline(baselineFile)));
-
-            // 两条分支共用同一个纯函数，行尾/报告间隔/尾换行的契约只在 LintOutput 里维护
-            Console.Write(LintOutput.Render(reportSet, json));
-
-            // 命中日志另存一份：留档与脚本读的是全部位置，不受人读报告的折叠与分组影响
-            if (logFile is not null)
+            // 日志流开在第一次真要写的时候：一份报告都没出的那一次（规则拼错、基线读不上）
+            // 不该留下一个空的日志文件。开不了的那一次也等报告出完再报错，与从前一样。
+            StreamWriter? log = null;
+            Exception? logError = null;
+            ILintReportSink? sink = null;
+            string? baselineText = null;
+            int unreadable = 0;
+            int readable = 0;
+            bool anyHit = false;
+            try
             {
-                HitLog.Append(logFile, reportSet);
+                // 逐份：读一份、扫一份、写一份、丢一份。报告不攒批，内存峰值是一份稿加一份报告
+                foreach (string file in expanded)
+                {
+                    string label = file == "-" ? "(stdin)" : file;
+                    string text;
+                    try
+                    {
+                        text = file == "-" ? ReadStdin() : ReadFileForLint(file);
+                    }
+                    catch (Exception ex)
+                        when (ex is IOException or UnauthorizedAccessException or InvalidDataException
+                            or ArgumentException or NotSupportedException)
+                    {
+                        // 一份读不了不拖住整批：原因带完整路径打到 stderr，跑完再按读取错误退 2
+                        unreadable++;
+                        Console.Error.WriteLine($"[失败] {label}：{ex.Message}");
+                        continue;
+                    }
+
+                    readable++;
+                    // 校验没过：只把读不上的那几份报出来，报告一份都不出
+                    if (session is null) continue;
+
+                    var report = baselineFile is null
+                        ? session.Scan(label, text)
+                        : session.ScanAgainstBaseline(
+                            label, text, baselineFile, baselineText ??= ReadBaseline(baselineFile));
+
+                    // 人读要标出每条命中属于哪份稿：多份时每份前面一行文件名。
+                    // JSON 契约仍由 LintOutput 一处维护，两条分支的字段不受人读排版影响
+                    sink ??= LintOutput.BeginSink(Console.Out, json);
+                    sink.Add(report);
+
+                    // 命中日志另存一份：留档与脚本读的是全部位置，不受人读报告的折叠与分组影响
+                    if (logFile is not null && log is null && logError is null)
+                    {
+                        try
+                        {
+                            log = HitLog.OpenAppender(logFile);
+                        }
+                        catch (Exception ex)
+                            when (ex is IOException or UnauthorizedAccessException or ArgumentException
+                                or NotSupportedException or SecurityException)
+                        {
+                            logError = ex;
+                        }
+                    }
+                    log?.Write(HitLog.Lines(report));
+                    anyHit |= report.Hits.Count > 0;
+                }
+
+                sink?.Finish();
+            }
+            finally
+            {
+                sink?.Dispose();
+                log?.Dispose();
+            }
+
+            // 一份都读不到时不拿空报告装作检查过
+            if (readable == 0)
+            {
+                Console.Error.WriteLine($"错误：{unreadable} 份稿都读不了，没有可以出报告的输入");
+                return 2;
+            }
+
+            // 基线那份要在报规则错之前读：基线读不到时先说基线
+            if (baselineFile is not null && baselineText is null)
+                ReadBaseline(baselineFile);
+
+            // 规则拼错的那一次一份报告都没出，错就在这里报
+            if (setupError is not null)
+                throw setupError;
+            if (logError is not null)
+                throw logError;
+            if (log is not null)
                 Console.Error.WriteLine($"[日志] 命中追加到 {logFile}");
+
+            // 读不了的汇总到最后：报告照常给，退出码按读取错误退 2
+            if (unreadable > 0)
+            {
+                Console.Error.WriteLine($"错误：{unreadable} 份稿读不了，上面的报告只覆盖读得到的那几份");
+                return 2;
             }
 
-            bool anyHit = reportSet.Reports.Any(r => r.Hits.Count > 0);
             return anyHit ? 1 : 0;
         }
         catch (Exception ex)
@@ -533,7 +652,7 @@ public static class Program
     private static void PrintReplyCheckHelp() =>
         Console.WriteLine("""
             reply-check 选项：
-              --json                以 JSON 输出（Version 1：Version 与 Hits 两项，每条带 Id、Token、Line）
+              --json                以 JSON 输出（Version 2：Version 与 Hits 两项，每条带 Id、Token、Line、Blocks）
               --help                显示本说明
 
             输入：一个文件路径，或传 - 从 stdin 读；不给也走 stdin。
@@ -569,12 +688,17 @@ public static class Program
               --log <文件>          把命中追加写成一行一条的 JSON 日志：留档、跑全库统计时用；
                                     日志里只有 ASCII 与汉字，别的字符转成 \uXXXX
 
-            输入：文件路径可多个；传 - 表示从 stdin 读。带 --baseline 时只能给一个输入。
+            输入：文件或目录，可多个。给目录时递归收 .txt 与 .md，按路径排序；
+                  软链接跟到真实目标，一份稿只检一次，指回上级的链接不会重复展开；
+                  子目录读不了会点名路径报出来，其余文件照常检查。
+                  目录里一个都收不到按用法错误退 2，并点名是哪个目录。
+                  传 - 表示从 stdin 读。带 --baseline 时只能给一个输入（目录按展开后的份数算）。
 
             --baseline 的用法：写前那一份当基线、写后那一份当输入，行号按写后那份算。
             存量命中不再列出，退出码只看新增：改写没有让任何判据变多就是 0。
 
             退出码（与其它子命令不同）：0 = 无命中，1 = 有命中，2 = 用法/读取错误。
+            单份稿读不了不打断整批：原因连同路径打到 stderr，报告只覆盖读得到的部分，最后退 2。
             命中判定基于过滤后的集合，因此 --min-severity warn 即「只在有 warn 时退 1」。
             """);
 
@@ -622,7 +746,7 @@ public static class Program
               texttool replace <文件...> [选项]    标点符号替换
               texttool vn <文件...> [选项]        视觉小说排版
               texttool join <目录> [选项]         文件拼接
-              texttool lint <文件...> [选项]        AI 味检查（只报不改）
+              texttool lint <文件|目录...> [选项]  AI 味检查（只报不改）
               texttool calibrate [选项]            规则标定：人类文本与模型文本两侧对比
               texttool reply-check [选项] [文件]    回复里读者解不开的写法（只报不改）
               texttool update [--check]           自更新（--check 仅检查）

@@ -174,6 +174,7 @@ public class GenreTierTests
     [InlineData("要不要做，你定。")]
     [InlineData("要不要补一批真人样本，你定吧。")]
     [InlineData("这个你定。")]
+    [InlineData("需不需要我把这条规则记进文档？")]
     public void 正文里求许可报出(string text)
     {
         Assert.NotEmpty(Hits(text, "agent", 求许可));
@@ -495,6 +496,25 @@ public class GenreTierTests
         // 套话词是通用规则：这四个词在两种文本里都是空话
         Assert.NotEmpty(Hits(text, "fiction", 套话词));
         Assert.NotEmpty(Hits(text, "doc", 套话词));
+    }
+
+    [Theory]
+    [InlineData("但需要指出，部分模型说话偏保守。")]
+    [InlineData("这里需要指出的是，样本只有六个。")]
+    [InlineData("需要指出：结论还不能定。")]
+    [InlineData("需要指出。结论还不能定。")]
+    public void 元话语的指出算套话(string text)
+    {
+        Assert.NotEmpty(Hits(text, "doc", 套话词));
+    }
+
+    [Theory]
+    [InlineData("看到结果不符合预期时，需要指出来。")]
+    [InlineData("评审需要指出问题在哪。")]
+    public void 带宾语的指出不算套话(string text)
+    {
+        // 套话只在不带宾语、直接把一句话推给对方时成立；「指出来」「指出问题」都有宾语，是正常说法
+        Assert.Empty(Hits(text, "doc", 套话词));
     }
 
     [Fact]

@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace TextTool.Services;
 
 /// <summary>
@@ -13,23 +15,31 @@ namespace TextTool.Services;
 ///
 /// 遮罩与原文等长、逐位对齐，换行不动：命中的位置、行列、Match 仍按原文取，
 /// 段落切分也照原文的换行进行，被遮住的字符只当空格看。
+///
+/// 遮罩一个字符占一比特（五十兆的稿子占六兆），被遮的字数在构造时顺手数完，
+/// <see cref="Apply"/> 只分配目标串一次。
+///
+/// 头部字段、指令行、围栏行这几类形状的判定取 <see cref="MarkdownLines"/> 与
+/// <see cref="MarkdownFenceTracker"/>，围栏按严格口径；行内那几样（行内代码、公式、链接地址、
+/// 自动链接、HTML 注释）在本文件里认。
 /// </summary>
 public sealed class BlogMarkdownMask
 {
-    private readonly bool[] _masked;
+    /// <summary>遮罩本体；不是博文时为 null，一个字都不遮。</summary>
+    private readonly BitMask? _mask;
 
-    private BlogMarkdownMask(bool[] masked, bool isBlogPost)
+    /// <summary>遮罩对得上的字符数，不是博文时为 0。</summary>
+    private readonly int _length;
+
+    private BlogMarkdownMask(BitMask? mask, int length, bool isBlogPost)
     {
-        _masked = masked;
+        _mask = mask;
+        _length = length;
         IsBlogPost = isBlogPost;
-        int count = 0;
-        foreach (bool bit in masked)
-            if (bit) count++;
-        MaskedChars = count;
     }
 
     /// <summary>被遮住的字符数，换行也算在内。字数统计用它从原文长度里扣。</summary>
-    public int MaskedChars { get; }
+    public int MaskedChars => _mask?.Count ?? 0;
 
     /// <summary>
     /// 这份稿子按博文处理：头部字段里有 title 与 date，或者出现过 <c>::</c> 指令行。
@@ -42,16 +52,14 @@ public sealed class BlogMarkdownMask
     /// </summary>
     public static BlogMarkdownMask Create(string text)
     {
-        if (string.IsNullOrEmpty(text)) return new BlogMarkdownMask(Array.Empty<bool>(), false);
+        if (string.IsNullOrEmpty(text)) return new BlogMarkdownMask(null, 0, false);
 
-        var masked = new bool[text.Length];
+        var masked = new BitMask(text.Length);
         bool inFrontMatter = false;
         bool hasTitle = false;
         bool hasDate = false;
         bool sawDirective = false;
-        bool inFence = false;
-        char fenceChar = '\0';
-        int fenceLength = 0;
+        var fence = new MarkdownFenceTracker();
         bool inComment = false;
         bool inMathBlock = false;
         int pos = 0;
@@ -68,14 +76,14 @@ public sealed class BlogMarkdownMask
             if (inFrontMatter)
             {
                 wholeLine = true;
-                hasTitle |= IsKey(trimmed, "title");
-                hasDate |= IsKey(trimmed, "date");
-                if (trimmed is "---" or "...") inFrontMatter = false;
+                hasTitle |= MarkdownLines.IsFrontMatterKey(trimmed, "title");
+                hasDate |= MarkdownLines.IsFrontMatterKey(trimmed, "date");
+                if (MarkdownLines.IsFrontMatterClosing(trimmed)) inFrontMatter = false;
             }
-            else if (inFence)
+            else if (fence.InFence)
             {
                 wholeLine = true;
-                if (ClosesFence(trimmed, fenceChar, fenceLength)) inFence = false;
+                fence.Advance(line);
             }
             else if (inComment)
             {
@@ -87,15 +95,15 @@ public sealed class BlogMarkdownMask
                 wholeLine = true;
                 if (trimmed.Contains("$$", StringComparison.Ordinal)) inMathBlock = false;
             }
-            else if (lineNo == 0 && IsFrontMatterDelimiter(trimmed) && LooksLikeFrontMatter(text, lineEnd))
+            else if (lineNo == 0 && MarkdownLines.IsFrontMatterOpening(trimmed)
+                     && MarkdownLines.LooksLikeFrontMatter(text, lineEnd))
             {
                 wholeLine = true;
                 inFrontMatter = true;
             }
-            else if (OpensFence(trimmed, out fenceChar, out fenceLength))
+            else if (fence.Advance(line))
             {
                 wholeLine = true;
-                inFence = true;
             }
             else if (trimmed.StartsWith("$$", StringComparison.Ordinal)
                      && !trimmed[2..].Contains("$$", StringComparison.Ordinal))
@@ -103,7 +111,7 @@ public sealed class BlogMarkdownMask
                 wholeLine = true;
                 inMathBlock = true;
             }
-            else if (trimmed.StartsWith("::", StringComparison.Ordinal))
+            else if (MarkdownLines.IsDirective(trimmed))
             {
                 wholeLine = true;
                 sawDirective = true;
@@ -115,7 +123,7 @@ public sealed class BlogMarkdownMask
 
             // 整行被遮时连它的换行一起遮：这一行不参与，换行也不该算进正文字数
             if (wholeLine)
-                Mask(masked, pos, newline < 0 ? lineEnd : newline + 1);
+                masked.Set(pos, newline < 0 ? lineEnd : newline + 1);
             else
                 MaskInline(text, masked, pos, lineEnd, ref inComment);
 
@@ -127,7 +135,9 @@ public sealed class BlogMarkdownMask
 
         bool isBlog = (hasTitle && hasDate) || sawDirective;
         // 不是博文就一点不遮：行内代码、围栏代码块里的字对文档与回复是有用的证据
-        return new BlogMarkdownMask(isBlog ? masked : Array.Empty<bool>(), isBlog);
+        return isBlog
+            ? new BlogMarkdownMask(masked, text.Length, true)
+            : new BlogMarkdownMask(null, 0, false);
     }
 
     /// <summary>
@@ -136,84 +146,71 @@ public sealed class BlogMarkdownMask
     /// </summary>
     public string Apply(string text)
     {
-        // 不是博文时遮罩是空的，长度对不上：原样交回，调用方不必先问 IsBlogPost
-        if (_masked.Length != text.Length) return text;
+        // 不是博文时没有遮罩，长度对不上：原样交回，调用方不必先问 IsBlogPost
+        if (_mask is not { } mask || _length != text.Length) return text;
 
-        var buffer = new char[text.Length];
-        for (int i = 0; i < text.Length; i++)
+        return string.Create(text.Length, (Text: text, Mask: mask), static (span, state) =>
         {
-            char c = text[i];
-            buffer[i] = _masked[i] && c is not ('\n' or '\r') ? ' ' : c;
-        }
-        return new string(buffer);
+            state.Text.AsSpan().CopyTo(span);
+            for (int i = 0; i < span.Length; i++)
+                if (state.Mask.Get(i) && span[i] is not ('\n' or '\r'))
+                    span[i] = ' ';
+        });
     }
 
     /// <summary>这个位置是不是被遮住的区域。</summary>
-    public bool IsMasked(int index) => index >= 0 && index < _masked.Length && _masked[index];
-
-    private static void Mask(bool[] masked, int from, int to)
-    {
-        for (int i = Math.Max(0, from); i < Math.Min(to, masked.Length); i++)
-            masked[i] = true;
-    }
-
-    /// <summary>首行是 --- 才算头部字段的开头。字节序标记不算字。</summary>
-    private static bool IsFrontMatterDelimiter(string trimmed) =>
-        trimmed.TrimStart('\uFEFF').Trim() == "---";
-
-    /// <summary>这一行是不是给定的键值行，<c>title: 标题</c> 与 <c>title : 标题</c> 都算。</summary>
-    private static bool IsKey(string trimmed, string key)
-    {
-        if (!trimmed.StartsWith(key, StringComparison.OrdinalIgnoreCase)) return false;
-        string rest = trimmed[key.Length..];
-        return rest.StartsWith(':') || rest.TrimStart().StartsWith(':');
-    }
+    public bool IsMasked(int index) =>
+        _mask is { } mask && index >= 0 && index < _length && mask.Get(index);
 
     /// <summary>
-    /// 收尾分隔符之前有没有 YAML 键值行（<c>title: 标题</c> 这种）。
-    /// 有才当头部字段：纯文本拿 --- 当分隔线的时候，后面那一段多半是正文，遮了就等于没检查。
+    /// 逐位存的遮罩：第 i 位对应第 i 个字符。标一段是按字对齐到整字一次填满，
+    /// 标上的位数当场累加，不必构造完再扫一遍全量。
     /// </summary>
-    private static bool LooksLikeFrontMatter(string text, int afterOpeningLine)
+    private sealed class BitMask
     {
-        int pos = Math.Min(afterOpeningLine + 1, text.Length);
-        for (int lines = 0; lines < 200 && pos < text.Length; lines++)
+        private readonly ulong[] _words;
+        private readonly int _length;
+
+        public BitMask(int length)
         {
-            int newline = text.IndexOf('\n', pos);
-            int lineEnd = newline < 0 ? text.Length : newline;
-            string trimmed = text[pos..lineEnd].Trim();
-            if (trimmed is "---" or "...") return false;
-            if (HasYamlKey(trimmed)) return true;
-            if (newline < 0) return false;
-            pos = newline + 1;
+            _length = length;
+            _words = new ulong[(length + 63) / 64];
         }
-        return false;
-    }
 
-    /// <summary>键值行的形状：行首是英文键名，紧跟一个冒号。汉字键名不算，那是正文里的「注意：」。</summary>
-    private static bool HasYamlKey(string trimmed)
-    {
-        int i = 0;
-        if (i >= trimmed.Length || !char.IsAsciiLetter(trimmed[i])) return false;
-        while (i < trimmed.Length && (char.IsAsciiLetterOrDigit(trimmed[i]) || trimmed[i] is '_' or '-'))
-            i++;
-        return i < trimmed.Length && trimmed[i] == ':';
-    }
+        /// <summary>标上的位数，就是被遮住的字符数。</summary>
+        public int Count { get; private set; }
 
-    private static bool OpensFence(string trimmed, out char fenceChar, out int fenceLength)
-    {
-        fenceChar = trimmed.Length > 0 ? trimmed[0] : '\0';
-        fenceLength = 0;
-        if (fenceChar is not ('`' or '~')) return false;
-        while (fenceLength < trimmed.Length && trimmed[fenceLength] == fenceChar) fenceLength++;
-        return fenceLength >= 3;
-    }
+        public bool Get(int index) => (_words[index >> 6] & (1UL << (index & 63))) != 0;
 
-    private static bool ClosesFence(string trimmed, char fenceChar, int fenceLength)
-    {
-        if (trimmed.Length < fenceLength) return false;
-        for (int i = 0; i < trimmed.Length; i++)
-            if (trimmed[i] != fenceChar) return false;
-        return true;
+        /// <summary>标上从 from（含）到 to（不含）这一段；越界的部分直接丢掉。</summary>
+        public void Set(int from, int to)
+        {
+            int start = Math.Max(0, from);
+            int stop = Math.Min(to, _length);
+            if (start >= stop) return;
+
+            int first = start >> 6;
+            int last = (stop - 1) >> 6;
+            ulong head = ulong.MaxValue << (start & 63);
+            ulong tail = ulong.MaxValue >> (63 - ((stop - 1) & 63));
+
+            if (first == last)
+            {
+                Fill(first, head & tail);
+                return;
+            }
+
+            Fill(first, head);
+            for (int word = first + 1; word < last; word++)
+                Fill(word, ulong.MaxValue);
+            Fill(last, tail);
+        }
+
+        private void Fill(int word, ulong bits)
+        {
+            Count += BitOperations.PopCount(bits & ~_words[word]);
+            _words[word] |= bits;
+        }
     }
 
     /// <summary>引用式链接定义：<c>[名字]: 地址</c>。整行没有正文，全遮。</summary>
@@ -225,7 +222,7 @@ public sealed class BlogMarkdownMask
     }
 
     /// <summary>行内那几样：行内代码、公式、链接地址、自动链接、HTML 注释。</summary>
-    private static void MaskInline(string text, bool[] masked, int start, int end, ref bool inComment)
+    private static void MaskInline(string text, BitMask masked, int start, int end, ref bool inComment)
     {
         int i = start;
         while (i < end)
@@ -241,7 +238,7 @@ public sealed class BlogMarkdownMask
                     i += open;
                     continue;
                 }
-                Mask(masked, i, close + open);
+                masked.Set(i, close + open);
                 i = close + open;
                 continue;
             }
@@ -254,17 +251,17 @@ public sealed class BlogMarkdownMask
                     if (close < 0)
                     {
                         // 注释跨行：这一行的尾巴也遮掉，后面的行由 inComment 接着遮
-                        Mask(masked, i, end);
+                        masked.Set(i, end);
                         inComment = true;
                         return;
                     }
-                    Mask(masked, i, close + 3);
+                    masked.Set(i, close + 3);
                     i = close + 3;
                     continue;
                 }
                 if (LooksLikeAutolink(text, i, end, out int tagEnd))
                 {
-                    Mask(masked, i, tagEnd);
+                    masked.Set(i, tagEnd);
                     i = tagEnd;
                     continue;
                 }
@@ -282,7 +279,7 @@ public sealed class BlogMarkdownMask
                 int close = text.IndexOf(')', i + 2, end - i - 2);
                 if (close >= 0)
                 {
-                    Mask(masked, i + 1, close + 1);
+                    masked.Set(i + 1, close + 1);
                     i = close + 1;
                     continue;
                 }
@@ -338,7 +335,7 @@ public sealed class BlogMarkdownMask
     /// 行内公式：<c>$...$</c> 与 <c>$$...$$</c>。开记号后面紧跟空白的不算，收记号前面是空白的也不算，
     /// 单 $ 还要求两边不是数字，免得把「一件 $5 一件 $10」当成公式遮掉。
     /// </summary>
-    private static bool TryMaskFormula(string text, bool[] masked, int start, int end, out int after)
+    private static bool TryMaskFormula(string text, BitMask masked, int start, int end, out int after)
     {
         after = start;
         int marker = start + 1 < end && text[start + 1] == '$' ? 2 : 1;
@@ -355,7 +352,7 @@ public sealed class BlogMarkdownMask
         if (char.IsWhiteSpace(text[close - 1])) return false;
         if (marker == 1 && close + 1 < end && char.IsAsciiDigit(text[close + 1])) return false;
 
-        Mask(masked, start, close + marker);
+        masked.Set(start, close + marker);
         after = close + marker;
         return true;
     }

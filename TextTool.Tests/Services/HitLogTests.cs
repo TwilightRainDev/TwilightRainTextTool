@@ -99,4 +99,46 @@ public class HitLogTests
         Assert.Throws<DirectoryNotFoundException>(
             () => HitLog.Append(Path.Combine(dir.Path, "缺失", "hits.jsonl"), 报告集()));
     }
+
+    // ================================================================
+    //  逐份追加：一次开流、写一份一次，与整批写出来的是同一份字节
+    // ================================================================
+
+    [Fact]
+    public void 逐份追加与整批追加写出同一份字节()
+    {
+        using var dir = new TempDir();
+        string 整批 = Path.Combine(dir.Path, "整批.jsonl");
+        string 逐份 = Path.Combine(dir.Path, "逐份.jsonl");
+
+        var set = 报告集(
+            命中("a", 1, 1, "甲", "甲"),
+            命中("b", 2, 1, "乙→丙", "……乙…丙……"));
+        set.Reports.Add(new LintReport
+        {
+            File = "另一份.md", Chars = 7,
+            Hits = new List<LintHit> { 命中("c", 1, 1, "😀", "笑 😀") },
+        });
+
+        HitLog.Append(整批, set);
+        using (var log = HitLog.OpenAppender(逐份))
+        {
+            foreach (var report in set.Reports)
+                log.Write(HitLog.Lines(report));
+        }
+
+        Assert.Equal(File.ReadAllBytes(整批), File.ReadAllBytes(逐份));
+        // 单份正文拼起来就是整批正文
+        Assert.Equal(HitLog.Lines(set), string.Concat(set.Reports.Select(HitLog.Lines)));
+    }
+
+    [Fact]
+    public void 追加流开不了时点名目录()
+    {
+        using var dir = new TempDir();
+
+        var ex = Assert.Throws<DirectoryNotFoundException>(
+            () => HitLog.OpenAppender(Path.Combine(dir.Path, "缺失", "hits.jsonl")));
+        Assert.Contains("日志目录不存在", ex.Message);
+    }
 }

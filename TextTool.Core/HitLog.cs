@@ -15,49 +15,73 @@ namespace TextTool.Services;
 public static class HitLog
 {
     /// <summary>
-    /// 把报告集合渲染成日志正文。每份报告先一行汇总，再逐条命中各一行。
+    /// 一组报告的日志正文。一次出完全部报告时走这里；命令行逐份处理时用 <see cref="Lines(LintReport)"/>
+    /// 配 <see cref="OpenAppender"/>，边出报告边追加。
     /// 纯函数：不碰磁盘，行尾为 LF。
     /// </summary>
     public static string Lines(LintReportSet reportSet)
     {
         var sb = new StringBuilder();
         foreach (var report in reportSet.Reports)
-        {
-            sb.Append("{\"Kind\":\"Report\",\"File\":").Append(Quote(report.File))
-                .Append(",\"Chars\":").Append(report.Chars)
-                .Append(",\"ParagraphMode\":").Append(Quote(report.ParagraphMode))
-                .Append(",\"Hits\":").Append(report.Hits.Count)
-                .Append("}\n");
-
-            foreach (var hit in report.Hits)
-            {
-                sb.Append("{\"Kind\":\"Hit\",\"File\":").Append(Quote(report.File))
-                    .Append(",\"Line\":").Append(hit.Line)
-                    .Append(",\"Col\":").Append(hit.Col)
-                    .Append(",\"Length\":").Append(hit.Length)
-                    .Append(",\"Id\":").Append(Quote(hit.Id))
-                    .Append(",\"Severity\":").Append(Quote(hit.Severity))
-                    .Append(",\"Match\":").Append(Quote(hit.Match))
-                    .Append(",\"Snippet\":").Append(Quote(hit.Snippet))
-                    .Append("}\n");
-            }
-        }
+            AppendLines(sb, report);
         return sb.ToString();
     }
 
+    /// <summary>一份报告的日志正文：先一行汇总，再逐条命中各一行。行尾为 LF。</summary>
+    public static string Lines(LintReport report)
+    {
+        var sb = new StringBuilder();
+        AppendLines(sb, report);
+        return sb.ToString();
+    }
+
+    private static void AppendLines(StringBuilder sb, LintReport report)
+    {
+        sb.Append("{\"Kind\":\"Report\",\"File\":").Append(Quote(report.File))
+            .Append(",\"Chars\":").Append(report.Chars)
+            .Append(",\"ParagraphMode\":").Append(Quote(report.ParagraphMode))
+            .Append(",\"Hits\":").Append(report.Hits.Count)
+            .Append("}\n");
+
+        foreach (var hit in report.Hits)
+        {
+            sb.Append("{\"Kind\":\"Hit\",\"File\":").Append(Quote(report.File))
+                .Append(",\"Line\":").Append(hit.Line)
+                .Append(",\"Col\":").Append(hit.Col)
+                .Append(",\"Length\":").Append(hit.Length)
+                .Append(",\"Id\":").Append(Quote(hit.Id))
+                .Append(",\"Severity\":").Append(Quote(hit.Severity))
+                .Append(",\"Match\":").Append(Quote(hit.Match))
+                .Append(",\"Snippet\":").Append(Quote(hit.Snippet))
+                .Append("}\n");
+        }
+    }
+
     /// <summary>
-    /// 追加到日志文件。文件不存在就新建；目录不存在时报错交给调用方，不悄悄换落点。
+    /// 打开日志追加流。逐份写时开一次，写完一份写一份，不再等全部报告攒齐。
+    /// 文件不存在就新建；目录不存在时报错交给调用方，不悄悄换落点。
+    /// 调用方负责 Dispose——关流就是收尾，漏了最后几行就丢在缓冲里。
+    /// </summary>
+    public static StreamWriter OpenAppender(string path)
+    {
+        var directory = Path.GetDirectoryName(Path.GetFullPath(path));
+        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            throw new DirectoryNotFoundException($"日志目录不存在：{directory}");
+        var stream = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.Read);
+        return new StreamWriter(stream, new UTF8Encoding(false));
+    }
+
+    /// <summary>
+    /// 追加到日志文件。给一次拿到全部报告、又没开追加流的调用方用。
+    /// 文件不存在就新建；目录不存在时报错交给调用方，不悄悄换落点。
     /// </summary>
     public static void Append(string path, LintReportSet reportSet)
     {
         string text = Lines(reportSet);
         if (text.Length == 0) return;
 
-        var directory = Path.GetDirectoryName(Path.GetFullPath(path));
-        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-            throw new DirectoryNotFoundException($"日志目录不存在：{directory}");
-
-        File.AppendAllText(path, text, new UTF8Encoding(false));
+        using var log = OpenAppender(path);
+        log.Write(text);
     }
 
     /// <summary>

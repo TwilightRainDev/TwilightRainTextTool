@@ -11,7 +11,7 @@ namespace TextTool.Tests.Services;
 /// - 分档界线只有两处：人类侧零命中、模型侧每千字达到人类侧三倍。判定用未取整的密度，
 ///   表里取两位小数只是显示；
 /// - 两侧都零命中的规则照样占一行，那种「活着但量不到东西」的判据正是标定要暴露的对象；
-/// - 算法规则（引号混用之类）不在规则表里，命中之后也要进表，标题从命中带出来。
+/// - 算法规则（引号混用之类）也在规则表里，它们与数据规则一样先占一行，标题取自规则表。
 /// </summary>
 public class CalibrateCommandTests
 {
@@ -203,15 +203,20 @@ public class CalibrateCommandTests
     }
 
     [Fact]
-    public void 算法规则命中后也进表且标题来自命中()
+    public void 算法规则命中后进表且标题来自规则表()
     {
         using var human = new TempDir();
         using var ai = new TempDir();
         写入(human.Path, "h.txt", 垫文(50));
         写入(ai.Path, "a.txt", "「他说」和\"直引号\"");
 
+        // 只带引号混用那一条规则：算法规则就在规则表里，表里没有它就不会跑
+        var rules = LintRuleStore.GetDefaultRules()
+            .Where(rule => rule.Id == "mixed-quote-style").ToList();
+        Assert.Single(rules);
+
         var row = Assert.Single(LintCalibration.RunDirectories(
-            human.Path, ai.Path, null, Array.Empty<LintRule>()).Rules);
+            human.Path, ai.Path, null, rules).Rules);
 
         Assert.Equal("mixed-quote-style", row.Id);
         Assert.Equal("引号风格混用", row.Title);

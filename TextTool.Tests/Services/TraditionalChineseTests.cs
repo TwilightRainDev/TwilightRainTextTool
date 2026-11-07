@@ -7,6 +7,9 @@ public class TraditionalChineseTests
 {
     private static AiToneLintService Service(params LintRule[] rules) => new(rules);
 
+    /// <summary>装真实规则表的引擎：算法规则也在表里，繁体稿照样要过它们。</summary>
+    private static AiToneLintService Engine() => new(LintRuleStore.Load());
+
     private static LintRule Rule(string id, string kind, params string[] patterns) => new()
     {
         Id = id, Group = "lexis", Title = id, Kind = kind,
@@ -132,8 +135,8 @@ public class TraditionalChineseTests
     [Fact]
     public void Scan_代码里的词表同样认得繁体写法()
     {
-        // ordinal-skeleton 的词表写在引擎里（首先|其次|再次|最后），不在规则表，走的是同一条归一
-        var report = Service().Scan("首先準備材料，其次動手，最後收尾。", "t.txt", "doc");
+        // ordinal-skeleton 的词表写在引擎里（首先|其次|再次|最后），规则表里只有它的元数据，走的是同一条归一
+        var report = Engine().Scan("首先準備材料，其次動手，最後收尾。", "t.txt", "doc");
 
         Assert.Contains(report.Notes, n => n.Id == "ordinal-skeleton");
     }
@@ -141,11 +144,107 @@ public class TraditionalChineseTests
     [Fact]
     public void Scan_复读串报出原文写法()
     {
-        var report = Service().Scan("他極其極其極其極其安靜。", "t.txt");
+        var report = Engine().Scan("他極其極其極其極其安靜。", "t.txt");
 
         var hit = Assert.Single(report.Hits.Where(h => h.Id == "repeated-token-run"));
         Assert.Equal("極其", hit.Match);
         Assert.Contains("極其", hit.Detail, StringComparison.Ordinal);
+    }
+
+    // ---------------------------------------------------------------
+    //  开头四千字符的繁体探测：简体稿不加载词库、不留副本
+    // ---------------------------------------------------------------
+
+    [Fact]
+    public void NeedsConversion_简体稿不转()
+    {
+        Assert.False(TraditionalChinese.NeedsConversion("随着人工智能技术的发展，这意味着每个人都要用起来。"));
+    }
+
+    [Fact]
+    public void NeedsConversion_归一会原样留着的著词不触发转换()
+    {
+        // 「著」简体也这么写（著作、著名），字表里没有它；归一会原样留着的几个词
+        // 也不该把简体稿推去跑一趟归一。
+        const string text = "这部代表著作的作者很著名，著者署名于昭著、巨著、名著、合著之间，着实不易。";
+
+        Assert.False(TraditionalChinese.NeedsConversion(text));
+    }
+
+    [Fact]
+    public void NeedsConversion_归一读得动的著词照样要转()
+    {
+        // 「著书」「显著」「论著」这些写法今天会被归一读成「着书」「显着」「论着」，
+        // 例外表里故意不收：含它们的稿子照旧跑一趟归一，与以前一字不差。
+        // 「代表著」这种把繁体写法带进简体稿的，同样照旧要转——不转就丢了「代表着」那条判据。
+        Assert.True(TraditionalChinese.NeedsConversion("他著书立说，这是一个显著的变化，一部论著。"));
+        Assert.True(TraditionalChinese.NeedsConversion("他代表著我们这一代人发问。"));
+    }
+
+    [Fact]
+    public void 简体稿上归一唯一动得了的是著字()
+    {
+        // 归一对简体稿唯一改得动的是「著」：词库的短语表收的是繁体字面（著書），
+        // 简体写法「著书」它认不出，读成「着书」；「著作」「著名」「着装」原样留着，
+        // 「土著」被读成「土着」。规则表里没有以「着书」「土着」为字面的判据，
+        // 报告上看不出这批差别，简体稿跳过归一因此不改对外结果。这条把边界钉在这里：
+        // 归一要是还改得动别的字，跳过归一就成了行为差异。
+        const string text = "代表著作有维特之烦恼，著名学者著书立说，着装整洁，土著居民。";
+
+        Assert.Equal(
+            "代表著作有维特之烦恼，著名学者着书立说，着装整洁，土着居民。",
+            TraditionalChinese.ToSimplified(text));
+    }
+
+    [Fact]
+    public void NeedsConversion_繁体稿要转()
+    {
+        Assert.True(TraditionalChinese.NeedsConversion("隨著人工智能技術的發展，這意味著每個人都要用起來。"));
+        Assert.True(TraditionalChinese.NeedsConversion(TraditionalFixture));
+    }
+
+    [Fact]
+    public void NeedsConversion_只看开头四千字符()
+    {
+        // 边界钉在这里：第 4000 个字符还算，第 4001 个不算。
+        string 简体 = new('简', TraditionalChinese.HeadProbeChars - 1);
+
+        Assert.True(TraditionalChinese.NeedsConversion(简体 + "這"));
+        Assert.False(TraditionalChinese.NeedsConversion(简体 + "简這"));
+    }
+
+    [Fact]
+    public void NeedsConversion_归一认得的字一个不漏()
+    {
+        // 探测表漏一个字，含那个字的稿子就会被当成简体稿不转，判据在它上面整体哑火。
+        // 口径：归一真会换掉的每一个字，单独拿出来问，答的必须是「要转」。
+        var 漏掉 = new List<string>();
+        for (int code = 0; code <= char.MaxValue; code++)
+        {
+            char c = (char)code;
+            if (char.IsSurrogate(c)) continue;
+            char 简体 = TraditionalChinese.Simplify(c);
+            if (简体 == c) continue;
+            if (!TraditionalChinese.NeedsConversion(c.ToString())) 漏掉.Add($"「{c}」→「{简体}」");
+        }
+
+        Assert.Empty(漏掉);
+    }
+
+    [Fact]
+    public void Scan_前四千字符是简体时后面的繁体字不归一()
+    {
+        // 已知取舍：开头四 KB 里认不出繁体就整份不转，后面那些繁体字面不会被换掉，
+        // 按简体写死的词条因此拿它们没辙。这条钉住的是取舍本身，不是缺陷；
+        // 真遇上这种排法，把开头一段换成繁体写法就能转。
+        string 简体开头 = new('简', TraditionalChinese.HeadProbeChars);
+        const string 繁体尾巴 = "隨著技術的發展，這意味著每個人都要用起來。";
+        var rule = Rule("cliche-words", "literal", "这意味着");
+
+        Assert.Empty(Service(rule).Scan(简体开头 + 繁体尾巴, "t.txt").Hits);
+
+        // 同一句挪到开头四 KB 以内，就认得出：繁体字本身没有变，变的只是它在哪。
+        Assert.Single(Service(rule).Scan(繁体尾巴, "t.txt").Hits);
     }
 
     /// <summary>

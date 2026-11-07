@@ -2,7 +2,11 @@ namespace TextTool.Tests.Services;
 
 public class AiToneLintServiceTests
 {
+    /// <summary>只装给定规则的引擎：算法规则不在表里就不会跑，用来隔离数据规则的行为。</summary>
     private static AiToneLintService Service(params LintRule[] rules) => new(rules);
+
+    /// <summary>装真实规则表的引擎。算法规则现在也在表里，要跑它们就得从表里带进来。</summary>
+    private static AiToneLintService Engine() => new(LintRuleStore.Load());
 
     private static LintRule Rule(string id, string kind, params string[] patterns) => new()
     {
@@ -172,7 +176,7 @@ public class AiToneLintServiceTests
     {
         var text = "他说\"好\"，又说「行」。";
 
-        var hit = Assert.Single(Service().Scan(text, "t.txt").Hits.Where(h => h.Id == "mixed-quote-style"));
+        var hit = Assert.Single(Engine().Scan(text, "t.txt").Hits.Where(h => h.Id == "mixed-quote-style"));
 
         Assert.Contains("ASCII 直引号", hit.Detail);
         Assert.Contains("直角引号", hit.Detail);
@@ -181,7 +185,7 @@ public class AiToneLintServiceTests
     [Fact]
     public void Scan_引号风格单一不报P4()
     {
-        var report = Service().Scan("他说「好」，又说「行」。", "t.txt");
+        var report = Engine().Scan("他说「好」，又说「行」。", "t.txt");
 
         Assert.DoesNotContain(report.Hits, h => h.Id == "mixed-quote-style");
     }
@@ -192,7 +196,7 @@ public class AiToneLintServiceTests
         // 中文规范写法：外层双引号、内层单引号。两套里各用一个是嵌套，不是风格对撑。
         var text = "他说：“我记住了‘下次一定’这句话。”";
 
-        Assert.DoesNotContain(Service().Scan(text, "t.txt").Hits, h => h.Id == "mixed-quote-style");
+        Assert.DoesNotContain(Engine().Scan(text, "t.txt").Hits, h => h.Id == "mixed-quote-style");
     }
 
     [Fact]
@@ -201,7 +205,7 @@ public class AiToneLintServiceTests
         // 两套字体共现才是真混用：这不是嵌套，是同一篇里换了引号字体
         var text = "他说“好”，又说「行」。";
 
-        var hit = Assert.Single(Service().Scan(text, "t.txt").Hits.Where(h => h.Id == "mixed-quote-style"));
+        var hit = Assert.Single(Engine().Scan(text, "t.txt").Hits.Where(h => h.Id == "mixed-quote-style"));
         Assert.Contains("弯引号", hit.Detail);
         Assert.Contains("直角引号", hit.Detail);
     }
@@ -211,7 +215,7 @@ public class AiToneLintServiceTests
     {
         var text = string.Join("\n", Enumerable.Repeat(new string('字', 20), 5));
 
-        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "paragraph-length-uniform"));
+        var note = Assert.Single(Engine().Scan(text, "t.txt").Notes.Where(n => n.Id == "paragraph-length-uniform"));
 
         Assert.Contains("变异系数", note.Text);
     }
@@ -220,7 +224,7 @@ public class AiToneLintServiceTests
     public void Scan_统计项不进Hits()
     {
         var text = string.Join("\n", Enumerable.Repeat(new string('字', 20), 5));
-        var report = Service().Scan(text, "t.txt");
+        var report = Engine().Scan(text, "t.txt");
 
         // 先证明这条文本确实产出了统计项：没有它，下面的 DoesNotContain 是空转
         Assert.Contains(report.Notes, n => n.Id == "paragraph-length-uniform");
@@ -233,7 +237,7 @@ public class AiToneLintServiceTests
         // 算法规则的命中不走 LintRuleStore.Validate，Severity 由代码直接给定；
         // 而 Filter 的 warn 比较是大小写敏感的——写成 "Warn" 会被 --min-severity
         // 静默丢弃、退出码变 0，是 CI 关卡最怕的失败方向。这条钉住契约。
-        var report = Service().Scan("他说\"好\"，又说「行」。", "t.txt");
+        var report = Engine().Scan("他说\"好\"，又说「行」。", "t.txt");
 
         Assert.All(report.Hits.Where(h => h.Group == "punctuation"),
             h => Assert.Contains(h.Severity, new[] { "info", "warn" }));
@@ -242,7 +246,7 @@ public class AiToneLintServiceTests
     [Fact]
     public void Scan_括号全半角混用产出P5()
     {
-        var hit = Assert.Single(Service().Scan("他说(好)，又说（行）。", "t.txt").Hits.Where(h => h.Id == "mixed-bracket-width"));
+        var hit = Assert.Single(Engine().Scan("他说(好)，又说（行）。", "t.txt").Hits.Where(h => h.Id == "mixed-bracket-width"));
 
         Assert.Contains("半角 2 个", hit.Detail);
         Assert.Contains("全角 2 个", hit.Detail);
@@ -254,7 +258,7 @@ public class AiToneLintServiceTests
         // 10 句、每句 13 字，长度完全一致 → 变异系数 0
         var text = string.Concat(Enumerable.Repeat("今天天气很好我们去公园散步。", 10));
 
-        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "sentence-length-uniform"));
+        var note = Assert.Single(Engine().Scan(text, "t.txt").Notes.Where(n => n.Id == "sentence-length-uniform"));
 
         Assert.Contains("变异系数 0.00，10 句", note.Text);   // 长度全等 → 变异系数 0，句数 10
     }
@@ -264,7 +268,7 @@ public class AiToneLintServiceTests
     {
         var text = string.Join("\n", "我们去看海。", "我们去爬山。", "我们回家吧。", "我们去吃饭。");
 
-        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "repeated-paragraph-opening"));
+        var note = Assert.Single(Engine().Scan(text, "t.txt").Notes.Where(n => n.Id == "repeated-paragraph-opening"));
 
         Assert.Contains("「我们」×4", note.Text);   // 4 段全部以「我们」起头
     }
@@ -274,7 +278,7 @@ public class AiToneLintServiceTests
     {
         var text = new string('好', 400) + "！！！";   // 403 字 / 3 个叹号，密度 7.4‰ > 3‰
 
-        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "exclamation-density"));
+        var note = Assert.Single(Engine().Scan(text, "t.txt").Notes.Where(n => n.Id == "exclamation-density"));
 
         Assert.Contains("叹号密度偏高：3 个 / 403 字", note.Text);   // 密度 7.4‰，门槛 3‰
     }
@@ -284,7 +288,7 @@ public class AiToneLintServiceTests
     {
         var text = "首先看甲。其次看乙。";
 
-        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "ordinal-skeleton"));
+        var note = Assert.Single(Engine().Scan(text, "t.txt").Notes.Where(n => n.Id == "ordinal-skeleton"));
 
         Assert.Contains("「首先/其次/最后」出现 2 次", note.Text);   // 门槛 2 次
     }
@@ -294,7 +298,7 @@ public class AiToneLintServiceTests
     {
         var text = "1. 甲\n2. 乙\n3. 丙\n";
 
-        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "explicit-numbering"));
+        var note = Assert.Single(Engine().Scan(text, "t.txt").Notes.Where(n => n.Id == "explicit-numbering"));
 
         Assert.Contains("显式序号标记 3 处", note.Text);
     }
@@ -302,7 +306,7 @@ public class AiToneLintServiceTests
     [Fact]
     public void Scan_显式序号标记不足三处不报C6()
     {
-        var report = Service().Scan("1. 甲\n正文一段。\n", "t.txt");
+        var report = Engine().Scan("1. 甲\n正文一段。\n", "t.txt");
 
         Assert.DoesNotContain(report.Notes, n => n.Id == "explicit-numbering");
     }
@@ -311,7 +315,7 @@ public class AiToneLintServiceTests
     public void Scan_显式序号标记恰两处仍不报C6()
     {
         // 阈值是既定的「≥3」：恰好 2 处是上界，仍不报
-        var report = Service().Scan("1. 甲\n2. 乙\n正文一段。\n", "t.txt");
+        var report = Engine().Scan("1. 甲\n2. 乙\n正文一段。\n", "t.txt");
 
         Assert.DoesNotContain(report.Notes, n => n.Id == "explicit-numbering");
     }
@@ -321,7 +325,7 @@ public class AiToneLintServiceTests
     {
         var text = "一、甲\n（2）乙\n3) 丙\n";
 
-        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "explicit-numbering"));
+        var note = Assert.Single(Engine().Scan(text, "t.txt").Notes.Where(n => n.Id == "explicit-numbering"));
 
         // 整串断言：只写 "3 处" 的话 "13 处"、"23 处" 也会通过
         Assert.Contains("显式序号标记 3 处", note.Text);
@@ -334,7 +338,7 @@ public class AiToneLintServiceTests
     public void Scan_显式序号标记其他形态也计入C6(string text)
     {
         // 三种替代分支：数字顿号、半角括号、中文数字点号
-        var note = Assert.Single(Service().Scan(text, "t.txt").Notes.Where(n => n.Id == "explicit-numbering"));
+        var note = Assert.Single(Engine().Scan(text, "t.txt").Notes.Where(n => n.Id == "explicit-numbering"));
 
         Assert.Contains("显式序号标记 3 处", note.Text);
     }
@@ -343,11 +347,11 @@ public class AiToneLintServiceTests
     public void Scan_序号标记只在行首计数()
     {
         // 序号不在行首（前有正文）：不计数
-        var 行中 = Service().Scan("甲 1. 乙\n甲 2. 乙\n甲 3. 乙\n", "t.txt");
+        var 行中 = Engine().Scan("甲 1. 乙\n甲 2. 乙\n甲 3. 乙\n", "t.txt");
         Assert.DoesNotContain(行中.Notes, n => n.Id == "explicit-numbering");
 
         // 前导空白不破行首：计数
-        var 缩进 = Service().Scan("  1. 甲\n  2. 乙\n  3. 丙\n", "t.txt");
+        var 缩进 = Engine().Scan("  1. 甲\n  2. 乙\n  3. 丙\n", "t.txt");
         Assert.Contains(缩进.Notes, n => n.Id == "explicit-numbering");
     }
 

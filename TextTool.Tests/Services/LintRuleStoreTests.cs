@@ -46,7 +46,7 @@ public class LintRuleStoreTests
     [Fact]
     public void Validate_Id仅差大小写即抛()
     {
-        // 口径与 ValidateNoAlgorithmIdCollision 及下游 --only / Filter 一致：Id 大小写不敏感，
+        // 口径与 Validate / ValidateOverrides 及下游 --only / Filter 一致：Id 大小写不敏感，
         // 否则校验放过、下游把它们塌缩成同一个，重复 Id 一直到运行期才暴露
         var rules = new List<LintRule> { Rule("cliche-words"), Rule("CLICHE-WORDS") };
 
@@ -97,11 +97,13 @@ public class LintRuleStoreTests
         var ids = LintRuleStore.GetDefaultRules().Select(r => r.Id).ToArray();
 
         // 顺序即分组：通用规则在前，小说与智能体的专属规则垫后。档位是过滤器，规则全表只有这一份。
+        // 算法规则统一垫在最末，组内按执行次序排：引擎按表序跑算法，命中与统计附注的插入次序
+        // 因此与「算法写在代码里」那些年一致，同位置多规则命中的先后不动。
         // 条数不写进名字也不写进注释：加一条规则就要改一处数字，而中文数字又搜不到。
         Assert.Equal(
             new[] { "repeated-punctuation", "ellipsis-style", "mixed-punctuation-width", "dash-and-tilde", "dash-run", "dash-pause-in-reply", "tilde-run", "invisible-characters", "emoji-and-symbols", "foreign-script-mix", "char-face",
                     "cliche-words", "deck-speak", "ai-frequent-words", "vague-attribution", "training-cutoff-disclaimer", "chatbot-artifacts", "sycophancy", "filler-phrases",
-                    "parallel-contrast", "triadic-parallel", "paragraph-ordinals", "elevated-ending", "stacked-modifiers", "fiction-modifier-chain", "copula-avoidance", "inline-title-list", "forced-reversal", "accounting-cliche",
+                    "parallel-contrast", "triadic-parallel", "paragraph-ordinals", "elevated-ending", "stacked-modifiers", "fiction-modifier-chain", "copula-avoidance", "inline-title-list", "forced-reversal", "accounting-cliche", "accounting-word-misuse",
                     "adverb-overuse", "violent-verbs", "hedging-ending", "disclaimer-stack", "hedge-denial-pile", "anthropomorphic-subject", "doc-process-residue",
                     "no-debt-declaration", "completion-log", "supersession", "tombstone-of-deletion", "re-report-suppression",
                     "assistant-persona", "meta-commentary-marker",
@@ -113,7 +115,10 @@ public class LintRuleStoreTests
                     "agent-commit-hash", "agent-code-list", "agent-path-list", "agent-cli-option",
                     "agent-smoke-jargon", "agent-test-jargon", "agent-process-jargon", "agent-inline-code",
                     "agent-truncated-path", "numbered-reference", "agent-conclusion-first", "agent-permission-ask",
-                    "agent-one-char-commitment", "agent-agreement-opener", "agent-deliberation-leak", "agent-reassurance-pile", "agent-self-intro", "agent-error-paste", "agent-flattery", "agent-conclusion-preamble" },
+                    "agent-one-char-commitment", "agent-agreement-opener", "agent-deliberation-leak", "agent-reassurance-pile", "agent-self-intro", "agent-error-paste", "agent-flattery", "agent-conclusion-preamble",
+                    "sentence-tempo", "fiction-simile-pile", "terminology-pile", "mixed-quote-style", "mixed-bracket-width",
+                    "paragraph-length-uniform", "sentence-length-uniform", "short-sentence-run", "repeated-paragraph-opening",
+                    "exclamation-density", "ordinal-skeleton", "explicit-numbering", "repeated-verbatim", "repeated-token-run", "choppy-clauses" },
             ids);
     }
 
@@ -426,22 +431,127 @@ public class LintRuleStoreTests
         Assert.Contains("null", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// 覆盖算法规则时只放开文案与适用范围：Kind 与算法名都是代码的事，改了就指向另一段实现。
+    /// </summary>
     [Fact]
-    public void ValidateNoAlgorithmIdCollision_外部Id撞算法Id即抛()
+    public void ValidateOverrides_外部把算法规则改成数据规则即抛()
     {
+        var builtIn = new List<LintRule> { AlgorithmRule("mixed-quote-style") };
         var external = new List<LintRule> { Rule("mixed-quote-style") };
 
         // 直接测守卫本身，不往程序目录写 lint_rules.json：那个文件会被并行跑的其它测试类读到
-        var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.ValidateNoAlgorithmIdCollision(external));
+        var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.ValidateOverrides(builtIn, external));
 
         Assert.Contains("mixed-quote-style", ex.Message);
+        Assert.Contains("Kind", ex.Message);
     }
 
     [Fact]
-    public void ValidateNoAlgorithmIdCollision_数据规则Id放行()
+    public void ValidateOverrides_外部改算法名即抛()
     {
-        LintRuleStore.ValidateNoAlgorithmIdCollision(new List<LintRule> { Rule("cliche-words"), Rule("X9") });
+        var builtIn = new List<LintRule> { AlgorithmRule("mixed-quote-style") };
+        var external = new List<LintRule> { AlgorithmRule("mixed-quote-style", name: "repeated-token-run") };
+
+        var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.ValidateOverrides(builtIn, external));
+
+        Assert.Contains("mixed-quote-style", ex.Message);
+        Assert.Contains("算法名", ex.Message);
     }
+
+    [Fact]
+    public void ValidateOverrides_外部给算法规则加模式即抛()
+    {
+        var builtIn = new List<LintRule> { AlgorithmRule("mixed-quote-style") };
+        var external = new List<LintRule> { AlgorithmRule("mixed-quote-style") };
+        external[0].Patterns = new List<string> { "引号" };
+
+        var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.ValidateOverrides(builtIn, external));
+
+        Assert.Contains("mixed-quote-style", ex.Message);
+        Assert.Contains("Patterns", ex.Message);
+    }
+
+    [Fact]
+    public void ValidateOverrides_外部只改算法规则的文案与档位即放行()
+    {
+        var builtIn = new List<LintRule> { AlgorithmRule("mixed-quote-style") };
+        var external = new List<LintRule> { AlgorithmRule("mixed-quote-style") };
+        external[0].Title = "改过的标题";
+        external[0].Detail = "改过的说明";
+        external[0].Severity = "warn";
+        external[0].Genres = new List<string> { "agent" };
+        external[0].DefaultOff = true;
+
+        LintRuleStore.ValidateOverrides(builtIn, external);
+        LintRuleStore.Validate(external);
+    }
+
+    [Fact]
+    public void ValidateOverrides_外部新增算法规则即抛()
+    {
+        var builtIn = new List<LintRule> { AlgorithmRule("mixed-quote-style") };
+        var external = new List<LintRule> { AlgorithmRule("my-own-algorithm") };
+
+        var ex = Assert.Throws<ArgumentException>(() => LintRuleStore.ValidateOverrides(builtIn, external));
+
+        Assert.Contains("my-own-algorithm", ex.Message);
+        Assert.Contains("新增", ex.Message);
+    }
+
+    [Fact]
+    public void ValidateOverrides_数据规则Id放行()
+    {
+        var builtIn = new List<LintRule> { AlgorithmRule("mixed-quote-style") };
+        var external = new List<LintRule> { Rule("cliche-words"), Rule("X9") };
+
+        LintRuleStore.ValidateOverrides(builtIn, external);
+    }
+
+    /// <summary>
+    /// 外部覆盖允许改算法规则的文案与适用范围，而且真能落盘、能读回来：
+    /// 界面的「改标题/改说明」走的正是这条路。
+    /// </summary>
+    [Fact]
+    public void SaveOverrides_只改算法规则的文案能落盘()
+    {
+        using var dir = new TempDir();
+        var rule = LintRuleStore.GetDefaultRules().Single(item => item.Id == "mixed-quote-style").Clone();
+        rule.Title = "改过的标题";
+        rule.Detail = "改过的说明";
+        rule.Severity = "warn";
+
+        LintRuleStore.SaveOverrides(new List<LintRule> { rule }, dir.Path);
+
+        var loaded = Assert.Single(LintRuleStore.LoadOverrides(dir.Path));
+        Assert.Equal("mixed-quote-style", loaded.Id);
+        Assert.Equal("改过的标题", loaded.Title);
+        Assert.Equal("改过的说明", loaded.Detail);
+        Assert.Equal("warn", loaded.Severity);
+        Assert.Equal(rule.AlgorithmName, loaded.AlgorithmName);
+    }
+
+    /// <summary>改算法名过不了校验，也落不了盘：坏配置不该等到下次启动才炸。</summary>
+    [Fact]
+    public void SaveOverrides_改算法名的覆盖不落盘()
+    {
+        using var dir = new TempDir();
+        var rule = LintRuleStore.GetDefaultRules().Single(item => item.Id == "mixed-quote-style").Clone();
+        rule.AlgorithmName = "no-such-algorithm";
+
+        var ex = Assert.Throws<ArgumentException>(
+            () => LintRuleStore.SaveOverrides(new List<LintRule> { rule }, dir.Path));
+
+        Assert.Contains("mixed-quote-style", ex.Message);
+        Assert.False(File.Exists(Path.Combine(dir.Path, LintRuleStore.OverrideFileName)));
+    }
+
+    /// <summary>算法规则的最小合法形状：算法名与 Id 同名，没有词面与正则。</summary>
+    private static LintRule AlgorithmRule(string id, string? name = null) => new()
+    {
+        Id = id, Group = "punctuation", Title = "标题", Kind = LintRule.KindAlgorithm,
+        AlgorithmName = name ?? id, Severity = "info", Detail = "说明",
+    };
 
     /// <summary>
     /// 界面上的词表编辑页把改动写进程序目录的 lint_rules.json，这里钉住三件事：

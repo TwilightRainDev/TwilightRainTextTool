@@ -8,32 +8,15 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        // 页签只负责干活，状态栏归窗口管。
-        MergeTabView.StatusChanged += message => StatusText.Text = message;
-        MergeTabView.ErrorOccurred += ShowError;
-        AboutTabView.StatusChanged += message => StatusText.Text = message;
-        AboutTabView.ErrorOccurred += ShowError;
-        foreach (UserControl tab in new UserControl[] { ReplaceTabView, JoinTabView, VnTabView, LintTabView })
+        // 页签只负责干活，状态栏归窗口管。六个页签都按同一个接口连线。
+        foreach (IStatusReporter tab in new IStatusReporter[]
+                 {
+                     MergeTabView, JoinTabView, ReplaceTabView,
+                     VnTabView, LintTabView, AboutTabView,
+                 })
         {
-            switch (tab)
-            {
-                case ReplaceTab replace:
-                    replace.StatusChanged += message => StatusText.Text = message;
-                    replace.ErrorOccurred += ShowError;
-                    break;
-                case JoinTab join:
-                    join.StatusChanged += message => StatusText.Text = message;
-                    join.ErrorOccurred += ShowError;
-                    break;
-                case VnTab vn:
-                    vn.StatusChanged += message => StatusText.Text = message;
-                    vn.ErrorOccurred += ShowError;
-                    break;
-                case LintTab lint:
-                    lint.StatusChanged += message => StatusText.Text = message;
-                    lint.ErrorOccurred += ShowError;
-                    break;
-            }
+            tab.StatusChanged += message => StatusText.Text = message;
+            tab.ErrorOccurred += ShowError;
         }
 
         // 两个页签共用同一个规则列表实例：在替换页改了顺序，行合并页立刻看到。

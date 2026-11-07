@@ -19,7 +19,7 @@ namespace TextTool.Gui.Views;
 /// 本页不弹对话框：导出、导入、检查更新的结果都写在结果行上，导出导入另外报一句到状态栏。
 /// 颜色一律取自主题资源，切主题后按新主题变体重取语义色画刷。
 /// </summary>
-public partial class AboutTab : UserControl
+public partial class AboutTab : UserControl, IStatusReporter
 {
     /// <summary>配置导入导出只认这两个文件名，别的文件不进程序目录。</summary>
     private const string ConfigFileName = "app_config.json";

@@ -47,9 +47,8 @@ internal static class DialogCheck
                 app.RequestedThemeVariant = variant;
 
                 failures += Shot(
-                    new SchemeSelectionDialog(
-                        new ReplaceSchemeAdapter(),
-                        ReplaceSchemeStore.GetDefaultSchemes().Cast<object>().ToList()),
+                    new CheckListDialog(
+                        new ReplaceSchemeAdapter(ReplaceSchemeStore.GetDefaultSchemes())),
                     $"schemes-{lang}-{themeName}.png", outDir, rows);
 
                 // 编辑窗只拍简体：它的布局与方案窗同源，翻一倍数量收益不高。
@@ -63,7 +62,7 @@ internal static class DialogCheck
                     // 规则勾选窗与其中的编辑窗：前者是树与三态勾，后者字段最多，
                     // 词条框还带等宽字体，深浅两套都要看。
                     failures += Shot(
-                        new LintRuleSelectionDialog(checkedIds: null, genre: null),
+                        new CheckListDialog(new LintRuleAdapter(checkedIds: null, genre: null)),
                         $"lint-rule-select-{lang}-{themeName}.png", outDir, rows);
 
                     var lintRule = LintRuleStore.GetDefaultRules()[0];
@@ -95,13 +94,12 @@ internal static class DialogCheck
         int failures = 0;
         Loc.SetLanguage("zh_CN");
 
-        var dialog = new SchemeSelectionDialog(
-            new ReplaceSchemeAdapter(),
-            ReplaceSchemeStore.GetDefaultSchemes().Cast<object>().ToList());
+        var dialog = new CheckListDialog(
+            new ReplaceSchemeAdapter(ReplaceSchemeStore.GetDefaultSchemes()));
         dialog.Show();
         Dispatcher.UIThread.RunJobs();
 
-        var tree = dialog.FindControl<TreeView>("SchemesTree");
+        var tree = dialog.FindControl<TreeView>("CheckTree");
         var summary = dialog.FindControl<TextBlock>("SummaryLabel");
         if (tree is null || summary is null)
         {
@@ -175,11 +173,11 @@ internal static class DialogCheck
         int failures = 0;
         Loc.SetLanguage("zh_CN");
 
-        var dialog = new LintRuleSelectionDialog(checkedIds: null, genre: null);
+        var dialog = new CheckListDialog(new LintRuleAdapter(checkedIds: null, genre: null));
         dialog.Show();
         Dispatcher.UIThread.RunJobs();
 
-        var tree = dialog.FindControl<TreeView>("RulesTree");
+        var tree = dialog.FindControl<TreeView>("CheckTree");
         var summary = dialog.FindControl<TextBlock>("SummaryLabel");
         var delete = dialog.FindControl<Button>("DeleteButton");
         var ok = dialog.FindControl<Button>("OkButton");

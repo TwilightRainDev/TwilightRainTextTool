@@ -10,14 +10,19 @@ namespace TextTool.Gui.Views;
 /// 单条规则的编辑窗。骨架与方案编辑窗一致：左标签右输入、行内警告、右下角取消与确定。
 ///
 /// 改动写进程序目录的 lint_rules.json，只存改过的条目，按 Id 覆盖内置。
-/// 两条硬约束：
+/// 三条硬约束：
 ///   1. 确定之前先校验，校验不过不落盘。写进一条非法正则，下次启动整个程序起不来。
 ///   2. 恢复内置与恢复全部内置都是立即写盘的动作，写完窗口不关，表单显示内置值。
+///   3. 由代码计算的规则（Kind=algorithm）只开放文案与适用范围：命不命中由引擎那段算法算，
+///      词表、匹配方式与段内门限归代码，界面上没有这三样可改。
 /// </summary>
 public partial class LintRuleEditDialog : Window
 {
     private LintRule _rule;
     private bool _overridden;
+
+    /// <summary>这条规则命不命中由代码算：词表、匹配方式、段内门限都不归界面管。</summary>
+    private static bool IsAlgorithm(LintRule rule) => rule.Kind == LintRule.KindAlgorithm;
 
     /// <summary>规则表被写过时为真，调用方据此重读列表。</summary>
     public bool Changed { get; private set; }
@@ -47,6 +52,7 @@ public partial class LintRuleEditDialog : Window
         KindLabel.Text = Loc.T("LabelLintRuleKind");
         KindLiteralItem.Content = Loc.T("LintRuleKindLiteral");
         KindRegexItem.Content = Loc.T("LintRuleKindRegex");
+        KindAlgorithmItem.Content = Loc.T("LintRuleKindAlgorithm");
         GenresLabel.Text = Loc.T("LabelLintRuleGenres");
         GenreDocBox.Content = Loc.T("LintGenreDoc");
         GenreFictionBox.Content = Loc.T("LintGenreFiction");
@@ -57,6 +63,8 @@ public partial class LintRuleEditDialog : Window
         MinCountLabel.Text = Loc.T("LabelLintRuleMinCount");
         PatternsLabel.Text = Loc.T("LabelLintRulePatterns");
         DetailLabel.Text = Loc.T("LabelLintRuleDetail");
+        DefaultOffLabel.Text = Loc.T("LabelLintRuleDefaultOff");
+        AlgorithmHintLabel.Text = Loc.T("HintLintRuleAlgorithmRule");
         RestoreButton.Content = Loc.T("BtnRestoreLintRule");
         RestoreAllButton.Content = Loc.T("BtnRestoreAllLintRules");
         CancelButton.Content = Loc.T("BtnCancel");
@@ -77,13 +85,24 @@ public partial class LintRuleEditDialog : Window
 
     private void LoadForm(LintRule rule)
     {
+        bool algorithm = IsAlgorithm(rule);
         TitleBox.Text = rule.Title;
-        KindBox.SelectedIndex = rule.Kind == "literal" ? 0 : 1;
+        // 由代码计算的规则在下拉里只能落在第三项，而且不许改：换一项就是换一段代码算
+        KindBox.SelectedIndex = algorithm ? 2 : rule.Kind == "literal" ? 0 : 1;
+        KindBox.IsEnabled = !algorithm;
         GenreDocBox.IsChecked = rule.Genres.Contains("doc", StringComparer.OrdinalIgnoreCase);
         GenreFictionBox.IsChecked = rule.Genres.Contains("fiction", StringComparer.OrdinalIgnoreCase);
         GenreAgentBox.IsChecked = rule.Genres.Contains("agent", StringComparer.OrdinalIgnoreCase);
         SeverityBox.SelectedIndex = rule.Severity == "info" ? 0 : 1;
+        DefaultOffBox.IsChecked = rule.DefaultOff;
+        // 段内门限也只对数据规则有意义：算法规则的报不报由代码里的门限决定
+        MinCountLabel.IsVisible = !algorithm;
+        MinCountBox.IsVisible = !algorithm;
         MinCountBox.Text = rule.MinCount.ToString();
+        // 没有词表可编的规则不摆空框：这一行显示说明，写清能改哪几项
+        PatternsLabel.IsVisible = !algorithm;
+        PatternsBox.IsVisible = !algorithm;
+        AlgorithmHintLabel.IsVisible = algorithm;
         PatternsBox.Text = string.Join(Environment.NewLine, rule.Patterns);
         DetailBox.Text = rule.Detail;
         ClearWarning();
@@ -93,10 +112,13 @@ public partial class LintRuleEditDialog : Window
     /// <summary>
     /// 表单 → 规则。以原规则为底只能改界面上开放的那几项（见 <see cref="LintRuleEdit"/>）：
     /// 词面表、范围、段末字数、密度门限、打断权不是本窗能改的，一律原样带回去。
+    /// 由代码计算的规则交上来的词表是空的：那几个框在这类规则上隐去，
+    /// 万一有值也不在这里挡，写盘前那道规则表校验会点名说这条规则不吃词表。
     /// </summary>
     private LintRule? ReadForm(out string? error)
     {
         error = null;
+        bool algorithm = IsAlgorithm(_rule);
 
         string title = (TitleBox.Text ?? string.Empty).Trim();
         if (title.Length == 0)
@@ -112,13 +134,16 @@ public partial class LintRuleEditDialog : Window
             .Select(line => line.Trim())
             .Where(line => line.Length > 0)
             .ToList();
-        if (patterns.Count == 0)
+        if (!algorithm && patterns.Count == 0)
         {
             error = "MsgLintRulePatternsEmpty";
             return null;
         }
 
-        if (!int.TryParse((MinCountBox.Text ?? string.Empty).Trim(), out int minCount) || minCount < 1)
+        // 段内门限同理：这类规则的门限在代码里，界面上没有这一栏可填，原值带回去
+        int minCount = _rule.MinCount;
+        if (!algorithm
+            && (!int.TryParse((MinCountBox.Text ?? string.Empty).Trim(), out minCount) || minCount < 1))
         {
             error = "MsgLintRuleMinCount";
             return null;
@@ -132,17 +157,22 @@ public partial class LintRuleEditDialog : Window
         if (GenreAgentBox.IsChecked == true)
             genres.Add("agent");
 
-        // 建议改法与词条一一对齐，词条被改过之后它就对不上了，
-        // 所以改过的规则一律不带建议：宁可少一条，也不要一条错位的。
         return LintRuleEdit.Rebuild(_rule, edited =>
         {
             edited.Title = title;
-            edited.Kind = KindBox.SelectedIndex == 0 ? "literal" : "regex";
-            edited.Patterns = patterns;
             edited.Genres = genres;
-            edited.MinCount = minCount;
             edited.Severity = SeverityBox.SelectedIndex == 0 ? "info" : "warn";
+            edited.DefaultOff = DefaultOffBox.IsChecked == true;
             edited.Detail = (DetailBox.Text ?? string.Empty).Trim();
+            // 词条照表单交上去：数据规则正常写，算法规则只有空表能过校验
+            edited.Patterns = patterns;
+            // 由代码计算的规则到此为止：匹配方式与段内门限照抄原规则
+            if (algorithm)
+                return;
+            edited.Kind = KindBox.SelectedIndex == 0 ? "literal" : "regex";
+            edited.MinCount = minCount;
+            // 建议改法与词条一一对齐，词条被改过之后它就对不上了，
+            // 所以改过的规则一律不带建议：宁可少一条，也不要一条错位的。
             edited.Hints = null;
         });
     }

@@ -9,7 +9,7 @@ namespace TextTool.Gui.Views;
 /// 视觉小说角色方案在通用勾选窗里的差异点：子节点先列角色名，再列路线名，
 /// 一行一个，勾选粒度是单个角色名或路线名。编辑走 <see cref="VNSchemeEditDialog"/>。
 /// </summary>
-public sealed class VnSchemeAdapter : ISchemeAdapter
+public sealed class VnSchemeAdapter : SchemeAdapterBase
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -17,10 +17,15 @@ public sealed class VnSchemeAdapter : ISchemeAdapter
         PropertyNameCaseInsensitive = true,
     };
 
-    public string KeyPrefix => "VnScheme";
+    /// <summary>传入的方案在窗里深拷贝一份，之后只动副本。</summary>
+    public VnSchemeAdapter(IEnumerable<VNCharacterScheme> schemes) : base(schemes.Cast<object>())
+    {
+    }
+
+    public override string KeyPrefix => "VnScheme";
 
     /// <summary>顶层节点：方案名、说明，括号里是角色数与路线数，口径与旧角色方案窗一致。</summary>
-    public string Describe(object scheme)
+    public override string Describe(object scheme)
     {
         VNCharacterScheme value = Cast(scheme);
         string name = value.IsBuiltIn ? value.Name : "* " + value.Name;
@@ -36,7 +41,7 @@ public sealed class VnSchemeAdapter : ISchemeAdapter
     }
 
     /// <summary>角色名一行一个，路线名接在后面并带前缀，两者都能单独勾。</summary>
-    public IReadOnlyList<(string Text, object Payload)> Lines(object scheme)
+    public override IReadOnlyList<(string Text, object Payload)> Lines(object scheme)
     {
         VNCharacterScheme value = Cast(scheme);
         var lines = new List<(string Text, object Payload)>();
@@ -51,19 +56,19 @@ public sealed class VnSchemeAdapter : ISchemeAdapter
         return lines;
     }
 
-    public bool IsBuiltIn(object scheme) => Cast(scheme).IsBuiltIn;
+    public override bool IsBuiltIn(object scheme) => Cast(scheme).IsBuiltIn;
 
-    public object CreateNew() => new VNCharacterScheme();
+    public override object CreateNew() => new VNCharacterScheme();
 
-    public async Task<object?> EditAsync(Window owner, object scheme) =>
+    public override async Task<object?> OpenEditorAsync(Window owner, object scheme) =>
         await VNSchemeEditDialog.ShowAsync(owner, Cast(scheme));
 
-    public object Clone(object scheme) => Copy(Cast(scheme));
+    public override object Clone(object scheme) => Copy(Cast(scheme));
 
-    public string Serialize(IEnumerable<object> schemes) =>
+    public override string Serialize(IEnumerable<object> schemes) =>
         JsonSerializer.Serialize(schemes.Select(Cast).ToList(), JsonOptions);
 
-    public List<object>? Deserialize(string json) =>
+    public override List<object>? Deserialize(string json) =>
         JsonSerializer.Deserialize<List<VNCharacterScheme>>(json, JsonOptions)
             ?.Select(scheme => (object)scheme)
             .ToList();

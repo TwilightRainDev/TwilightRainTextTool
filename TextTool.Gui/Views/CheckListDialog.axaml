@@ -1,25 +1,26 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        x:Class="TextTool.Gui.Views.SchemeSelectionDialog"
+        x:Class="TextTool.Gui.Views.CheckListDialog"
         Width="640" Height="560"
         MinWidth="480" MinHeight="360"
         WindowStartupLocation="CenterOwner">
 
   <!--
-    预设方案勾选窗。布局规矩与两个页签一致：行高一律 Auto，只有树那一行是星号，
-    因为它才是唯一该吃掉剩余高度的地方。控件尺寸一概不写死，窗口只给初值与下限。
+    勾选窗的布局：行高一律 Auto，只有树那一行是星号，它吃掉剩余高度。
+    控件尺寸不写死，窗口只给初值与下限。替换方案、角色方案、检查判据
+    套的是这一份布局。导入导出按钮归方案窗用，适配器没有导入导出时不占位置。
     缺输入、导入导出失败、删除确认全部走行内文字，不弹系统对话框。
   -->
   <Grid Margin="12" RowDefinitions="*,Auto,Auto,Auto">
 
-    <!-- 方案树：顶层节点是方案，展开后是只读的规则说明 -->
-    <TreeView x:Name="SchemesTree" Grid.Row="0"
-              SelectionChanged="OnSchemeSelected"
-              DoubleTapped="OnTreeDoubleTapped"
+    <!-- 清单树：顶层是可勾选的节点，展开后是可单独勾的行 -->
+    <TreeView x:Name="CheckTree" Grid.Row="0"
+              SelectionChanged="OnSelectionChanged"
+              DoubleTapped="OnDoubleTapped"
               ScrollViewer.HorizontalScrollBarVisibility="Disabled" />
 
     <!--
-      方案操作行。删除按钮点下去后原地换成确认与取消两个按钮：
+      操作行。删除按钮点下去后原地换成确认与取消两个按钮：
       两个按钮放在同一个无间距的容器里，删按钮隐藏时不留空档。
     -->
     <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,10,0,0">
@@ -33,8 +34,8 @@
           <Button x:Name="CancelDeleteButton" Click="OnDeleteCancel" />
         </StackPanel>
       </StackPanel>
-      <Button x:Name="ImportButton" Click="OnImport" />
-      <Button x:Name="ExportButton" Click="OnExport" />
+      <Button x:Name="ImportButton" Click="OnImport" IsVisible="False" />
+      <Button x:Name="ExportButton" Click="OnExport" IsVisible="False" />
     </StackPanel>
 
     <!-- 摘要与行内提示：摘要随勾选实时刷新，错误与删除确认用警告色 -->

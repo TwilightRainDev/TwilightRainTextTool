@@ -13,7 +13,7 @@ namespace TextTool.Gui.Views;
 /// 缺输入、文件夹不存在、拼接失败一律写结果行的行内文字，不弹窗：
 /// 弹窗会抢焦点，也会盖掉上一次的结果。
 /// </summary>
-public partial class JoinTab : UserControl
+public partial class JoinTab : UserControl, IStatusReporter
 {
     private const string DefaultPattern = "*.txt";
     private const string DefaultOutputName = "combined.txt";

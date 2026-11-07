@@ -1,11 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Text;
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Media;
-using Avalonia.Platform.Storage;
 using TextTool.Gui.Localization;
 using TextTool.Services;
 
@@ -21,39 +17,20 @@ namespace TextTool.Gui.Views;
 ///   3. 方案弹窗点「取消」什么都不写：列表不能因此盖回磁盘。
 ///   4. 配置读不出来时在页面顶部挂一条横条，不只报到状态栏。
 /// </summary>
-public partial class ReplaceTab : UserControl
+public partial class ReplaceTab : FileTabBase
 {
     private static readonly UTF8Encoding Utf8WithBom = new(encoderShouldEmitUTF8Identifier: true);
 
-    private readonly List<string> _selectedFiles = new();
     private readonly ObservableCollection<string> _ruleTexts = new();
 
     private List<ReplaceRule> _rules = new();
-    private DetectionResult? _lastDetection;
     private CancellationTokenSource? _cts;
-
-    /// <summary>动态文案记下键与参数，切语言时按新语言重刷，不留旧语言的残句。</summary>
-    private Message? _banner;
-    private Message? _warning;
-    private Message? _result;
-
-    /// <summary>状态栏文字。由 MainWindow 订阅。</summary>
-    public event Action<string>? StatusChanged;
-
-    /// <summary>需要让用户知道出了错。由 MainWindow 显示。</summary>
-    public event Action<string>? ErrorOccurred;
 
     public ReplaceTab()
     {
         InitializeComponent();
         RuleList.ItemsSource = _ruleTexts;
         ApplyLocalization();
-        Loc.LanguageChanged += ApplyLocalization;
-
-        DragDrop.SetAllowDrop(this, true);
-        AddHandler(DragDrop.DragOverEvent, OnDragOver);
-        AddHandler(DragDrop.DragLeaveEvent, OnDragLeave);
-        AddHandler(DragDrop.DropEvent, OnDrop);
     }
 
     /// <summary>
@@ -69,21 +46,37 @@ public partial class ReplaceTab : UserControl
         RefreshRules();
     }
 
-    /// <summary>
-    /// 离屏验收工具用：把文件直接交给页签，等同一次拖放或浏览选择。
-    /// 真实界面没有别的入口，所以只开这一个口子。
-    /// </summary>
-    internal void UseFilesForCheck(IReadOnlyList<string> paths) => SelectFiles(paths);
-
     // ================================================================
     //  文案
     // ================================================================
 
-    private void ApplyLocalization()
+    protected override TextBox FileBoxControl => FileBox;
+
+    protected override Button BrowseButtonControl => BrowseButton;
+
+    protected override TextBlock SourceLabelControl => SourceLabel;
+
+    protected override TextBlock ResultLabelControl => ResultLabel;
+
+    protected override TextBlock EncodingLabelControl => EncodingLabel;
+
+    protected override TextBlock EncodingValueControl => EncodingValue;
+
+    protected override TextBlock InlineWarningControl => InlineWarning;
+
+    protected override Border BannerBarControl => ConfigErrorBar;
+
+    protected override TextBlock BannerTextControl => ConfigErrorText;
+
+    protected override string PickerTitleKey => "TabReplace";
+
+    /// <summary>本页的编码行从头到尾都用次要色，检测成功也不切回正文色。</summary>
+    protected override bool EncodingInPrimaryColor => false;
+
+    protected override void ApplyLocalization()
     {
-        SourceLabel.Text = Loc.T("LabelSourceFile");
-        BrowseButton.Content = Loc.T("BtnBrowse");
-        EncodingLabel.Text = Loc.T("LabelEncoding");
+        ApplyCommonLocalization();
+
         RulesLabel.Text = Loc.T("LabelRules");
         FindLabel.Text = Loc.T("LabelFind");
         ReplaceWithLabel.Text = Loc.T("LabelReplaceWith");
@@ -96,117 +89,14 @@ public partial class ReplaceTab : UserControl
             ? Loc.T("BtnExecuteReplace")
             : Loc.T("StatusReplacing");
         HintLabel.Text = Loc.T("HintRuleEdit");
-
-        EncodingValue.Text = _lastDetection is null
-            ? Loc.T("EncodingNotSelected")
-            : Loc.T(_lastDetection.LocKey);
-
-        ConfigErrorText.Text = Format(_banner);
-        ConfigErrorBar.IsVisible = _banner is not null;
-        InlineWarning.Text = Format(_warning);
-        InlineWarning.IsVisible = _warning is not null;
-        ResultLabel.Text = Format(_result);
-        if (_result is not null && TryBrush(_result.Warning ? "WarningFg" : "SuccessFg") is { } brush)
-            ResultLabel.Foreground = brush;
     }
-
-    private static string Format(Message? text) =>
-        text is { } t ? Loc.T(t.Key, t.Args) : string.Empty;
-
-    /// <summary>一条待显示的文案。存键与实参而不是成品字串，切语言时才能重算。</summary>
-    private sealed record Message(string Key, object[] Args, bool Warning);
 
     // ================================================================
     //  选文件
     // ================================================================
 
-    private async void OnBrowse(object? sender, RoutedEventArgs e)
-    {
-        if (TopLevel.GetTopLevel(this)?.StorageProvider is not { } storage)
-            return;
-
-        var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
-        {
-            Title = Loc.T("TabReplace"),
-            AllowMultiple = true,
-            FileTypeFilter = new[]
-            {
-                new FilePickerFileType(Loc.T("FileFilterText")) { Patterns = new[] { "*.txt" } },
-                new FilePickerFileType(Loc.T("FileFilterAll")) { Patterns = new[] { "*" } },
-            },
-        });
-
-        var paths = files
-            .Select(f => f.TryGetLocalPath())
-            .OfType<string>()
-            .ToArray();
-
-        if (paths.Length > 0)
-            SelectFiles(paths);
-    }
-
-    private void OnDragOver(object? sender, DragEventArgs e)
-    {
-        bool hasFiles = e.Data.Contains(DataFormats.Files);
-        e.DragEffects = hasFiles ? DragDropEffects.Copy : DragDropEffects.None;
-        if (hasFiles && TryBrush("DragHighlightBg") is { } highlight)
-            FileBox.Background = highlight;
-    }
-
-    private void OnDragLeave(object? sender, RoutedEventArgs e) => ResetDragHighlight();
-
-    private void OnDrop(object? sender, DragEventArgs e)
-    {
-        ResetDragHighlight();
-
-        var paths = e.Data.GetFiles()?
-            .Select(f => f.TryGetLocalPath())
-            .OfType<string>()
-            .ToArray();
-
-        if (paths is { Length: > 0 })
-            SelectFiles(paths);
-    }
-
-    /// <summary>
-    /// 取主题画刷。必须带当前主题变体：语义色放在 ThemeDictionaries 里，
-    /// 不带变体的重载会按默认变体查、查不到就静默返回 false，
-    /// 结果就是颜色悄悄退化成正文色，界面上看不出异常。
-    /// </summary>
-    private IBrush? TryBrush(string key) =>
-        this.TryFindResource(key, ActualThemeVariant, out object? value) && value is IBrush brush
-            ? brush
-            : null;
-
-    private void ResetDragHighlight() => FileBox.ClearValue(BackgroundProperty);
-
-    private void SelectFiles(IReadOnlyList<string> files)
-    {
-        _selectedFiles.Clear();
-        var valid = files.Where(File.Exists).ToList();
-        if (valid.Count == 0)
-            return;
-
-        _selectedFiles.AddRange(valid);
-        FileBox.Text = valid.Count == 1 ? valid[0] : Loc.T("StatusFilesSelectedShort", valid.Count);
-
-        // 编码只按第一个文件检测，作为参考显示；处理时每个文件各自严格检测。
-        try
-        {
-            _lastDetection = EncodingDetector.Detect(valid[0]);
-            EncodingValue.Text = Loc.T(_lastDetection.LocKey);
-            EncodingValue.Classes.Set("muted", false);
-        }
-        catch
-        {
-            _lastDetection = null;
-            EncodingValue.Text = Loc.T("EncodingNotSelected");
-            EncodingValue.Classes.Set("muted", true);
-        }
-
+    protected override void OnFilesSelected(IReadOnlyList<string> files) =>
         ReplaceButton.IsEnabled = true;
-        StatusChanged?.Invoke(Loc.T("StatusFilesSelected", valid.Count));
-    }
 
     // ================================================================
     //  规则编辑
@@ -315,12 +205,12 @@ public partial class ReplaceTab : UserControl
         if (error is null)
         {
             ClearWarning();
-            StatusChanged?.Invoke(statusText);
+            ReportStatus(statusText);
             return;
         }
 
         ShowBanner("MsgSaveFailed", error);
-        StatusChanged?.Invoke(Loc.T("MsgSaveFailed", error));
+        ReportStatus(Loc.T("MsgSaveFailed", error));
     }
 
     private string? TrySaveRules()
@@ -356,9 +246,8 @@ public partial class ReplaceTab : UserControl
             return;
         }
 
-        var result = await SchemeSelectionDialog.ShowAsync(
-            owner, new ReplaceSchemeAdapter(), schemes.Cast<object>().ToList());
-        if (result is null)
+        if (await CheckListDialog.ShowAsync(owner, new ReplaceSchemeAdapter(schemes))
+            is not SchemeSelectionResult result)
             return;
 
         // 方案本身的编辑结果先落盘，再谈应用；两件事失败互不牵连。
@@ -405,11 +294,11 @@ public partial class ReplaceTab : UserControl
             running.Cancel();
             ReplaceButton.IsEnabled = false;
             ReplaceButton.Content = Loc.T("StatusCancelling");
-            StatusChanged?.Invoke(Loc.T("StatusCancelling"));
+            ReportStatus(Loc.T("StatusCancelling"));
             return;
         }
 
-        if (_selectedFiles.Count == 0)
+        if (SelectedFiles.Count == 0)
             return;
 
         if (_rules.Count == 0)
@@ -419,7 +308,7 @@ public partial class ReplaceTab : UserControl
         }
 
         var rules = _rules.ToList();
-        string[] files = _selectedFiles.ToArray();
+        string[] files = SelectedFiles.ToArray();
 
         _cts = new CancellationTokenSource();
         ReplaceButton.IsEnabled = false;
@@ -428,9 +317,9 @@ public partial class ReplaceTab : UserControl
         var progress = new Progress<(int Done, string Error)>(p =>
         {
             if (string.IsNullOrEmpty(p.Error))
-                StatusChanged?.Invoke(Loc.T("StatusBatchProgress", p.Done, files.Length));
+                ReportStatus(Loc.T("StatusBatchProgress", p.Done, files.Length));
             else
-                ErrorOccurred?.Invoke(Loc.T("MsgReplaceFailed", $"{Path.GetFileName(files[p.Done - 1])}：{p.Error}"));
+                ReportError(Loc.T("MsgReplaceFailed", $"{Path.GetFileName(files[p.Done - 1])}：{p.Error}"));
         });
 
         try
@@ -463,48 +352,12 @@ public partial class ReplaceTab : UserControl
         {
             ReplaceButton.IsEnabled = true;
             ReplaceButton.Content = Loc.T("BtnExecuteReplace");
-            ErrorOccurred?.Invoke(Loc.T("MsgReplaceFailed", ex.Message));
+            ReportError(Loc.T("MsgReplaceFailed", ex.Message));
         }
         finally
         {
             _cts?.Dispose();
             _cts = null;
         }
-    }
-
-    // ================================================================
-    //  提示
-    // ================================================================
-
-    private void ShowResult(string key, bool warning, params object[] args)
-    {
-        _result = new Message(key, args, warning);
-        ResultLabel.Text = Loc.T(key, args);
-        if (TryBrush(warning ? "WarningFg" : "SuccessFg") is { } brush)
-            ResultLabel.Foreground = brush;
-        StatusChanged?.Invoke(ResultLabel.Text);
-    }
-
-    private void ShowBanner(string key, params object[] args)
-    {
-        _banner = new Message(key, args, true);
-        ConfigErrorText.Text = Loc.T(key, args);
-        ConfigErrorBar.IsVisible = true;
-    }
-
-    private void ShowWarning(string key, params object[] args)
-    {
-        _warning = new Message(key, args, true);
-        InlineWarning.Text = Loc.T(key, args);
-        if (TryBrush("WarningFg") is { } brush)
-            InlineWarning.Foreground = brush;
-        InlineWarning.IsVisible = true;
-    }
-
-    private void ClearWarning()
-    {
-        _warning = null;
-        InlineWarning.Text = string.Empty;
-        InlineWarning.IsVisible = false;
     }
 }

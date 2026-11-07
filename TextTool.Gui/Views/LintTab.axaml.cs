@@ -1,10 +1,5 @@
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Layout;
-using Avalonia.Media;
-using Avalonia.Platform.Storage;
-using Avalonia.Styling;
 using TextTool.Gui.Localization;
 using TextTool.Services;
 
@@ -16,15 +11,13 @@ namespace TextTool.Gui.Views;
 /// 报告里每一个字都由 <see cref="ILintText"/> 现取，本页不拼接报告正文，
 /// 所以换语言后旧报告就是旧语言，必须按新语言重扫一遍（见 <see cref="RerenderReportAsync"/>）。
 /// </summary>
-public partial class LintTab : UserControl
+public partial class LintTab : FileTabBase
 {
     /// <summary>
     /// 粘贴内容的来源名，与命令行一致。人读报告不打印文件名，它只落在报告模型的 File 上，
     /// 与按文件跑出来的报告保持同一种形状。
     /// </summary>
     private const string PasteSource = "(paste)";
-
-    private readonly List<string> _selectedFiles = new();
 
     /// <summary>规则清单。勾中的那几条对应 <see cref="LintRunner.Run"/> 的 onlyIds。</summary>
     private List<LintRule> _rules = new();
@@ -38,20 +31,10 @@ public partial class LintTab : UserControl
     /// <summary>勾中的规则 Id。等于整张表时检查那一步传 null，理由见 SelectedOnlyIds。</summary>
     private HashSet<string> _selectedRuleIds = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>动态文案记下键与参数，切语言时按新语言重刷。</summary>
-    private Message? _result;
-    private Message? _warning;
-
     private bool _running;
 
     /// <summary>每发起一次新扫描或重渲染就加一，用来丢弃已经过期的后台结果。</summary>
     private int _generation;
-
-    /// <summary>状态栏文字。由 MainWindow 订阅。</summary>
-    public event Action<string>? StatusChanged;
-
-    /// <summary>需要让用户知道出了错。由 MainWindow 显示。</summary>
-    public event Action<string>? ErrorOccurred;
 
     public LintTab()
     {
@@ -59,35 +42,37 @@ public partial class LintTab : UserControl
         // 先取规则再刷文案：配置读不出来时，提示是在 LoadRules 里记下的，由 ApplyLocalization 显示。
         LoadRules();
         ApplyLocalization();
-
-        // 订阅挂在 Loaded 上、退订挂在 Unloaded 上：页签被移出视觉树后不再收语言切换的通知，
-        // 回来时重新挂一次，避免同一处回调挂两遍。
-        Loaded += OnLoaded;
-        Unloaded += OnUnloaded;
-
-        DragDrop.SetAllowDrop(this, true);
-        AddHandler(DragDrop.DragOverEvent, OnDragOver);
-        AddHandler(DragDrop.DragLeaveEvent, OnDragLeave);
-        AddHandler(DragDrop.DropEvent, OnDrop);
     }
-
-    private void OnLoaded(object? sender, RoutedEventArgs e)
-    {
-        Loc.LanguageChanged -= ApplyLocalization;
-        Loc.LanguageChanged += ApplyLocalization;
-    }
-
-    private void OnUnloaded(object? sender, RoutedEventArgs e) =>
-        Loc.LanguageChanged -= ApplyLocalization;
 
     // ================================================================
     //  文案
     // ================================================================
 
-    private void ApplyLocalization()
+    protected override TextBox FileBoxControl => FileBox;
+
+    protected override Button BrowseButtonControl => BrowseButton;
+
+    protected override TextBlock SourceLabelControl => SourceLabel;
+
+    protected override TextBlock ResultLabelControl => ResultLabel;
+
+    protected override TextBlock InlineWarningControl => InlineWarning;
+
+    protected override string PickerTitleKey => "TabLint";
+
+    /// <summary>本页不显示编码，选文件时不检测。</summary>
+    protected override bool DetectsEncoding => false;
+
+    /// <summary>行内警告同时报到状态栏：缺输入、文件不见了这类事不能只挂在页面里。</summary>
+    protected override bool WarningReachesStatusBar => true;
+
+    /// <summary>载入后不重刷文案：重刷会顺带重扫报告，把结果写回状态栏。</summary>
+    protected override bool ApplyLocalizationOnLoad => false;
+
+    protected override void ApplyLocalization()
     {
-        SourceLabel.Text = Loc.T("LabelSourceFile");
-        BrowseButton.Content = Loc.T("BtnBrowse");
+        ApplyCommonLocalization();
+
         PasteLabel.Text = Loc.T("LabelLintPaste");
         OnlyLabel.Text = Loc.T("LabelLintOnly");
         SeverityLabel.Text = Loc.T("LabelLintMinSeverity");
@@ -101,29 +86,10 @@ public partial class LintTab : UserControl
         BtnLint.Content = _running ? Loc.T("StatusLintRunning") : Loc.T("BtnLint");
         RulePresetButton.Content = Loc.T("BtnLintRulePreset");
         HintLabel.Text = Loc.T("HintLint");
+
         RefreshOnlySummary();
-
-        InlineWarning.Text = Format(_warning);
-        InlineWarning.IsVisible = _warning is not null;
-        if (_warning is null)
-            InlineWarning.ClearValue(TextBlock.ForegroundProperty);
-        else if (TryBrush("WarningFg") is { } warningBrush)
-            InlineWarning.Foreground = warningBrush;
-
-        ResultLabel.Text = Format(_result);
-        if (_result is null)
-            ResultLabel.ClearValue(TextBlock.ForegroundProperty);
-        else if (TryBrush("SuccessFg") is { } successBrush)
-            ResultLabel.Foreground = successBrush;
-
         _ = RerenderReportAsync();
     }
-
-    private static string Format(Message? text) =>
-        text is { } t ? Loc.T(t.Key, t.Args) : string.Empty;
-
-    /// <summary>一条待显示的文案。存键与实参而不是成品字串，切语言时才能重算。</summary>
-    private sealed record Message(string Key, object[] Args);
 
     // ================================================================
     //  规则
@@ -167,8 +133,8 @@ public partial class LintTab : UserControl
         if (TopLevel.GetTopLevel(this) is not Window owner)
             return;
 
-        List<string>? selected = await LintRuleSelectionDialog.ShowAsync(owner, _selectedRuleIds, SelectedGenre());
-        if (selected is null)
+        if (await CheckListDialog.ShowAsync(owner, new LintRuleAdapter(_selectedRuleIds, SelectedGenre()))
+            is not List<string> selected)
             return;
 
         LoadRules(selected);
@@ -209,9 +175,9 @@ public partial class LintTab : UserControl
     }
 
     /// <summary>
-    /// 勾中的就是 onlyIds，全选时返回 null。全选必须传 null 而不是全部 Id：
-    /// 算法规则由代码产出（见 AiToneLintService.AlgorithmRuleIds），不在本列表里，
-    /// 传一份数据规则的 Id 会把算法规则的命中一并筛掉。
+    /// 勾中的就是 onlyIds，全选时返回 null。列表里是整张规则表，算法规则也在其中，
+    /// 返回 null 等于不给 --only，与命令行是同一种说法，默认不勾选的判据因此不会被点名。
+    /// 返回一份等长的 Id 清单则相反：那等于把每一条都点了名。清单读不出来时同样返回 null。
     /// </summary>
     private IReadOnlyCollection<string>? SelectedOnlyIds()
     {
@@ -239,78 +205,7 @@ public partial class LintTab : UserControl
     //  选文件
     // ================================================================
 
-    private async void OnBrowse(object? sender, RoutedEventArgs e)
-    {
-        if (TopLevel.GetTopLevel(this)?.StorageProvider is not { } storage)
-            return;
-
-        var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
-        {
-            Title = Loc.T("TabLint"),
-            AllowMultiple = true,
-            FileTypeFilter = new[]
-            {
-                new FilePickerFileType(Loc.T("FileFilterText")) { Patterns = new[] { "*.txt" } },
-                new FilePickerFileType(Loc.T("FileFilterAll")) { Patterns = new[] { "*" } },
-            },
-        });
-
-        var paths = files
-            .Select(f => f.TryGetLocalPath())
-            .OfType<string>()
-            .ToArray();
-
-        if (paths.Length > 0)
-            SelectFiles(paths);
-    }
-
-    private void OnDragOver(object? sender, DragEventArgs e)
-    {
-        bool hasFiles = e.Data.Contains(DataFormats.Files);
-        e.DragEffects = hasFiles ? DragDropEffects.Copy : DragDropEffects.None;
-        if (hasFiles && TryBrush("DragHighlightBg") is { } highlight)
-            FileBox.Background = highlight;
-    }
-
-    private void OnDragLeave(object? sender, RoutedEventArgs e) => ResetDragHighlight();
-
-    private void OnDrop(object? sender, DragEventArgs e)
-    {
-        ResetDragHighlight();
-
-        var paths = e.Data.GetFiles()?
-            .Select(f => f.TryGetLocalPath())
-            .OfType<string>()
-            .ToArray();
-
-        if (paths is { Length: > 0 })
-            SelectFiles(paths);
-    }
-
-    /// <summary>
-    /// 取资源里的画刷。语义色在 ThemeDictionaries 下，必须带上当前主题变体去查：
-    /// 不带变体的重载按 Default 查找，主题字典里的键一个也取不到。
-    /// 资源缺席时返回 null，调用方保持控件原有颜色。
-    /// </summary>
-    private IBrush? TryBrush(string key) =>
-        this.TryFindResource(key, ActualThemeVariant, out object? value) && value is IBrush brush
-            ? brush
-            : null;
-
-    private void ResetDragHighlight() => FileBox.ClearValue(TextBox.BackgroundProperty);
-
-    private void SelectFiles(IReadOnlyList<string> files)
-    {
-        _selectedFiles.Clear();
-        var valid = files.Where(File.Exists).ToList();
-        if (valid.Count == 0)
-            return;
-
-        _selectedFiles.AddRange(valid);
-        FileBox.Text = valid.Count == 1 ? valid[0] : Loc.T("StatusFilesSelectedShort", valid.Count);
-        ClearWarning();
-        StatusChanged?.Invoke(Loc.T("StatusFilesSelected", valid.Count));
-    }
+    protected override void OnFilesSelected(IReadOnlyList<string> files) => ClearWarning();
 
     // ================================================================
     //  检查
@@ -322,7 +217,7 @@ public partial class LintTab : UserControl
             return;
 
         string paste = PasteBox.Text ?? string.Empty;
-        string[] files = _selectedFiles.ToArray();
+        string[] files = SelectedFiles.ToArray();
 
         if (files.Length == 0 && string.IsNullOrWhiteSpace(paste))
         {
@@ -347,7 +242,7 @@ public partial class LintTab : UserControl
         _running = true;
         BtnLint.IsEnabled = false;
         BtnLint.Content = Loc.T("StatusLintRunning");
-        StatusChanged?.Invoke(Loc.T("StatusLintRunning"));
+        ReportStatus(Loc.T("StatusLintRunning"));
 
         try
         {
@@ -360,11 +255,11 @@ public partial class LintTab : UserControl
             _lastOnlyIds = onlyIds;
             ReportBox.Text = scan.Text;
             ClearWarning();
-            ShowResult(scan.Hits, scan.Notes);
+            ShowResult("StatusLintDone", warning: false, scan.Hits, scan.Notes);
         }
         catch (Exception ex)
         {
-            ErrorOccurred?.Invoke(ex.Message);
+            ReportError(ex.Message);
         }
         finally
         {
@@ -437,41 +332,11 @@ public partial class LintTab : UserControl
                 return;
 
             ReportBox.Text = scan.Text;
-            ShowResult(scan.Hits, scan.Notes);
+            ShowResult("StatusLintDone", warning: false, scan.Hits, scan.Notes);
         }
         catch (Exception ex)
         {
-            ErrorOccurred?.Invoke(ex.Message);
+            ReportError(ex.Message);
         }
-    }
-
-    // ================================================================
-    //  提示
-    // ================================================================
-
-    private void ShowResult(int hits, int notes)
-    {
-        _result = new Message("StatusLintDone", new object[] { hits, notes });
-        ResultLabel.Text = Loc.T("StatusLintDone", hits, notes);
-        if (TryBrush("SuccessFg") is { } brush)
-            ResultLabel.Foreground = brush;
-        StatusChanged?.Invoke(ResultLabel.Text);
-    }
-
-    private void ShowWarning(string key, params object[] args)
-    {
-        _warning = new Message(key, args);
-        InlineWarning.Text = Loc.T(key, args);
-        if (TryBrush("WarningFg") is { } brush)
-            InlineWarning.Foreground = brush;
-        InlineWarning.IsVisible = true;
-        StatusChanged?.Invoke(InlineWarning.Text);
-    }
-
-    private void ClearWarning()
-    {
-        _warning = null;
-        InlineWarning.Text = string.Empty;
-        InlineWarning.IsVisible = false;
     }
 }

@@ -1,11 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Media;
-using Avalonia.Platform.Storage;
 using TextTool.Gui.Localization;
 using TextTool.Services;
 
@@ -23,14 +19,12 @@ namespace TextTool.Gui.Views;
 ///   2. 批量进度分条报到状态栏，跑起来再点一次就是取消。
 ///   3. 处理完成后不弹「是否打开输出文件夹」，输出路径写在结果行上。
 /// </summary>
-public partial class VnTab : UserControl
+public partial class VnTab : FileTabBase
 {
     private static readonly UTF8Encoding Utf8WithBom = new(encoderShouldEmitUTF8Identifier: true);
 
     /// <summary>旧页 NumericUpDown 的默认值（100 到 2000 之间的 450）。</summary>
     private const int DefaultMaxPara = 450;
-
-    private readonly List<string> _selectedFiles = new();
 
     /// <summary>方案勾选窗里勾中的角色名，一行一个，按方案顺序与行顺序。</summary>
     private readonly List<string> _selectedCharacters = new();
@@ -38,17 +32,7 @@ public partial class VnTab : UserControl
     /// <summary>这些角色名来自哪些方案：路线名与场景正则跟着方案走，旧页也是这么喂引擎的。</summary>
     private List<VNCharacterScheme> _involvedSchemes = new();
 
-    private DetectionResult? _lastDetection;
     private CancellationTokenSource? _cts;
-
-    /// <summary>结果行的文案。存键与实参，切语言时按新语言重刷。</summary>
-    private Message? _result;
-
-    /// <summary>状态栏文字。由 MainWindow 订阅。</summary>
-    public event Action<string>? StatusChanged;
-
-    /// <summary>需要让用户知道出了错。由 MainWindow 显示。</summary>
-    public event Action<string>? ErrorOccurred;
 
     public VnTab()
     {
@@ -56,44 +40,36 @@ public partial class VnTab : UserControl
         MaxParaBox.Value = DefaultMaxPara;
         ApplyLocalization();
 
-        // 切页签会把本页从可视树上摘下来，切回来再挂上，所以订阅跟着挂载走。
-        Loaded += OnLoaded;
-        Unloaded += OnUnloaded;
-
         // 结果行的语义色是运行时赋的，切主题后按新主题重取一次。
-        ActualThemeVariantChanged += (_, _) => UpdateResultText();
-
-        DragDrop.SetAllowDrop(this, true);
-        AddHandler(DragDrop.DragOverEvent, OnDragOver);
-        AddHandler(DragDrop.DragLeaveEvent, OnDragLeave);
-        AddHandler(DragDrop.DropEvent, OnDrop);
+        ActualThemeVariantChanged += (_, _) => RefreshMessages();
     }
-
-    private void OnLoaded(object? sender, RoutedEventArgs e)
-    {
-        Loc.LanguageChanged -= ApplyLocalization;
-        Loc.LanguageChanged += ApplyLocalization;
-        ApplyLocalization();
-    }
-
-    private void OnUnloaded(object? sender, RoutedEventArgs e) =>
-        Loc.LanguageChanged -= ApplyLocalization;
-
-    /// <summary>
-    /// 离屏验收工具用：把文件直接交给页签，等同一次拖放或浏览选择。
-    /// 真实界面没有别的入口，所以只开这一个口子。
-    /// </summary>
-    internal void UseFilesForCheck(IReadOnlyList<string> paths) => SelectFiles(paths);
 
     // ================================================================
     //  文案
     // ================================================================
 
-    private void ApplyLocalization()
+    protected override TextBox FileBoxControl => FileBox;
+
+    protected override Button BrowseButtonControl => BrowseButton;
+
+    protected override TextBlock SourceLabelControl => SourceLabel;
+
+    protected override TextBlock ResultLabelControl => ResultLabel;
+
+    protected override TextBlock EncodingLabelControl => EncodingLabel;
+
+    protected override TextBlock EncodingValueControl => EncodingValue;
+
+    protected override string PickerTitleKey => "TabVN";
+
+    protected override string SourceLabelKey => "LabelVNFile";
+
+    protected override string EncodingLabelKey => "LabelVNEncoding";
+
+    protected override void ApplyLocalization()
     {
-        SourceLabel.Text = Loc.T("LabelVNFile");
-        BrowseButton.Content = Loc.T("BtnBrowse");
-        EncodingLabel.Text = Loc.T("LabelVNEncoding");
+        ApplyCommonLocalization();
+
         ModeLabel.Text = Loc.T("LabelVNMode");
         AllRadio.Content = Loc.T("RadioVNAll");
         ReformatRadio.Content = Loc.T("RadioVNReformat");
@@ -102,18 +78,7 @@ public partial class VnTab : UserControl
         PresetSchemesButton.Content = Loc.T("BtnVNPresetSchemes");
         ProcessButton.Content = _cts is null ? Loc.T("BtnVNProcess") : Loc.T("StatusVNProcessing");
 
-        UpdateEncodingValue();
         UpdatePresetSummary();
-        UpdateResultText();
-    }
-
-    /// <summary>编码未选中时用次要色，选中后回到正文色。</summary>
-    private void UpdateEncodingValue()
-    {
-        EncodingValue.Text = _lastDetection is null
-            ? Loc.T("EncodingNotSelected")
-            : Loc.T(_lastDetection.LocKey);
-        EncodingValue.Classes.Set("muted", _lastDetection is null);
     }
 
     private void UpdatePresetSummary()
@@ -123,112 +88,12 @@ public partial class VnTab : UserControl
             : Loc.T("StatusVNPresetSummary", _involvedSchemes.Count, _selectedCharacters.Count);
     }
 
-    private void UpdateResultText()
-    {
-        if (_result is not { } result)
-        {
-            ResultLabel.Text = string.Empty;
-            ResultLabel.ClearValue(TextBlock.ForegroundProperty);
-            return;
-        }
-
-        ResultLabel.Text = Loc.T(result.Key, result.Args);
-        if (TryBrush(result.Warning ? "WarningFg" : "SuccessFg") is { } brush)
-            ResultLabel.Foreground = brush;
-        else
-            ResultLabel.ClearValue(TextBlock.ForegroundProperty);
-    }
-
-    /// <summary>一条待显示的结果文案。存键与实参而不是成品字串，切语言时才能重算。</summary>
-    private sealed record Message(string Key, object[] Args, bool Warning);
-
-    /// <summary>
-    /// 取资源里的画刷。语义色在 ThemeDictionaries 下，必须带上当前主题变体去查：
-    /// 不带变体的重载按 Default 查找，主题字典里的键一个也取不到。
-    /// </summary>
-    private IBrush? TryBrush(string key) =>
-        this.TryFindResource(key, ActualThemeVariant, out object? value) && value is IBrush brush
-            ? brush
-            : null;
-
     // ================================================================
     //  选文件
     // ================================================================
 
-    private async void OnBrowse(object? sender, RoutedEventArgs e)
-    {
-        if (TopLevel.GetTopLevel(this)?.StorageProvider is not { } storage)
-            return;
-
-        var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
-        {
-            Title = Loc.T("TabVN"),
-            AllowMultiple = true,
-            FileTypeFilter = new[]
-            {
-                new FilePickerFileType(Loc.T("FileFilterText")) { Patterns = new[] { "*.txt" } },
-                new FilePickerFileType(Loc.T("FileFilterAll")) { Patterns = new[] { "*" } },
-            },
-        });
-
-        var paths = files
-            .Select(f => f.TryGetLocalPath())
-            .OfType<string>()
-            .ToArray();
-
-        if (paths.Length > 0)
-            SelectFiles(paths);
-    }
-
-    private void OnDragOver(object? sender, DragEventArgs e)
-    {
-        bool hasFiles = e.Data.Contains(DataFormats.Files);
-        e.DragEffects = hasFiles ? DragDropEffects.Copy : DragDropEffects.None;
-        if (hasFiles && TryBrush("DragHighlightBg") is { } highlight)
-            FileBox.Background = highlight;
-    }
-
-    private void OnDragLeave(object? sender, RoutedEventArgs e) => ResetDragHighlight();
-
-    private void OnDrop(object? sender, DragEventArgs e)
-    {
-        ResetDragHighlight();
-
-        var paths = e.Data.GetFiles()?
-            .Select(f => f.TryGetLocalPath())
-            .OfType<string>()
-            .ToArray();
-
-        if (paths is { Length: > 0 })
-            SelectFiles(paths);
-    }
-
-    private void ResetDragHighlight() => FileBox.ClearValue(TextBox.BackgroundProperty);
-
-    private void SelectFiles(IReadOnlyList<string> files)
-    {
-        _selectedFiles.Clear();
-        var valid = files.Where(File.Exists).ToList();
-        if (valid.Count == 0)
-            return;
-
-        _selectedFiles.AddRange(valid);
-        FileBox.Text = valid.Count == 1 ? valid[0] : Loc.T("StatusFilesSelectedShort", valid.Count);
-
-        // 编码只按第一个文件检测，作为参考显示；处理时每个文件各自严格检测。
-        try
-        {
-            _lastDetection = EncodingDetector.Detect(valid[0]);
-        }
-        catch
-        {
-            _lastDetection = null;
-        }
-
-        UpdateEncodingValue();
+    protected override void OnFilesSelected(IReadOnlyList<string> files) =>
         ProcessButton.IsEnabled = true;
-        StatusChanged?.Invoke(Loc.T("StatusFilesSelected", valid.Count));
-    }
 
     // ================================================================
     //  预设角色方案
@@ -251,11 +116,8 @@ public partial class VnTab : UserControl
             return;
         }
 
-        var result = await SchemeSelectionDialog.ShowAsync(
-            owner, new VnSchemeAdapter(), schemes.Cast<object>().ToList());
-
-        // 取消：磁盘与页面上的勾选都保持原样。
-        if (result is null)
+        if (await CheckListDialog.ShowAsync(owner, new VnSchemeAdapter(schemes))
+            is not SchemeSelectionResult result)
             return;
 
         List<VNCharacterScheme> edited = result.Schemes.Cast<VNCharacterScheme>().ToList();
@@ -312,15 +174,15 @@ public partial class VnTab : UserControl
             running.Cancel();
             ProcessButton.IsEnabled = false;
             ProcessButton.Content = Loc.T("StatusCancelling");
-            StatusChanged?.Invoke(Loc.T("StatusCancelling"));
+            ReportStatus(Loc.T("StatusCancelling"));
             return;
         }
 
-        if (_selectedFiles.Count == 0)
+        if (SelectedFiles.Count == 0)
             return;
 
         // 全部选项在点击的这一刻读一次，跑起来之后控件再改也不影响本次处理。
-        string[] files = _selectedFiles.ToArray();
+        string[] files = SelectedFiles.ToArray();
         int maxPara = (int)(MaxParaBox.Value ?? DefaultMaxPara);
         bool doReformat = AllRadio.IsChecked == true || ReformatRadio.IsChecked == true;
         bool doFixPunct = AllRadio.IsChecked == true || FixPunctRadio.IsChecked == true;
@@ -344,9 +206,9 @@ public partial class VnTab : UserControl
         var progress = new Progress<(int Done, string Error)>(p =>
         {
             if (string.IsNullOrEmpty(p.Error))
-                StatusChanged?.Invoke(Loc.T("StatusBatchProgress", p.Done, files.Length));
+                ReportStatus(Loc.T("StatusBatchProgress", p.Done, files.Length));
             else
-                ErrorOccurred?.Invoke(Loc.T("MsgProcessFailed", $"{Path.GetFileName(files[p.Done - 1])}：{p.Error}"));
+                ReportError(Loc.T("MsgProcessFailed", $"{Path.GetFileName(files[p.Done - 1])}：{p.Error}"));
         });
 
         try
@@ -526,16 +388,5 @@ public partial class VnTab : UserControl
         {
             throw new InvalidOperationException("场景标记正则执行超时，请编辑方案简化规则后重试");
         }
-    }
-
-    // ================================================================
-    //  提示
-    // ================================================================
-
-    private void ShowResult(string key, bool warning, params object[] args)
-    {
-        _result = new Message(key, args, warning);
-        UpdateResultText();
-        StatusChanged?.Invoke(Loc.T(key, args));
     }
 }

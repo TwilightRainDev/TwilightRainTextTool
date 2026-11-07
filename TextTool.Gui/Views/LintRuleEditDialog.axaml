@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="TextTool.Gui.Views.LintRuleEditDialog"
         Title="{DynamicResource DlgLintRuleEdit}"
-        Width="640" Height="620"
+        Width="640" Height="700"
         MinWidth="520" MinHeight="480"
         WindowStartupLocation="CenterOwner">
 
@@ -31,7 +31,7 @@
     </Border>
 
     <ScrollViewer Grid.Row="1" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-      <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+      <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
 
         <TextBlock x:Name="TitleLabel" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" />
         <TextBox x:Name="TitleBox" Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" />
@@ -41,14 +41,17 @@
                   HorizontalAlignment="Stretch" SelectedIndex="0">
           <ComboBoxItem x:Name="KindLiteralItem" />
           <ComboBoxItem x:Name="KindRegexItem" />
+          <!-- 由代码计算的规则只走这一项，而且下拉框置灰：改它等于换一段代码算 -->
+          <ComboBoxItem x:Name="KindAlgorithmItem" />
         </ComboBox>
 
         <TextBlock x:Name="GenresLabel" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" />
-        <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="12">
-          <CheckBox x:Name="GenreDocBox" />
-          <CheckBox x:Name="GenreFictionBox" />
-          <CheckBox x:Name="GenreAgentBox" />
-        </StackPanel>
+        <!-- 标签列宽随译文变长，一行放不下时排到第二行，不出右边边界 -->
+        <WrapPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal">
+          <CheckBox x:Name="GenreDocBox" Margin="0,0,12,0" />
+          <CheckBox x:Name="GenreFictionBox" Margin="0,0,12,0" />
+          <CheckBox x:Name="GenreAgentBox" Margin="0,0,12,0" />
+        </WrapPanel>
 
         <TextBlock x:Name="SeverityLabel" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" />
         <ComboBox x:Name="SeverityBox" Grid.Row="3" Grid.Column="1" VerticalAlignment="Center"
@@ -65,12 +68,18 @@
                    Margin="0,8,10,8" />
         <!-- 词表本体：一行一条。规则长了在自己框里滚，不把窗口撑高。 -->
         <TextBox x:Name="PatternsBox" Grid.Row="5" Grid.Column="1"
-                 AcceptsReturn="True" TextWrapping="Wrap" Height="240"
+                 AcceptsReturn="True" TextWrapping="Wrap" Height="210"
                  FontFamily="Consolas, Menlo, monospace"
                  ScrollViewer.VerticalScrollBarVisibility="Auto" />
+        <!-- 由代码计算的规则没有词表可编：词表框隐去，这一行显示说明 -->
+        <TextBlock x:Name="AlgorithmHintLabel" Grid.Row="5" Grid.Column="1"
+                   VerticalAlignment="Top" TextWrapping="Wrap" Margin="0,8,10,8" IsVisible="False" />
 
-        <TextBlock x:Name="DetailLabel" Grid.Row="6" Grid.Column="0" VerticalAlignment="Top" />
-        <TextBox x:Name="DetailBox" Grid.Row="6" Grid.Column="1"
+        <TextBlock x:Name="DefaultOffLabel" Grid.Row="6" Grid.Column="0" VerticalAlignment="Center" />
+        <CheckBox x:Name="DefaultOffBox" Grid.Row="6" Grid.Column="1" VerticalAlignment="Center" />
+
+        <TextBlock x:Name="DetailLabel" Grid.Row="7" Grid.Column="0" VerticalAlignment="Top" />
+        <TextBox x:Name="DetailBox" Grid.Row="7" Grid.Column="1"
                  AcceptsReturn="True" TextWrapping="Wrap" Height="60" />
 
       </Grid>

@@ -25,6 +25,8 @@ public sealed class ReplyShapeScanner
         "agent-code-list", "agent-truncated-path", "emoji-and-symbols", "char-face", "violent-verbs",
         "agent-process-jargon", "agent-smoke-jargon", "agent-test-jargon",
         "agent-conclusion-first", "agent-permission-ask",
+        "agent-one-char-commitment", "agent-receipt-commitment", "agent-template-preamble",
+        "agent-weight-comparison", "agent-keepsake", "agent-measure-invite", "agent-caretaker-line", "agent-probe-question",
     };
 
     private readonly List<(string Id, string Title, bool Blocks, int MinCount, List<Regex> Patterns)> _shapes;

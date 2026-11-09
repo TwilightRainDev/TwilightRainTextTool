@@ -115,7 +115,7 @@ public class LintRuleStoreTests
                     "agent-commit-hash", "agent-code-list", "agent-path-list", "agent-cli-option",
                     "agent-smoke-jargon", "agent-test-jargon", "agent-process-jargon", "agent-inline-code",
                     "agent-truncated-path", "numbered-reference", "agent-conclusion-first", "agent-permission-ask",
-                    "agent-one-char-commitment", "agent-agreement-opener", "agent-deliberation-leak", "agent-reassurance-pile", "agent-self-intro", "agent-error-paste", "agent-flattery", "agent-conclusion-preamble",
+                    "agent-one-char-commitment", "agent-receipt-commitment", "agent-template-preamble", "agent-weight-comparison", "agent-keepsake", "agent-measure-invite", "agent-caretaker-line", "agent-probe-question", "agent-bare-verb-closer", "agent-agreement-opener", "agent-deliberation-leak", "agent-reassurance-pile", "agent-self-intro", "agent-error-paste", "agent-flattery", "agent-conclusion-preamble",
                     "sentence-tempo", "fiction-simile-pile", "terminology-pile", "mixed-quote-style", "mixed-bracket-width",
                     "paragraph-length-uniform", "sentence-length-uniform", "short-sentence-run", "repeated-paragraph-opening",
                     "exclamation-density", "ordinal-skeleton", "explicit-numbering", "repeated-verbatim", "repeated-token-run", "choppy-clauses" },
@@ -218,8 +218,11 @@ public class LintRuleStoreTests
         Assert.Equal(new[] { "fiction" }, rules["fiction-metaphor-lexicon"].Genres);
         Assert.Equal(5, rules["fiction-metaphor-lexicon"].MinDensityPerKChar);
         Assert.Equal(new[] { "agent" }, rules["agent-one-char-commitment"].Genres);
-        Assert.Equal(2, rules["agent-one-char-commitment"].MinCount);
-        Assert.Equal(3, rules["agent-one-char-commitment"].MinDensityPerKChar);
+        // 单处就算：一次「我认。」已经是收尾替掉了下一句，不靠密度分真假
+        Assert.Equal(1, rules["agent-one-char-commitment"].MinCount);
+        Assert.Null(rules["agent-one-char-commitment"].MinDensityPerKChar);
+        Assert.Equal(1, rules["agent-receipt-commitment"].MinCount);
+        Assert.Equal(1, rules["agent-template-preamble"].MinCount);
         Assert.Equal(new[] { "agent" }, rules["agent-agreement-opener"].Genres);
         Assert.Equal(new[] { "agent" }, rules["agent-deliberation-leak"].Genres);
         Assert.Equal(new[] { "agent" }, rules["agent-reassurance-pile"].Genres);
@@ -238,6 +241,10 @@ public class LintRuleStoreTests
         Assert.True(rules["agent-conclusion-first"].BlocksReply);
         Assert.False(rules["emoji-and-symbols"].BlocksReply);
         Assert.True(rules["agent-permission-ask"].BlocksReply);
+        // 收尾族与客套开场都在当场打断之列：认一句就走比行话更难被读者发现
+        Assert.True(rules["agent-one-char-commitment"].BlocksReply);
+        Assert.True(rules["agent-receipt-commitment"].BlocksReply);
+        Assert.True(rules["agent-template-preamble"].BlocksReply);
 
         // 行话族的回复门限与 lint 门限分开：lint 单处就报，回复里一段两处才打断
         Assert.Equal(1, rules["agent-process-jargon"].MinCount);

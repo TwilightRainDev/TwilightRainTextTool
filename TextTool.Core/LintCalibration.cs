@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -87,13 +88,17 @@ public static class LintCalibration
         Dictionary<string, Tally> tallies, Dictionary<string, string> titles, bool aiSide)
     {
         var stats = new CalibrationCollection { Files = files.Count };
-        foreach (var file in files)
-        {
-            var encoding = EncodingDetector.DetectStrict(file);
-            string text = File.ReadAllText(file, encoding.Encoding);
-            var report = LintRunner.Run(
-                new[] { (file, text) }, null, null, genre, rules: table).Reports[0];
+        // 规则编译与档位筛选只做一次，逐份复用：文件再多也只有这一次开销。
+        var session = LintSession.Create(genre, null, null, null, table);
 
+        // 命中按文件顺序入账：计数是整数，先后不影响结果；读不了的那一份也在原位置抛出来。
+        LintBatch.Run(files, session, ReadForCalibration, item =>
+        {
+            // 标定不把「读不了」当成结果：一个文件的编码认不出来，两侧的密度就不可比，
+            // 必须整次停下。位置与原因原样抛给调用方。
+            if (item.Error is not null) ExceptionDispatchInfo.Capture(item.Error).Throw();
+
+            var report = item.Report!;
             stats.Chars += report.Chars;
             stats.Hits += report.Hits.Count;
             foreach (var hit in report.Hits)
@@ -108,9 +113,17 @@ public static class LintCalibration
                 if (aiSide) tally._ai++;
                 else tally._human++;
             }
-        }
+        });
+
         stats.PerKChar = LintTextFormatter.Density(stats.Hits, stats.Chars);
         return stats;
+    }
+
+    /// <summary>读一份要标定的稿：严格模式认编码，与 lint 读同一份文件的读法一致。</summary>
+    private static string ReadForCalibration(string file)
+    {
+        var encoding = EncodingDetector.DetectStrict(file);
+        return File.ReadAllText(file, encoding.Encoding);
     }
 
     /// <summary>

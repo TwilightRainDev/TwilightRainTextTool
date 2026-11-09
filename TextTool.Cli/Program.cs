@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Runtime.ExceptionServices;
 using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -424,34 +425,10 @@ public static class Program
             bool anyHit = false;
             try
             {
-                // 逐份：读一份、扫一份、写一份、丢一份。报告不攒批，内存峰值是一份稿加一份报告
-                foreach (string file in expanded)
+                // 一份报告落地的三件事：输出（人读或 JSON）、命中日志、命中标记。
+                // 逐份与并行两条路都走这里，两条路的输出形状因此只有一个来源。
+                void Emit(string label, LintReport report)
                 {
-                    string label = file == "-" ? "(stdin)" : file;
-                    string text;
-                    try
-                    {
-                        text = file == "-" ? ReadStdin() : ReadFileForLint(file);
-                    }
-                    catch (Exception ex)
-                        when (ex is IOException or UnauthorizedAccessException or InvalidDataException
-                            or ArgumentException or NotSupportedException)
-                    {
-                        // 一份读不了不拖住整批：原因带完整路径打到 stderr，跑完再按读取错误退 2
-                        unreadable++;
-                        Console.Error.WriteLine($"[失败] {label}：{ex.Message}");
-                        continue;
-                    }
-
-                    readable++;
-                    // 校验没过：只把读不上的那几份报出来，报告一份都不出
-                    if (session is null) continue;
-
-                    var report = baselineFile is null
-                        ? session.Scan(label, text)
-                        : session.ScanAgainstBaseline(
-                            label, text, baselineFile, baselineText ??= ReadBaseline(baselineFile));
-
                     // 人读要标出每条命中属于哪份稿：多份时每份前面一行文件名。
                     // JSON 契约仍由 LintOutput 一处维护，两条分支的字段不受人读排版影响
                     sink ??= LintOutput.BeginSink(Console.Out, json);
@@ -473,6 +450,64 @@ public static class Program
                     }
                     log?.Write(HitLog.Lines(report));
                     anyHit |= report.Hits.Count > 0;
+                }
+
+                // 一份的收尾：读不了就点名路径与原因，读得到就计数并出报告。
+                // 读之外的错（引擎自己坏了）不属于「这一份不行」，原样抛出去。
+                static bool ReadError(Exception ex) => ex is IOException or UnauthorizedAccessException
+                    or InvalidDataException or ArgumentException or NotSupportedException;
+
+                void Handle(string label, LintReport? report, Exception? error)
+                {
+                    if (error is not null)
+                    {
+                        // 一份读不了不拖住整批：原因带完整路径打到 stderr，跑完再按读取错误退 2
+                        if (!ReadError(error)) ExceptionDispatchInfo.Capture(error).Throw();
+                        unreadable++;
+                        Console.Error.WriteLine($"[失败] {label}：{error.Message}");
+                        return;
+                    }
+
+                    readable++;
+                    // 校验没过：只把读不上的那几份报出来，报告一份都不出
+                    if (report is not null) Emit(label, report);
+                }
+
+                // 输入里带 - 时只能逐份：stdin 只有一条流，不能和别的稿同时读。
+                // 引擎没建起来时同样逐份：那一次只报哪几份读不上，报告一份都不出。
+                if (session is not null && expanded.Count > 1 && !expanded.Contains("-"))
+                {
+                    // 多份同时开工，结果按文件顺序落地，与逐份跑的输出顺序一致
+                    LintBatch.Run(expanded, session, ReadFileForLint,
+                        item => Handle(item.File, item.Report, item.Error));
+                }
+                else
+                {
+                    foreach (string file in expanded)
+                    {
+                        string label = file == "-" ? "(stdin)" : file;
+                        string text;
+                        try
+                        {
+                            text = file == "-" ? ReadStdin() : ReadFileForLint(file);
+                        }
+                        catch (Exception ex)
+                        {
+                            Handle(label, null, ex);
+                            continue;
+                        }
+
+                        if (session is null)
+                        {
+                            Handle(label, null, null);
+                            continue;
+                        }
+
+                        Handle(label, baselineFile is null
+                            ? session.Scan(label, text)
+                            : session.ScanAgainstBaseline(
+                                label, text, baselineFile, baselineText ??= ReadBaseline(baselineFile)), null);
+                    }
                 }
 
                 sink?.Finish();

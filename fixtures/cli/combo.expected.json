@@ -1,0 +1,55 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "long.txt",
+      "Chars": 13135,
+      "ParagraphMode": "markdown",
+      "Hits": [
+        {
+          "Id": "mixed-punctuation-width",
+          "Group": "punctuation",
+          "Title": "全半角混用",
+          "Severity": "warn",
+          "Line": 147,
+          "Col": 11,
+          "Length": 2,
+          "Match": "客:",
+          "Snippet": "…  作者-\u003E\u003E博客: 提交 Mark…",
+          "Detail": "半角标点与中文或全角字符相邻",
+          "Hint": null,
+          "SuggestScheme": "标点符号转换"
+        },
+        {
+          "Id": "mixed-punctuation-width",
+          "Group": "punctuation",
+          "Title": "全半角混用",
+          "Severity": "warn",
+          "Line": 148,
+          "Col": 11,
+          "Length": 2,
+          "Match": "客:",
+          "Snippet": "…  博客-\u003E\u003E博客: 构建与发布\n …",
+          "Detail": "半角标点与中文或全角字符相邻",
+          "Hint": null,
+          "SuggestScheme": "标点符号转换"
+        },
+        {
+          "Id": "mixed-punctuation-width",
+          "Group": "punctuation",
+          "Title": "全半角混用",
+          "Severity": "warn",
+          "Line": 149,
+          "Col": 12,
+          "Length": 2,
+          "Match": "者:",
+          "Snippet": "… 博客--\u003E\u003E读者: 渲染 HTML…",
+          "Detail": "半角标点与中文或全角字符相邻",
+          "Hint": null,
+          "SuggestScheme": "标点符号转换"
+        }
+      ],
+      "Notes": []
+    }
+  ]
+}

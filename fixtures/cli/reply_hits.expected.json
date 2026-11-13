@@ -1,0 +1,29 @@
+{
+  "Version": 2,
+  "Hits": [
+    {
+      "Id": "agent-one-char-commitment",
+      "Token": "我认一半",
+      "Line": 8,
+      "Blocks": true
+    },
+    {
+      "Id": "agent-weight-comparison",
+      "Token": "这句话稳稳的，比之前都重",
+      "Line": 10,
+      "Blocks": true
+    },
+    {
+      "Id": "agent-one-char-commitment",
+      "Token": "我接住了",
+      "Line": 14,
+      "Blocks": true
+    },
+    {
+      "Id": "agent-receipt-commitment",
+      "Token": "我记下了",
+      "Line": 14,
+      "Blocks": true
+    }
+  ]
+}

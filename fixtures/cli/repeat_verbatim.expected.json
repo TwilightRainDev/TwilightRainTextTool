@@ -1,0 +1,162 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "repeat_verbatim.txt",
+      "Chars": 312,
+      "ParagraphMode": "line",
+      "Hits": [
+        {
+          "Id": "repeated-verbatim",
+          "Group": "structure",
+          "Title": "逐字重复",
+          "Severity": "warn",
+          "Line": 4,
+          "Col": 1,
+          "Length": 28,
+          "Match": "后面的判断要分三步来核对。每一步都要留下可以复查的记录。",
+          "Snippet": "…以复查的记录。\n后面的判断要分三步来核对。每一步都要留下可以复查的记录。\n这份备忘写了两…",
+          "Detail": "从这一句起共 2 句与第 3 行第 12 列起逐字相同",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "repeated-verbatim",
+          "Group": "structure",
+          "Title": "逐字重复",
+          "Severity": "warn",
+          "Line": 6,
+          "Col": 1,
+          "Length": 16,
+          "Match": "这份备忘写了两遍请务必核对清楚。",
+          "Snippet": "…务必核对清楚。\n这份备忘写了两遍请务必核对清楚。\n这份备忘写了两…",
+          "Detail": "与第 5 行第 1 列逐字相同",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "repeated-verbatim",
+          "Group": "structure",
+          "Title": "逐字重复",
+          "Severity": "warn",
+          "Line": 7,
+          "Col": 1,
+          "Length": 16,
+          "Match": "这份备忘写了两遍请务必核对清楚。",
+          "Snippet": "…务必核对清楚。\n这份备忘写了两遍请务必核对清楚。\n这段文字整段贴…",
+          "Detail": "与第 5 行第 1 列逐字相同",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "fiction-text-self-reference",
+          "Group": "syntax",
+          "Title": "回头指自己写的字",
+          "Severity": "info",
+          "Line": 8,
+          "Col": 1,
+          "Length": 4,
+          "Match": "这段文字",
+          "Snippet": "…务必核对清楚。\n这段文字整段贴了两遍是为…",
+          "Detail": "故事里回头指自己那几行字——读者跟着人物走，不是替你校稿。实测人类长篇每千字 0.01 处，这类稿子 8.8 处",
+          "Hint": "删掉指涉，只写被指的那件事",
+          "SuggestScheme": null
+        },
+        {
+          "Id": "fiction-text-self-reference",
+          "Group": "syntax",
+          "Title": "回头指自己写的字",
+          "Severity": "info",
+          "Line": 9,
+          "Col": 1,
+          "Length": 4,
+          "Match": "这段文字",
+          "Snippet": "…重复报在哪里。\n这段文字整段贴了两遍是为…",
+          "Detail": "故事里回头指自己那几行字——读者跟着人物走，不是替你校稿。实测人类长篇每千字 0.01 处，这类稿子 8.8 处",
+          "Hint": "删掉指涉，只写被指的那件事",
+          "SuggestScheme": null
+        },
+        {
+          "Id": "repeated-verbatim",
+          "Group": "structure",
+          "Title": "逐字重复",
+          "Severity": "warn",
+          "Line": 9,
+          "Col": 1,
+          "Length": 23,
+          "Match": "这段文字整段贴了两遍是为了看逐字重复报在哪里。",
+          "Snippet": "…重复报在哪里。\n这段文字整段贴了两遍是为了看逐字重复报在哪里。\n这段文字整段贴…",
+          "Detail": "与第 8 行第 1 列逐字相同",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "fiction-text-self-reference",
+          "Group": "syntax",
+          "Title": "回头指自己写的字",
+          "Severity": "info",
+          "Line": 10,
+          "Col": 1,
+          "Length": 4,
+          "Match": "这段文字",
+          "Snippet": "…重复报在哪里。\n这段文字整段贴了两遍是为…",
+          "Detail": "故事里回头指自己那几行字——读者跟着人物走，不是替你校稿。实测人类长篇每千字 0.01 处，这类稿子 8.8 处",
+          "Hint": "删掉指涉，只写被指的那件事",
+          "SuggestScheme": null
+        },
+        {
+          "Id": "repeated-verbatim",
+          "Group": "structure",
+          "Title": "逐字重复",
+          "Severity": "warn",
+          "Line": 10,
+          "Col": 1,
+          "Length": 23,
+          "Match": "这段文字整段贴了两遍是为了看逐字重复报在哪里。",
+          "Snippet": "…重复报在哪里。\n这段文字整段贴了两遍是为了看逐字重复报在哪里。\n丙句单独出现一…",
+          "Detail": "与第 8 行第 1 列逐字相同",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "repeated-verbatim",
+          "Group": "structure",
+          "Title": "逐字重复",
+          "Severity": "warn",
+          "Line": 13,
+          "Col": 1,
+          "Length": 16,
+          "Match": "丙句单独出现一次说明情况的起因。",
+          "Snippet": "…段接着说别的。\n丙句单独出现一次说明情况的起因。\n再补一句把间距…",
+          "Detail": "与第 11 行第 1 列逐字相同",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "repeated-verbatim",
+          "Group": "structure",
+          "Title": "逐字重复",
+          "Severity": "warn",
+          "Line": 15,
+          "Col": 1,
+          "Length": 12,
+          "Match": "丁句另起一段接着说别的。",
+          "Snippet": "…开一点的内容。\n丁句另起一段接着说别的。\n",
+          "Detail": "与第 12 行第 1 列逐字相同",
+          "Hint": null,
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": [
+        {
+          "Id": "sentence-length-uniform",
+          "Text": "句长分布过于整齐（变异系数 0.24，18 句）"
+        },
+        {
+          "Id": "repeated-paragraph-opening",
+          "Text": "段首两字高度重复：「这份」×3、「这段」×3"
+        }
+      ]
+    }
+  ]
+}

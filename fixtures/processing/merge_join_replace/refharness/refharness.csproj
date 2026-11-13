@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    基准生成器：只为了跑一遍参考实现，把结果写成 expected/<用例名>.txt。
+    它不属于交付物，只在本机生成基准时用。没有 target framework 之说，跟 TextTool.Core 对齐 net8.0。
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>refharness</AssemblyName>
+    <RootNamespace>RefHarness</RootNamespace>
+    <!-- 参考实现的 csproj 里有一堆分析器告警源，这里不参与交付，别让它们挡住生成。 -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../../../../Config/Archive/TextTool/TextTool.Core/TextTool.Core.csproj" />
+  </ItemGroup>
+
+</Project>

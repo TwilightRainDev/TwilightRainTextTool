@@ -1,0 +1,148 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "shape_ordinal.txt",
+      "Chars": 240,
+      "ParagraphMode": "markdown",
+      "Hits": [
+        {
+          "Id": "completion-log",
+          "Group": "lexis",
+          "Title": "完工记录或过程叙述",
+          "Severity": "info",
+          "Line": 1,
+          "Col": 1,
+          "Length": 2,
+          "Match": "这次",
+          "Snippet": "这次改版的范围先说清…",
+          "Detail": "正文里记「已经改了、已经修过、本轮做完、验收通过」：读者要拿到的是此刻成立的规矩，做完的过程属于变更记录，留在正文里只会在压缩或转述之后把人引回旧状态。",
+          "Hint": "删掉轮次词；读者不知道「这次」指哪一次",
+          "SuggestScheme": null
+        },
+        {
+          "Id": "paragraph-ordinals",
+          "Group": "syntax",
+          "Title": "段内序数词",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 1,
+          "Length": 2,
+          "Match": "首先",
+          "Snippet": "…的理解动手。\n\n首先，导航栏的四个入…",
+          "Detail": "段内序数词骨架",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "paragraph-ordinals",
+          "Group": "syntax",
+          "Title": "段内序数词",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 27,
+          "Length": 2,
+          "Match": "其次",
+          "Snippet": "…掉重复的那一个。其次，搜索框挪到左上…",
+          "Detail": "段内序数词骨架",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "paragraph-ordinals",
+          "Group": "syntax",
+          "Title": "段内序数词",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 46,
+          "Length": 2,
+          "Match": "再次",
+          "Snippet": "…，与入口同一行。再次，页脚的备案信息…",
+          "Detail": "段内序数词骨架",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "paragraph-ordinals",
+          "Group": "syntax",
+          "Title": "段内序数词",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 68,
+          "Length": 2,
+          "Match": "最后",
+          "Snippet": "…与版权声明对齐。最后，全站的按钮圆角…",
+          "Detail": "段内序数词骨架",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "paragraph-ordinals",
+          "Group": "syntax",
+          "Title": "段内序数词",
+          "Severity": "warn",
+          "Line": 5,
+          "Col": 26,
+          "Length": 2,
+          "Match": "其一",
+          "Snippet": "…一步才有地方放。其一，入口减少之后，…",
+          "Detail": "段内序数词骨架",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "paragraph-ordinals",
+          "Group": "syntax",
+          "Title": "段内序数词",
+          "Severity": "warn",
+          "Line": 5,
+          "Col": 51,
+          "Length": 2,
+          "Match": "其二",
+          "Snippet": "…来的宽度正好够。其二，页脚不右收的话…",
+          "Detail": "段内序数词骨架",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "paragraph-ordinals",
+          "Group": "syntax",
+          "Title": "段内序数词",
+          "Severity": "warn",
+          "Line": 5,
+          "Col": 78,
+          "Length": 2,
+          "Match": "其三",
+          "Snippet": "…列内容挤在一起。其三，圆角统一放到最…",
+          "Detail": "段内序数词骨架",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "paragraph-ordinals",
+          "Group": "syntax",
+          "Title": "段内序数词",
+          "Severity": "warn",
+          "Line": 5,
+          "Col": 87,
+          "Length": 2,
+          "Match": "最后",
+          "Snippet": "…三，圆角统一放到最后，是因为旧页面上…",
+          "Detail": "段内序数词骨架",
+          "Hint": null,
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": [
+        {
+          "Id": "sentence-length-uniform",
+          "Text": "句长分布过于整齐（变异系数 0.26，10 句）"
+        },
+        {
+          "Id": "ordinal-skeleton",
+          "Text": "序数词骨架「首先/其次/最后」出现 8 次——结构化排版的典型痕迹"
+        }
+      ]
+    }
+  ]
+}

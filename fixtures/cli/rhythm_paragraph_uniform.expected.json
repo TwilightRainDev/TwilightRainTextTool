@@ -1,0 +1,17 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "rhythm_paragraph_uniform.txt",
+      "Chars": 168,
+      "ParagraphMode": "markdown",
+      "Hits": [],
+      "Notes": [
+        {
+          "Id": "paragraph-length-uniform",
+          "Text": "段落长度过于均一（变异系数 0.05，6 段）——人写文本段落长短通常更参差"
+        }
+      ]
+    }
+  ]
+}

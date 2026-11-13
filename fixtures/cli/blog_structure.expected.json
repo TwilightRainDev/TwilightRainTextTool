@@ -1,0 +1,27 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "blog_structure.md",
+      "Chars": 140,
+      "ParagraphMode": "markdown",
+      "Hits": [
+        {
+          "Id": "forced-reversal",
+          "Group": "syntax",
+          "Title": "强加反转",
+          "Severity": "info",
+          "Line": 7,
+          "Col": 48,
+          "Length": 2,
+          "Match": "反而",
+          "Snippet": "…错，认清结构之后反而好判。\n\n\u0060\u0060\u0060…",
+          "Detail": "「反而」裸词——无让步前提的强加反转；命中是候选，读语境再判",
+          "Hint": null,
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": []
+    }
+  ]
+}

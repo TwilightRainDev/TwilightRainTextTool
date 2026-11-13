@@ -1,0 +1,41 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "shape_quote.txt",
+      "Chars": 105,
+      "ParagraphMode": "markdown",
+      "Hits": [
+        {
+          "Id": "mixed-quote-style",
+          "Group": "punctuation",
+          "Title": "引号风格混用",
+          "Severity": "info",
+          "Line": 3,
+          "Col": 5,
+          "Length": 1,
+          "Match": "“",
+          "Snippet": "…字。\n\n第一行是“把话说完”，第二…",
+          "Detail": "弯引号 4 个 / ASCII 直引号 2 个 / 直角引号 2 个",
+          "Hint": null,
+          "SuggestScheme": "引号括号统一"
+        },
+        {
+          "Id": "mixed-punctuation-width",
+          "Group": "punctuation",
+          "Title": "全半角混用",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 41,
+          "Length": 2,
+          "Match": "的:",
+          "Snippet": "…，是他自己后来加的:\u0022把话说完，是让…",
+          "Detail": "半角标点与中文或全角字符相邻",
+          "Hint": null,
+          "SuggestScheme": "标点符号转换"
+        }
+      ],
+      "Notes": []
+    }
+  ]
+}

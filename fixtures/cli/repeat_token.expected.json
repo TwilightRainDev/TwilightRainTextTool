@@ -1,0 +1,180 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "repeat_token.txt",
+      "Chars": 238,
+      "ParagraphMode": "line",
+      "Hits": [
+        {
+          "Id": "repeated-token-run",
+          "Group": "structure",
+          "Title": "复读串",
+          "Severity": "warn",
+          "Line": 1,
+          "Col": 5,
+          "Length": 8,
+          "Match": "极其",
+          "Snippet": "这个方案极其极其极其极其难维护。\n他哈哈…",
+          "Detail": "「极其」连写 4 次",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "repeated-token-run",
+          "Group": "structure",
+          "Title": "复读串",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 1,
+          "Length": 12,
+          "Match": "真的",
+          "Snippet": "…天也没停下来。\n真的真的真的真的真的真的不用再问了。\n为…",
+          "Detail": "「真的」连写 6 次",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "repeated-token-run",
+          "Group": "structure",
+          "Title": "复读串",
+          "Severity": "warn",
+          "Line": 4,
+          "Col": 1,
+          "Length": 8,
+          "Match": "为什",
+          "Snippet": "…的不用再问了。\n为什为什为什为什么这句话读起来很…",
+          "Detail": "「为什」连写 4 次",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "fiction-dialogue-reference",
+          "Group": "syntax",
+          "Title": "台词里反复指那句话",
+          "Severity": "info",
+          "Line": 4,
+          "Col": 10,
+          "Length": 3,
+          "Match": "这句话",
+          "Snippet": "…什为什为什为什么这句话读起来很怪。\n一…",
+          "Detail": "人物反复点评对方刚说的那句话，而不是接着做事或接话——对话变成了对语言的核对。实测人类长篇每千字最高 0.44 处，这类稿子 8 到 20 处",
+          "Hint": "换成接住那句话的动作或回答",
+          "SuggestScheme": null
+        },
+        {
+          "Id": "repeated-token-run",
+          "Group": "structure",
+          "Title": "复读串",
+          "Severity": "warn",
+          "Line": 6,
+          "Col": 3,
+          "Length": 8,
+          "Match": "非常",
+          "Snippet": "…不算复读。\n他说非常非常非常非常重要的事情要讲三…",
+          "Detail": "「非常」连写 4 次",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "repeated-token-run",
+          "Group": "structure",
+          "Title": "复读串",
+          "Severity": "warn",
+          "Line": 9,
+          "Col": 3,
+          "Length": 12,
+          "Match": "一句话",
+          "Snippet": "…只有标点。\n他用一句话一句话一句话一句话把意思讲完了。\n…",
+          "Detail": "「一句话」连写 4 次",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "fiction-dialogue-reference",
+          "Group": "syntax",
+          "Title": "台词里反复指那句话",
+          "Severity": "info",
+          "Line": 10,
+          "Col": 1,
+          "Length": 3,
+          "Match": "这句话",
+          "Snippet": "…把意思讲完了。\n这句话包含了要是要是要…",
+          "Detail": "人物反复点评对方刚说的那句话，而不是接着做事或接话——对话变成了对语言的核对。实测人类长篇每千字最高 0.44 处，这类稿子 8 到 20 处",
+          "Hint": "换成接住那句话的动作或回答",
+          "SuggestScheme": null
+        },
+        {
+          "Id": "repeated-token-run",
+          "Group": "structure",
+          "Title": "复读串",
+          "Severity": "warn",
+          "Line": 10,
+          "Col": 7,
+          "Length": 8,
+          "Match": "要是",
+          "Snippet": "…。\n这句话包含了要是要是要是要是这样的串。\n非 …",
+          "Detail": "「要是」连写 4 次",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "adverb-overuse",
+          "Group": "statistics",
+          "Title": "副词同段堆叠",
+          "Severity": "info",
+          "Line": 12,
+          "Col": 1,
+          "Length": 2,
+          "Match": "极其",
+          "Snippet": "…格的单字不算。\n极其极其极其还没到四…",
+          "Detail": "同一段里副词反复出现（凑够两处才报）——一次是正常写法，连着用是在使劲",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "adverb-overuse",
+          "Group": "statistics",
+          "Title": "副词同段堆叠",
+          "Severity": "info",
+          "Line": 12,
+          "Col": 3,
+          "Length": 2,
+          "Match": "极其",
+          "Snippet": "…单字不算。\n极其极其极其还没到四遍。…",
+          "Detail": "同一段里副词反复出现（凑够两处才报）——一次是正常写法，连着用是在使劲",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "adverb-overuse",
+          "Group": "statistics",
+          "Title": "副词同段堆叠",
+          "Severity": "info",
+          "Line": 12,
+          "Col": 5,
+          "Length": 2,
+          "Match": "极其",
+          "Snippet": "…不算。\n极其极其极其还没到四遍。\n",
+          "Detail": "同一段里副词反复出现（凑够两处才报）——一次是正常写法，连着用是在使劲",
+          "Hint": null,
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": [
+        {
+          "Id": "paragraph-length-uniform",
+          "Text": "段落长度过于均一（变异系数 0.19，12 段）——人写文本段落长短通常更参差"
+        },
+        {
+          "Id": "sentence-length-uniform",
+          "Text": "句长分布过于整齐（变异系数 0.27，12 句）"
+        },
+        {
+          "Id": "short-sentence-run",
+          "Text": "连续 13 句都在 10 字以内——节拍化的碎片句，像在逐条填写动作与情绪"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "real_doc_agents.md",
+      "Chars": 735,
+      "ParagraphMode": "markdown",
+      "Hits": [
+        {
+          "Id": "triadic-parallel",
+          "Group": "syntax",
+          "Title": "三项并列排比",
+          "Severity": "info",
+          "Line": 31,
+          "Col": 29,
+          "Length": 15,
+          "Match": "能看懂、能照着做、能判断对不对",
+          "Snippet": "…不用翻别的文件就能看懂、能照着做、能判断对不对。\n改注释时顺手…",
+          "Detail": "三项以上并列，每项以同一个字开头：最简单、最直接、最不绕弯子。排比撑起来的是口气，不是内容，读者读完只记得节奏。真人长篇每千字最高 0.10 处，这类稿子 8.5 处",
+          "Hint": "三项减到两项，或者用一句话直接说完",
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": [
+        {
+          "Id": "repeated-paragraph-opening",
+          "Text": "段首两字高度重复：「##」×6、「- 」×3"
+        }
+      ]
+    }
+  ]
+}

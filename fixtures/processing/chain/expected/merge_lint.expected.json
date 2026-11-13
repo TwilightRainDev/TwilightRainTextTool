@@ -1,0 +1,158 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "out.txt",
+      "Chars": 106,
+      "ParagraphMode": "line",
+      "Hits": [
+        {
+          "Id": "mixed-punctuation-width",
+          "Group": "punctuation",
+          "Title": "全半角混用",
+          "Severity": "warn",
+          "Line": 1,
+          "Col": 11,
+          "Length": 2,
+          "Match": "里,",
+          "Snippet": "…今快速变化的行业里,团队需要不断沉淀…",
+          "Detail": "半角标点与中文或全角字符相邻",
+          "Hint": null,
+          "SuggestScheme": "标点符号转换"
+        },
+        {
+          "Id": "paragraph-ordinals",
+          "Group": "syntax",
+          "Title": "段内序数词",
+          "Severity": "warn",
+          "Line": 2,
+          "Col": 1,
+          "Length": 2,
+          "Match": "首先",
+          "Snippet": "…断沉淀方法论.\n首先要把问题拆到足够…",
+          "Detail": "段内序数词骨架",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "mixed-punctuation-width",
+          "Group": "punctuation",
+          "Title": "全半角混用",
+          "Severity": "warn",
+          "Line": 2,
+          "Col": 11,
+          "Length": 2,
+          "Match": "细,",
+          "Snippet": "…要把问题拆到足够细,其次要找到可以衡…",
+          "Detail": "半角标点与中文或全角字符相邻",
+          "Hint": null,
+          "SuggestScheme": "标点符号转换"
+        },
+        {
+          "Id": "paragraph-ordinals",
+          "Group": "syntax",
+          "Title": "段内序数词",
+          "Severity": "warn",
+          "Line": 2,
+          "Col": 13,
+          "Length": 2,
+          "Match": "其次",
+          "Snippet": "…问题拆到足够细,其次要找到可以衡量的…",
+          "Detail": "段内序数词骨架",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "mixed-punctuation-width",
+          "Group": "punctuation",
+          "Title": "全半角混用",
+          "Severity": "warn",
+          "Line": 2,
+          "Col": 24,
+          "Length": 2,
+          "Match": "标,",
+          "Snippet": "…找到可以衡量的指标,\n最后再谈优化.…",
+          "Detail": "半角标点与中文或全角字符相邻",
+          "Hint": null,
+          "SuggestScheme": "标点符号转换"
+        },
+        {
+          "Id": "cliche-words",
+          "Group": "lexis",
+          "Title": "套话词",
+          "Severity": "info",
+          "Line": 3,
+          "Col": 8,
+          "Length": 6,
+          "Match": "值得注意的是",
+          "Snippet": "…\n最后再谈优化.值得注意的是,这套流程并不是…",
+          "Detail": "套话/空词",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "mixed-punctuation-width",
+          "Group": "punctuation",
+          "Title": "全半角混用",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 13,
+          "Length": 2,
+          "Match": "是,",
+          "Snippet": "…优化.值得注意的是,这套流程并不是一…",
+          "Detail": "半角标点与中文或全角字符相邻",
+          "Hint": null,
+          "SuggestScheme": "标点符号转换"
+        },
+        {
+          "Id": "mixed-punctuation-width",
+          "Group": "punctuation",
+          "Title": "全半角混用",
+          "Severity": "warn",
+          "Line": 4,
+          "Col": 4,
+          "Length": 2,
+          "Match": "说,",
+          "Snippet": "…不变的.\n总的来说,只有把每个环节都…",
+          "Detail": "半角标点与中文或全角字符相邻",
+          "Hint": null,
+          "SuggestScheme": "标点符号转换"
+        },
+        {
+          "Id": "mixed-punctuation-width",
+          "Group": "punctuation",
+          "Title": "全半角混用",
+          "Severity": "warn",
+          "Line": 4,
+          "Col": 15,
+          "Length": 2,
+          "Match": "通,",
+          "Snippet": "…有把每个环节都跑通,才能形成真正的闭…",
+          "Detail": "半角标点与中文或全角字符相邻",
+          "Hint": null,
+          "SuggestScheme": "标点符号转换"
+        },
+        {
+          "Id": "cliche-words",
+          "Group": "lexis",
+          "Title": "套话词",
+          "Severity": "info",
+          "Line": 4,
+          "Col": 24,
+          "Length": 2,
+          "Match": "闭环",
+          "Snippet": "…,才能形成真正的闭环.\n",
+          "Detail": "套话/空词",
+          "Hint": null,
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": [
+        {
+          "Id": "ordinal-skeleton",
+          "Text": "序数词骨架「首先/其次/最后」出现 3 次——结构化排版的典型痕迹"
+        }
+      ]
+    }
+  ]
+}

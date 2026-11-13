@@ -1,0 +1,2 @@
+{"Kind":"Report","File":"baseline_body.txt","Chars":45,"ParagraphMode":"line","Hits":1}
+{"Kind":"Hit","File":"baseline_body.txt","Line":3,"Col":2,"Length":3,"Id":"elevated-ending","Severity":"warn","Match":"不仅仅","Snippet":"\u2026是一种赋能。\n这不仅仅是效率问题，而是\u2026"}

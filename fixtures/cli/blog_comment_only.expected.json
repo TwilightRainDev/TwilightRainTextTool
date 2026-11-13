@@ -1,0 +1,55 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "blog_comment_only.md",
+      "Chars": 235,
+      "ParagraphMode": "markdown",
+      "Hits": [
+        {
+          "Id": "completion-log",
+          "Group": "lexis",
+          "Title": "完工记录或过程叙述",
+          "Severity": "info",
+          "Line": 10,
+          "Col": 1,
+          "Length": 2,
+          "Match": "这次",
+          "Snippet": "…结束 --\u003E\n\n这次想说的是，检查得…",
+          "Detail": "正文里记「已经改了、已经修过、本轮做完、验收通过」：读者要拿到的是此刻成立的规矩，做完的过程属于变更记录，留在正文里只会在压缩或转述之后把人引回旧状态。",
+          "Hint": "删掉轮次词；读者不知道「这次」指哪一次",
+          "SuggestScheme": null
+        },
+        {
+          "Id": "completion-log",
+          "Group": "lexis",
+          "Title": "完工记录或过程叙述",
+          "Severity": "info",
+          "Line": 10,
+          "Col": 25,
+          "Length": 4,
+          "Match": "已经改了",
+          "Snippet": "…构。这一版的说明已经改了措辞，后面还会再…",
+          "Detail": "正文里记「已经改了、已经修过、本轮做完、验收通过」：读者要拿到的是此刻成立的规矩，做完的过程属于变更记录，留在正文里只会在压缩或转述之后把人引回旧状态。",
+          "Hint": "改写成这件事现在的样子",
+          "SuggestScheme": null
+        },
+        {
+          "Id": "forced-reversal",
+          "Group": "syntax",
+          "Title": "强加反转",
+          "Severity": "info",
+          "Line": 14,
+          "Col": 38,
+          "Length": 2,
+          "Match": "反而",
+          "Snippet": "…v) { /* 反而 */ }\n\u0060\u0060…",
+          "Detail": "「反而」裸词——无让步前提的强加反转；命中是候选，读语境再判",
+          "Hint": null,
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": []
+    }
+  ]
+}

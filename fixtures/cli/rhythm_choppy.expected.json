@@ -1,0 +1,27 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "rhythm_choppy.txt",
+      "Chars": 52,
+      "ParagraphMode": "markdown",
+      "Hits": [
+        {
+          "Id": "choppy-clauses",
+          "Group": "structure",
+          "Title": "短句硬连",
+          "Severity": "info",
+          "Line": 3,
+          "Col": 1,
+          "Length": 25,
+          "Match": "他起身；穿衣，洗脸，拿包，出门，下楼，买饭，上车。",
+          "Snippet": "…杯挪到桌角。\n\n他起身；穿衣，洗脸，拿包，出门，下楼，买饭，上车。\n",
+          "Detail": "这一段切成 8 个短促分句，平均 2.1 字，靠分号与破折号硬接——成分全省了，读者得自己补主语和宾语",
+          "Hint": null,
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": []
+    }
+  ]
+}

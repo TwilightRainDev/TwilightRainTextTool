@@ -1,0 +1,41 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "shape_simile.txt",
+      "Chars": 173,
+      "ParagraphMode": "markdown",
+      "Hits": [
+        {
+          "Id": "fiction-simile-pile",
+          "Group": "syntax",
+          "Title": "一句里叠着比喻",
+          "Severity": "info",
+          "Line": 1,
+          "Col": 1,
+          "Length": 30,
+          "Match": "她站在候车棚下，风把围巾吹得贴住脸颊像一条刚刚醒过来的蛇，远",
+          "Snippet": "她站在候车棚下，风把围巾吹得贴住脸颊像一条刚刚醒过来的蛇，远处的电线在暮色里…",
+          "Detail": "这一句 101 字里串了 4 个比喻——读者拿到的是一串喻体，不是一个画面；真人长篇里这种句子每千字不超过 0.08 句",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "fiction-metaphor-lexicon",
+          "Group": "lexis",
+          "Title": "同一套比喻词",
+          "Severity": "info",
+          "Line": 1,
+          "Col": 72,
+          "Length": 2,
+          "Match": "镜子",
+          "Snippet": "…样的云犹如打翻的镜子，这些念头一个接…",
+          "Detail": "这几个喻体被写过太多遍了：读者见过上千次，拿到的是模板不是画面。实测人类长篇每千字最多 0.32 处，这类稿子 18.7 处",
+          "Hint": "换成本书里出现过的东西，或者直接写那件事，不要比",
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": []
+    }
+  ]
+}

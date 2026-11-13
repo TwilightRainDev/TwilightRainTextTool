@@ -1,0 +1,8 @@
+reply-check 选项：
+  --json                以 JSON 输出（Version 2：Version 与 Hits 两项，每条带 Id、Token、Line、Blocks）
+  --help                显示本说明
+
+输入：一个文件路径，或传 - 从 stdin 读；不给也走 stdin。
+围栏代码块里的内容整块跳过：那是引用的原文，不是回复的措辞。
+
+退出码与 lint 一致：0 = 没有发现，1 = 有发现，2 = 用法或读取错误。

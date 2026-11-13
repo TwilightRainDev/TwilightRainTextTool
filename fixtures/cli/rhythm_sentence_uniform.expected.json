@@ -1,0 +1,21 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "rhythm_sentence_uniform.txt",
+      "Chars": 85,
+      "ParagraphMode": "line",
+      "Hits": [],
+      "Notes": [
+        {
+          "Id": "sentence-length-uniform",
+          "Text": "句长分布过于整齐（变异系数 0.00，12 句）"
+        },
+        {
+          "Id": "short-sentence-run",
+          "Text": "连续 12 句都在 10 字以内——节拍化的碎片句，像在逐条填写动作与情绪"
+        }
+      ]
+    }
+  ]
+}

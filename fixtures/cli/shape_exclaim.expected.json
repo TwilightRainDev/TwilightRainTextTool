@@ -1,0 +1,32 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "shape_exclaim.txt",
+      "Chars": 434,
+      "ParagraphMode": "markdown",
+      "Hits": [
+        {
+          "Id": "completion-log",
+          "Group": "lexis",
+          "Title": "完工记录或过程叙述",
+          "Severity": "info",
+          "Line": 1,
+          "Col": 15,
+          "Length": 5,
+          "Match": "已经摆好了",
+          "Snippet": "…下卖豆浆的老太太已经摆好了摊子。她把塑料凳…",
+          "Detail": "正文里记「已经改了、已经修过、本轮做完、验收通过」：读者要拿到的是此刻成立的规矩，做完的过程属于变更记录，留在正文里只会在压缩或转述之后把人引回旧状态。",
+          "Hint": "改写成这件事现在的样子",
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": [
+        {
+          "Id": "exclamation-density",
+          "Text": "叹号密度偏高：6 个 / 434 字"
+        }
+      ]
+    }
+  ]
+}

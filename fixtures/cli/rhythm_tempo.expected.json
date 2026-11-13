@@ -1,0 +1,21 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "rhythm_tempo.txt",
+      "Chars": 1603,
+      "ParagraphMode": "line",
+      "Hits": [],
+      "Notes": [
+        {
+          "Id": "sentence-tempo",
+          "Text": "第 2 行起这一窗 89 句，平均 9 字，最长 9 字——一句都没说长，整段按节拍往下砸"
+        },
+        {
+          "Id": "sentence-length-uniform",
+          "Text": "句长分布过于整齐（变异系数 0.00，178 句）"
+        }
+      ]
+    }
+  ]
+}

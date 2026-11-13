@@ -1,0 +1,17 @@
+# 多步链的对照用例表。make_goldens.sh 与 tests/compare_chain.sh 都读这一份，
+# 加用例只改这里，两个脚本不用跟着改。
+#
+# 四列，制表符分隔，空行与 # 开头的行不算：
+#   1 用例名     基准是本目录 expected/ 下的 <用例名>.expected.txt
+#   2 稿件       inputs/ 下的文件名
+#   3 步骤       按这次序跑，逗号隔开；步骤名就是链里的三种：merge / replace / vn
+#   4 检查       lint 表示产物再跑一遍 lint --json，另存 <用例名>.expected.json 与
+#                <用例名>.expected.exit；- 表示不跑
+#
+# 步骤名与命令行子命令同名同参数：merge 不带选项、replace 读本目录的 replace_rules.json、
+# vn 不带选项。链里没有「检查」这一步（它只读不写），所以第 4 列是链跑完之后另外做的一件事。
+#
+# 基准由 make_goldens.sh 按第 3 列一步步跑命令行生成，不要手改。
+merge_replace	merge_replace.txt	merge,replace	-
+replace_vn	replace_vn.txt	replace,vn	-
+merge_lint	merge_lint.txt	merge	lint

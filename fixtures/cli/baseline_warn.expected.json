@@ -1,0 +1,37 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "baseline_body.txt",
+      "Chars": 45,
+      "ParagraphMode": "line",
+      "Hits": [
+        {
+          "Id": "elevated-ending",
+          "Group": "syntax",
+          "Title": "结尾升华",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 2,
+          "Length": 3,
+          "Match": "不仅仅",
+          "Snippet": "…是一种赋能。\n这不仅仅是效率问题，而是…",
+          "Detail": "段末拔高收尾",
+          "Hint": null,
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": [
+        {
+          "Id": "cliche-words",
+          "Text": "相对基线新增 0 处"
+        },
+        {
+          "Id": "elevated-ending",
+          "Text": "相对基线新增 1 处"
+        }
+      ],
+      "BaselineHits": 2
+    }
+  ]
+}

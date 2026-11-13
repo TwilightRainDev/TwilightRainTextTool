@@ -1,0 +1,153 @@
+# merge、replace、join、vn 四个子命令的对照用例表。tests/compare_processing.sh 读这一份。
+#
+# 五列，制表符分隔，空行与 # 开头的行不算：
+#   1 用例名
+#   2 要摆进跑目录的稿件，多项用分号隔开；"源>目标" 表示复制成另一个名字；
+#     "+子目录" 表示建一个空目录（join 用它摆一个干净的目标目录）；
+#     "link:目标>名字" 表示建一条软链接
+#   3 命令行参数（shell 写法，稿件名按第 2 列摆好后的名字写）
+#   4 strict = 必须逐字节一致；known = 已知不一致，只打印不判红
+#   5 已知不一致的原因，strict 用例写 -
+#
+# 帮助文本不在这份表里比：参考实现的 3.1 构建用的还是旧说法，原生的帮助文本对齐 4.0，
+# 这一项由 tests/compare_cli.sh 按 4.0 的基准比对。
+#
+# 稿件都在 inputs/ 下。每份用例在两个干净的目录里各跑一次：一边是参考实现，
+# 一边是原生命令行；跑完比 stdout、stderr、退出码，以及目录里每个文件的字节
+# （输出文件的名字、.bak 轮换、原地覆盖都在这份比对里）。
+
+merge_default	prose.txt	merge prose.txt	strict	-
+merge_threshold_1	prose.txt	merge prose.txt --threshold 1	strict	-
+merge_threshold_8	prose.txt	merge prose.txt --threshold 8	strict	-
+merge_threshold_40	prose.txt	merge prose.txt --threshold 40	strict	-
+merge_threshold_negative	prose.txt	merge prose.txt --threshold -3	strict	-
+merge_chars_explicit	prose.txt	merge prose.txt --chars --threshold 12	strict	-
+merge_bytes	long.txt	merge long.txt --bytes	strict	-
+merge_bytes_threshold	prose.txt	merge prose.txt --bytes --threshold 60	strict	-
+merge_no_cjk	dialogue.txt	merge dialogue.txt --no-cjk	strict	-
+merge_no_cjk_threshold	prose.txt	merge prose.txt --no-cjk --threshold 8	strict	-
+merge_fix_punct	dialogue.txt	merge dialogue.txt --fix-punct	strict	-
+merge_fix_punct_chars	dialogue.txt	merge dialogue.txt --fix-punct --punct-chars "，。"	strict	-
+merge_no_trim_comma	prose.txt	merge prose.txt --no-trim-comma	strict	-
+merge_all_flags	prose.txt	merge prose.txt --threshold 12 --bytes --fix-punct --punct-chars "，" --no-trim-comma	strict	-
+merge_overwrite	ow.txt	merge ow.txt --overwrite	strict	-
+merge_backup	ow.txt	merge ow.txt --backup	strict	-
+merge_backup_rotate	ow.txt;ow_bak.txt>ow.txt.bak;ow_bak1.txt>ow.txt.bak.1	merge ow.txt --backup	strict	-
+merge_gbk	gbk.txt	merge gbk.txt	known	写盘保持原编码，参考实现一律写带 BOM 的 UTF-8；正文相同
+merge_gbk_threshold	gbk.txt	merge gbk.txt --threshold 8	known	写盘保持原编码，参考实现一律写带 BOM 的 UTF-8；正文相同
+merge_bom	bom.txt	merge bom.txt	strict	-
+merge_utf16	utf16.txt	merge utf16.txt	known	写盘保持原编码，参考实现一律写带 BOM 的 UTF-8；正文相同
+merge_empty	empty.txt	merge empty.txt	strict	-
+merge_crlf	crlf.txt	merge crlf.txt	strict	-
+merge_nonl	nonl.txt	merge nonl.txt	strict	-
+merge_noext	noext	merge noext	strict	-
+merge_long	long.txt	merge long.txt	strict	-
+merge_two_files	two_a.txt;two_b.txt	merge two_a.txt two_b.txt	strict	-
+merge_no_files	-	merge	strict	-
+merge_missing_file	-	merge nope.txt	strict	-
+merge_missing_with_one_ok	two_a.txt	merge two_a.txt nope.txt	strict	-
+merge_bad_threshold	prose.txt	merge prose.txt --threshold abc	strict	-
+merge_threshold_missing_value	prose.txt	merge prose.txt --threshold	strict	-
+merge_unknown_flag	prose.txt	merge prose.txt --bogus	strict	-
+merge_dir_input	prose.txt	merge .	strict	-
+replace_scheme_punct	latin.txt	replace latin.txt --scheme 标点符号转换	strict	-
+replace_scheme_quotes	latin.txt	replace latin.txt --scheme 引号括号统一	strict	-
+replace_scheme_symbols	latin.txt	replace latin.txt --scheme 特殊符号清除	strict	-
+replace_scheme_dashes	latin.txt	replace latin.txt --scheme 横线省略号→逗号	strict	-
+replace_scheme_repeat	latin.txt	replace latin.txt --scheme 重复矛盾标点整理	strict	-
+replace_scheme_fullwidth	latin.txt	replace latin.txt --scheme 全角字母数字→半角	strict	-
+replace_scheme_digits	latin.txt	replace latin.txt --scheme 阿拉伯数字→中文	strict	-
+replace_scheme_filler	latin.txt	replace latin.txt --scheme 语气词清理	strict	-
+replace_scheme_words	latin.txt	replace latin.txt --scheme 词语替换	strict	-
+replace_gbk	gbk.txt	replace gbk.txt --scheme 标点符号转换	known	写盘保持原编码，参考实现一律写带 BOM 的 UTF-8；正文相同
+replace_bom	bom.txt	replace bom.txt --scheme 标点符号转换	strict	-
+replace_empty	empty.txt	replace empty.txt --scheme 引号括号统一	strict	-
+replace_crlf	crlf.txt	replace crlf.txt --scheme 标点符号转换	strict	-
+replace_nonl	nonl.txt	replace nonl.txt --scheme 引号括号统一	strict	-
+replace_long	long.txt	replace long.txt --scheme 重复矛盾标点整理	strict	-
+replace_two_files	two_a.txt;two_b.txt	replace two_a.txt two_b.txt --scheme 标点符号转换	strict	-
+replace_no_scheme	prose.txt	replace prose.txt	strict	-
+replace_unknown_scheme	prose.txt	replace prose.txt --scheme 不存在的方案	strict	-
+replace_scheme_missing_value	prose.txt	replace prose.txt --scheme	strict	-
+replace_no_files	-	replace	strict	-
+replace_missing_file	-	replace nope.txt --scheme 标点符号转换	strict	-
+replace_dir_input	prose.txt	replace . --scheme 标点符号转换	strict	-
+
+merge_overwrite_gbk	gbk.txt	merge gbk.txt --overwrite	known	写盘保持原编码，参考实现一律写带 BOM 的 UTF-8；正文相同
+merge_overwrite_bom	bom.txt	merge bom.txt --overwrite	strict	-
+merge_backup_empty	empty.txt	merge empty.txt --backup	strict	-
+merge_threshold_plus	prose.txt	merge prose.txt --threshold "+8"	strict	-
+merge_punct_chars_empty	dialogue.txt	merge dialogue.txt --fix-punct --punct-chars ""	strict	-
+merge_two_files_backup	two_a.txt;two_b.txt	merge two_a.txt two_b.txt --backup	strict	-
+replace_utf16	utf16.txt	replace utf16.txt --scheme 标点符号转换	known	写盘保持原编码，参考实现一律写带 BOM 的 UTF-8；正文相同
+replace_scheme_twice	latin.txt	replace latin.txt --scheme 引号括号统一 --scheme 标点符号转换	strict	-
+
+join_basic	two_a.txt>a_first.txt;two_b.txt>B_second.txt;empty.txt>c_empty.txt;crlf.txt>d_crlf.txt	join .	strict	-
+join_pattern	two_a.txt>a.txt;note.md>n.md;upper.TXT>u.TXT	join . --pattern '*.md'	strict	-
+join_pattern_case	upper.TXT>u.TXT;two_a.txt>a.txt	join . --pattern '*.txt'	strict	-
+join_pattern_all_dotstar	+sub;two_a.txt>sub/a.txt;noext>sub/noext;note.md>sub/n.md	join sub --pattern '*.*'	strict	-
+join_pattern_star	+sub;two_a.txt>sub/a.txt;noext>sub/noext	join sub --pattern '*'	strict	-
+join_pattern_empty	+sub;two_a.txt>sub/a.txt;note.md>sub/n.md	join sub --pattern ''	strict	-
+join_pattern_noext	noext;two_a.txt>a.txt	join . --pattern noext	strict	-
+join_output_custom	two_a.txt>a.txt;two_b.txt>b.txt	join . --output merged.log	strict	-
+join_exclude_output	pre_joined.txt>joined.txt;two_a.txt>a.txt	join .	strict	-
+join_no_files	-	join .	strict	-
+join_no_dir	-	join	strict	-
+join_missing_dir	-	join nope	strict	-
+join_file_as_dir	prose.txt>p.txt	join p.txt	strict	-
+join_two_dirs	prose.txt>p.txt	join . p.txt	strict	-
+join_pattern_missing_value	prose.txt>p.txt	join . --pattern	strict	-
+join_output_missing_value	prose.txt>p.txt	join . --output	strict	-
+join_overwrite	prose.txt>p.txt	join . --overwrite	strict	-
+join_gbk	gbk.txt>g.txt;two_a.txt>a.txt	join .	strict	-
+join_utf16	utf16.txt>u.txt;two_a.txt>a.txt	join .	strict	-
+join_bom	bom.txt>b.txt;two_a.txt>a.txt	join .	strict	-
+join_crlf_only	crlf.txt>c.txt	join .	strict	-
+
+join_symlink	two_a.txt>a.txt;two_b.txt>b.txt;link:b.txt>0_first.txt	join .	strict	-
+
+vn_default	dialogue.txt>d.txt	vn d.txt	strict	-
+vn_reformat_only	dialogue.txt>d.txt	vn d.txt --reformat-only	strict	-
+vn_punct_only	dialogue.txt>d.txt	vn d.txt --punct-only	strict	-
+vn_both_flags	dialogue.txt>d.txt	vn d.txt --reformat-only --punct-only	strict	-
+vn_max_para	para_long.txt>p.txt	vn p.txt --max-para 60	strict	-
+vn_max_para_large	para_long.txt>p.txt	vn p.txt --max-para 100000	strict	-
+vn_max_para_zero	dialogue.txt>d.txt	vn d.txt --max-para 0	strict	-
+vn_max_para_negative	dialogue.txt>d.txt	vn d.txt --max-para -5	strict	-
+vn_max_para_abc	dialogue.txt>d.txt	vn d.txt --max-para abc	strict	-
+vn_max_para_missing_value	dialogue.txt>d.txt	vn d.txt --max-para	strict	-
+vn_scheme_sg	vn_sg.txt>s.txt	vn s.txt --scheme 'Steins;Gate 默认角色'	strict	-
+vn_scheme_sg_reformat_only	vn_sg.txt>s.txt	vn s.txt --scheme 'Steins;Gate 默认角色' --reformat-only	strict	-
+vn_scheme_shizuku	vn_shizuku.txt>s.txt	vn s.txt --scheme '樱之诗 默认角色'	strict	-
+vn_scheme_two	vn_sg.txt>s.txt	vn s.txt --scheme 'Steins;Gate 默认角色' --scheme '空之境界'	strict	-
+vn_scheme_unknown	dialogue.txt>d.txt	vn d.txt --scheme 不存在的方案	strict	-
+vn_scheme_missing_value	dialogue.txt>d.txt	vn d.txt --scheme	strict	-
+vn_scene	vn_scene.txt>s.txt	vn s.txt	strict	-
+vn_scene_scheme	vn_scene.txt>s.txt	vn s.txt --scheme '空之境界'	strict	-
+vn_no_files	-	vn	strict	-
+vn_missing_file	-	vn nope.txt	strict	-
+vn_missing_with_one_ok	two_a.txt>a.txt	vn a.txt nope.txt	strict	-
+vn_multi	two_a.txt>a.txt;two_b.txt>b.txt	vn a.txt b.txt	strict	-
+vn_gbk	gbk.txt>g.txt	vn g.txt	known	写盘保持原编码，参考实现一律写带 BOM 的 UTF-8；正文相同
+vn_bom	bom.txt>b.txt	vn b.txt	strict	-
+vn_utf16	utf16.txt>u.txt	vn u.txt	known	写盘保持原编码，参考实现一律写带 BOM 的 UTF-8；正文相同
+vn_empty	empty.txt>e.txt	vn e.txt	strict	-
+vn_crlf	crlf.txt>c.txt	vn c.txt	strict	-
+vn_nonl	nonl.txt>n.txt	vn n.txt	strict	-
+vn_dir_input	prose.txt>p.txt	vn .	strict	-
+vn_unknown_flag	prose.txt>p.txt	vn p.txt --bogus	strict	-
+vn_overwrite	prose.txt>p.txt	vn p.txt --overwrite	strict	-
+
+# 已知不一致：join 写不出输出文件时，参考实现报的是 .NET 的系统措辞（还带绝对路径），
+# 原生报自己的「写入失败：…」。两边退出码都是 1，也都不留下输出文件，差的只是这一行字。
+join_output_bad_dir	prose.txt>p.txt	join . --output sub/x.txt	known	参考实现报 .NET 的系统措辞，原生报「写入失败：…」
+join_output_empty	prose.txt>p.txt	join . --output ''	known	参考实现报 .NET 的系统措辞，原生报「写入失败：…」
+join_dangling_symlink	prose.txt>p.txt;link:nowhere.txt>broken.txt	join .	known	读不到那份稿时，参考实现报「Could not find file …」，原生报系统措辞
+
+# 已知不一致：replace 的博文结构遮罩还没接（参考实现在博文里跳过代码块、行内代码、
+# 链接地址与 ::: 指令行），所以博客形状的稿子两边不一样。
+replace_blog_mask	blog.txt	replace blog.txt --scheme 标点符号转换	strict	-
+
+# 已知不一致：引擎的 --bytes 按 UTF-8 字节量宽度，参考实现按原文件编码的字节量。
+# GBK 稿里一个汉字算 3 字节还是 2 字节，断行位置就不同。
+merge_bytes_gbk	gbk.txt	merge gbk.txt --bytes --threshold 20 --no-cjk	known	写盘保持原编码，参考实现一律写带 BOM 的 UTF-8；正文相同

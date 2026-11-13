@@ -1,0 +1,27 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "real_doc.md",
+      "Chars": 437,
+      "ParagraphMode": "markdown",
+      "Hits": [
+        {
+          "Id": "tombstone-of-deletion",
+          "Group": "lexis",
+          "Title": "为删掉的东西立碑",
+          "Severity": "info",
+          "Line": 16,
+          "Col": 19,
+          "Length": 4,
+          "Match": "不在这里",
+          "Snippet": "…在各自的仓库里，不在这里重复。\n",
+          "Detail": "为删掉的东西立碑：「原档已清」「盘上已无」「不在这里」。读者拿到的是碑文，不是他要找的内容；东西没了就照没了写，去向值得交代就写进变更记录，那里才是查得到的地方。",
+          "Hint": "删掉；不在这里的东西不该出现在这一页",
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": []
+    }
+  ]
+}

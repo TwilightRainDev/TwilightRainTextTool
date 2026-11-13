@@ -1,0 +1,34 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "lint_dir/a_first.txt",
+      "Chars": 14,
+      "ParagraphMode": "line",
+      "Hits": [
+        {
+          "Id": "cliche-words",
+          "Group": "lexis",
+          "Title": "套话词",
+          "Severity": "info",
+          "Line": 1,
+          "Col": 1,
+          "Length": 6,
+          "Match": "值得注意的是",
+          "Snippet": "值得注意的是，这不是重点。\n",
+          "Detail": "套话/空词",
+          "Hint": null,
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": []
+    },
+    {
+      "File": "lint_dir/sub/c_nested.txt",
+      "Chars": 7,
+      "ParagraphMode": "line",
+      "Hits": [],
+      "Notes": []
+    }
+  ]
+}

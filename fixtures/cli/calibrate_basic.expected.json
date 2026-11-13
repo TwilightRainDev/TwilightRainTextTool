@@ -1,0 +1,1045 @@
+{
+  "Version": 1,
+  "Genre": null,
+  "Human": {
+    "Files": 2,
+    "Chars": 249,
+    "Hits": 12,
+    "PerKChar": 48.19277108433735
+  },
+  "Ai": {
+    "Files": 2,
+    "Chars": 13572,
+    "Hits": 84,
+    "PerKChar": 6.18921308576481
+  },
+  "SeparableCount": 15,
+  "Rules": [
+    {
+      "Id": "agent-path-list",
+      "Title": "路径清单",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 21,
+      "AiPerKChar": 1.5473032714412025,
+      "Verdict": "separable"
+    },
+    {
+      "Id": "agent-inline-code",
+      "Title": "行内代码密集",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 16,
+      "AiPerKChar": 1.1788977306218686,
+      "Verdict": "separable"
+    },
+    {
+      "Id": "agent-cli-option",
+      "Title": "命令行选项",
+      "HumanHits": 2,
+      "HumanPerKChar": 8.032128514056225,
+      "AiHits": 8,
+      "AiPerKChar": 0.5894488653109343,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-process-jargon",
+      "Title": "流程行话",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 6,
+      "AiPerKChar": 0.4420866489832007,
+      "Verdict": "separable"
+    },
+    {
+      "Id": "completion-log",
+      "Title": "完工记录或过程叙述",
+      "HumanHits": 2,
+      "HumanPerKChar": 8.032128514056225,
+      "AiHits": 5,
+      "AiPerKChar": 0.3684055408193339,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-machine-numbers",
+      "Title": "机器式数值",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 5,
+      "AiPerKChar": 0.3684055408193339,
+      "Verdict": "separable"
+    },
+    {
+      "Id": "agent-commit-hash",
+      "Title": "提交哈希",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 3,
+      "AiPerKChar": 0.22104332449160036,
+      "Verdict": "separable"
+    },
+    {
+      "Id": "mixed-punctuation-width",
+      "Title": "全半角混用",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 3,
+      "AiPerKChar": 0.22104332449160036,
+      "Verdict": "separable"
+    },
+    {
+      "Id": "parallel-contrast",
+      "Title": "对举句式",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 3,
+      "AiPerKChar": 0.22104332449160036,
+      "Verdict": "separable"
+    },
+    {
+      "Id": "supersession",
+      "Title": "取代或版本变更叙事",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 3,
+      "AiPerKChar": 0.22104332449160036,
+      "Verdict": "separable"
+    },
+    {
+      "Id": "cliche-words",
+      "Title": "套话词",
+      "HumanHits": 3,
+      "HumanPerKChar": 12.048192771084338,
+      "AiHits": 2,
+      "AiPerKChar": 0.14736221632773358,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "forced-reversal",
+      "Title": "强加反转",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 2,
+      "AiPerKChar": 0.14736221632773358,
+      "Verdict": "separable"
+    },
+    {
+      "Id": "tombstone-of-deletion",
+      "Title": "为删掉的东西立碑",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 2,
+      "AiPerKChar": 0.14736221632773358,
+      "Verdict": "separable"
+    },
+    {
+      "Id": "dash-pause-in-reply",
+      "Title": "回复里的破折号",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 1,
+      "AiPerKChar": 0.07368110816386679,
+      "Verdict": "separable"
+    },
+    {
+      "Id": "fiction-dead-metaphor",
+      "Title": "陈词比喻",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 1,
+      "AiPerKChar": 0.07368110816386679,
+      "Verdict": "separable"
+    },
+    {
+      "Id": "fiction-dominant-register",
+      "Title": "强势方腔调",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 1,
+      "AiPerKChar": 0.07368110816386679,
+      "Verdict": "separable"
+    },
+    {
+      "Id": "fiction-modifier-chain",
+      "Title": "定语链",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 1,
+      "AiPerKChar": 0.07368110816386679,
+      "Verdict": "separable"
+    },
+    {
+      "Id": "numbered-reference",
+      "Title": "编号引用",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 1,
+      "AiPerKChar": 0.07368110816386679,
+      "Verdict": "separable"
+    },
+    {
+      "Id": "deck-speak",
+      "Title": "汇报腔",
+      "HumanHits": 3,
+      "HumanPerKChar": 12.048192771084338,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "ellipsis-style",
+      "Title": "省略号风格",
+      "HumanHits": 1,
+      "HumanPerKChar": 4.016064257028113,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "repeated-punctuation",
+      "Title": "重复标点",
+      "HumanHits": 1,
+      "HumanPerKChar": 4.016064257028113,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "accounting-cliche",
+      "Title": "算账式引出数据",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "accounting-word-misuse",
+      "Title": "记事写成记账",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "adverb-overuse",
+      "Title": "副词同段堆叠",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-agreement-opener",
+      "Title": "开口先认同",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-bare-verb-closer",
+      "Title": "及物动词停在收尾处",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-caretaker-line",
+      "Title": "陪护台词",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-code-list",
+      "Title": "裸代号清单",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-conclusion-first",
+      "Title": "结论先行",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-conclusion-preamble",
+      "Title": "结论前置口号",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-deliberation-leak",
+      "Title": "把推演写进回复",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-error-paste",
+      "Title": "接口报错话术",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-flattery",
+      "Title": "先夸提问者",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-keepsake",
+      "Title": "把话收留成纪念",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-measure-invite",
+      "Title": "让你自己掂量",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-one-char-commitment",
+      "Title": "单字动词表承诺",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-permission-ask",
+      "Title": "正文里求许可",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-probe-question",
+      "Title": "反问试探",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-reassurance-pile",
+      "Title": "接住式安抚",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-receipt-commitment",
+      "Title": "记下当结账",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-self-intro",
+      "Title": "自报家门",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-smoke-jargon",
+      "Title": "冒烟行话",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-template-preamble",
+      "Title": "客套开场三段式",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-test-jargon",
+      "Title": "测试行话",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-truncated-path",
+      "Title": "截断路径",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "agent-weight-comparison",
+      "Title": "给每句话称重",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "ai-frequent-words",
+      "Title": "AI 高频词",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "anthropomorphic-subject",
+      "Title": "非活物做人的动作",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "assistant-persona",
+      "Title": "助手号腔",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "char-face",
+      "Title": "越界字符",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "chatbot-artifacts",
+      "Title": "协作交流痕迹",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "choppy-clauses",
+      "Title": "短句硬连",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "connective-scene-shift",
+      "Title": "连接词切场景",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "copula-avoidance",
+      "Title": "系动词回避",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "dash-and-tilde",
+      "Title": "破折号与波浪号",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "dash-run",
+      "Title": "破折号连用",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "disclaimer-stack",
+      "Title": "免责堆叠",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "doc-process-residue",
+      "Title": "文档里的过程残留",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "elevated-ending",
+      "Title": "结尾升华",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "emoji-and-symbols",
+      "Title": "表情与装饰符号",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "exclamation-density",
+      "Title": "叹号密度偏高",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "explicit-numbering",
+      "Title": "显式序号标记",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-atmosphere-props",
+      "Title": "氛围道具",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-beat-action",
+      "Title": "小动作当句读",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-body-tics",
+      "Title": "网文脸固定搭配",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-bold-template",
+      "Title": "正文里的加粗模板",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-choice-diagnosis",
+      "Title": "二选一的心理归因",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-community-taste",
+      "Title": "社区洁癖套话",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-dialogue-reference",
+      "Title": "台词里反复指那句话",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-emotion-telling",
+      "Title": "心理告知与预告",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-filler-modifiers",
+      "Title": "程度词堆叠",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-metaphor-lexicon",
+      "Title": "同一套比喻词",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-narrator-formula",
+      "Title": "说书人的开合语",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-permission-consoling",
+      "Title": "劝慰腔的许可句",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-physio-tics",
+      "Title": "生理反应套话",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-proportion-eyes",
+      "Title": "比例式情绪",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-sensation-tics",
+      "Title": "感受套话",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-simile-pile",
+      "Title": "一句里叠着比喻",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-synonym-chain",
+      "Title": "同义连写",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-text-self-reference",
+      "Title": "回头指自己写的字",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-vague-nominalization",
+      "Title": "抽象名词化",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "fiction-vague-simile",
+      "Title": "万能比喻",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "filler-phrases",
+      "Title": "填充短语",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "foreign-script-mix",
+      "Title": "外文字符混排",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "hedge-denial-pile",
+      "Title": "叠着免责",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "hedging-ending",
+      "Title": "段末兜底",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "inline-title-list",
+      "Title": "内联标题列表",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "invisible-characters",
+      "Title": "隐形字符",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "meta-commentary-marker",
+      "Title": "元评价路标",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "mixed-bracket-width",
+      "Title": "括号全半角混用",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "mixed-quote-style",
+      "Title": "引号风格混用",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "no-debt-declaration",
+      "Title": "无债宣告或空节留痕",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "ordinal-skeleton",
+      "Title": "序数词骨架",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "outline-residue",
+      "Title": "大纲残留",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "paragraph-length-uniform",
+      "Title": "段落长度过于均一",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "paragraph-ordinals",
+      "Title": "段内序数词",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "re-report-suppression",
+      "Title": "防复报的碑",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "repeated-paragraph-opening",
+      "Title": "段首重复",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "repeated-token-run",
+      "Title": "复读串",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "repeated-verbatim",
+      "Title": "逐字重复",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "sentence-length-uniform",
+      "Title": "句长分布过于整齐",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "sentence-tempo",
+      "Title": "节拍化短句",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "short-sentence-run",
+      "Title": "连续短句",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "stacked-modifiers",
+      "Title": "修饰语堆叠",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "sycophancy",
+      "Title": "谄媚语气",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "synopsis-formula",
+      "Title": "简介模板骨架",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "synopsis-register",
+      "Title": "摘要动词",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "terminology-pile",
+      "Title": "术语与意象堆砌",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "tilde-run",
+      "Title": "波浪号当省略号",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "trailer-ending",
+      "Title": "结尾预告句",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "training-cutoff-disclaimer",
+      "Title": "知识截止免责",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "triadic-parallel",
+      "Title": "三项并列排比",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "vague-attribution",
+      "Title": "模糊归因",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    },
+    {
+      "Id": "violent-verbs",
+      "Title": "暴力动词套话",
+      "HumanHits": 0,
+      "HumanPerKChar": 0,
+      "AiHits": 0,
+      "AiPerKChar": 0,
+      "Verdict": "indistinguishable"
+    }
+  ]
+}

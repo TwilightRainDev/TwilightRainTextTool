@@ -1,0 +1,111 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "real_doc.md",
+      "Chars": 437,
+      "ParagraphMode": "markdown",
+      "Hits": [
+        {
+          "Id": "numbered-reference",
+          "Group": "lexis",
+          "Title": "编号引用",
+          "Severity": "info",
+          "Line": 3,
+          "Col": 59,
+          "Length": 5,
+          "Match": "第 4 节",
+          "Snippet": "…NTS.md\u0060 第 4 节）。\n\n每份记录…",
+          "Detail": "拿编号当路标：读者手里只有这段话，编一张别处的表才解得开。把那条本身写进来，或者只说结论",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "agent-process-jargon",
+          "Group": "lexis",
+          "Title": "流程行话",
+          "Severity": "info",
+          "Line": 11,
+          "Col": 14,
+          "Length": 2,
+          "Match": "债账",
+          "Snippet": "…（护栏、工具闸、债账、文档布局、仓库…",
+          "Detail": "收口、落盘、口径、档位、体检——这一带自造的词，头一次读到的人得先翻译一遍。回复每十万字 91 处，人写的技术博文 2 处。第一次出现时给一句同义的人话，或直接换掉",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "agent-path-list",
+          "Group": "lexis",
+          "Title": "路径清单",
+          "Severity": "info",
+          "Line": 11,
+          "Col": 31,
+          "Length": 27,
+          "Match": "Docs/ChangeLog/Workspace.md",
+          "Snippet": "…库约定） | \u0060Docs/ChangeLog/Workspace.md\u0060 |\n| Ch…",
+          "Detail": "一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "agent-path-list",
+          "Group": "lexis",
+          "Title": "路径清单",
+          "Severity": "info",
+          "Line": 12,
+          "Col": 14,
+          "Length": 43,
+          "Match": "Docs/ChangeLog/Project/ChatBot/ChangeLog.md",
+          "Snippet": "…tBot | \u0060Docs/ChangeLog/Project/ChatBot/ChangeLog.md\u0060 |\n| Te…",
+          "Detail": "一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "agent-path-list",
+          "Group": "lexis",
+          "Title": "路径清单",
+          "Severity": "info",
+          "Line": 13,
+          "Col": 24,
+          "Length": 43,
+          "Match": "Docs/ChangeLog/Project/TextTool/DevNotes.md",
+          "Snippet": "…新细节） | \u0060Docs/ChangeLog/Project/TextTool/DevNotes.md\u0060 |\n| Bi…",
+          "Detail": "一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "agent-path-list",
+          "Group": "lexis",
+          "Title": "路径清单",
+          "Severity": "info",
+          "Line": 14,
+          "Col": 18,
+          "Length": 47,
+          "Match": "Docs/ChangeLog/Project/BiliCompact/ChangeLog.md",
+          "Snippet": "…pact | \u0060Docs/ChangeLog/Project/BiliCompact/ChangeLog.md\u0060 |\n\nBlo…",
+          "Detail": "一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "tombstone-of-deletion",
+          "Group": "lexis",
+          "Title": "为删掉的东西立碑",
+          "Severity": "info",
+          "Line": 16,
+          "Col": 19,
+          "Length": 4,
+          "Match": "不在这里",
+          "Snippet": "…在各自的仓库里，不在这里重复。\n",
+          "Detail": "为删掉的东西立碑：「原档已清」「盘上已无」「不在这里」。读者拿到的是碑文，不是他要找的内容；东西没了就照没了写，去向值得交代就写进变更记录，那里才是查得到的地方。",
+          "Hint": "删掉；不在这里的东西不该出现在这一页",
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": []
+    }
+  ]
+}

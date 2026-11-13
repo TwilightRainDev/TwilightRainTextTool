@@ -1,0 +1,79 @@
+# 命令行对照用例表。make_goldens.sh 与 tests/compare_cli.sh 都读这一份，
+# 加用例只改这里，两个脚本不用跟着改。
+#
+# 三列，制表符分隔，空行与 # 开头的行不算：
+#   用例名	类型	参数
+# 类型 lint 与 json 都跑两次：人读输出（4.0 的构建）、--json（3.1 的构建），退出码两行。
+#   lint 指检查命令，json 指 calibrate 与 reply-check 这两个只读命令；两者的跑法相同。
+# 类型 plain 只跑一次，退出码一行。参数照 shell 的写法写，带空格的值用引号括起来。
+#
+# 用例名就是基准文件的前缀，参数里的稿件名不带目录：报告里 File 字段就是它。
+short	lint	lint short.txt
+clean	lint	lint clean.txt
+gbk	lint	lint gbk.txt
+real_doc	lint	lint real_doc.md
+long	lint	lint long.txt
+two_files	lint	lint short.txt real_doc.md
+only_mixed	lint	lint short.txt --only cliche-words,repeated-punctuation
+only_scaled	lint	lint long.txt --only agent-path-list
+min_warn	lint	lint short.txt --min-severity warn
+min_info	lint	lint short.txt --min-severity info
+genre_doc	lint	lint real_doc.md --genre doc
+genre_fiction	lint	lint short.txt --genre fiction
+genre_agent	lint	lint short.txt --genre agent
+only_spaces	lint	lint short.txt --only "cliche-words , repeated-punctuation"
+min_warn_upper	lint	lint short.txt --min-severity WARN
+genre_upper	lint	lint short.txt --genre DOC
+combo	lint	lint long.txt --min-severity warn --genre doc --only completion-log,supersession,mixed-punctuation-width
+repeat_verbatim	lint	lint repeat_verbatim.txt
+repeat_token	lint	lint repeat_token.txt
+repeat_opening	lint	lint repeat_opening.txt
+rhythm_short_run	lint	lint rhythm_short_run.txt
+rhythm_sentence_uniform	lint	lint rhythm_sentence_uniform.txt
+rhythm_paragraph_uniform	lint	lint rhythm_paragraph_uniform.txt
+rhythm_tempo	lint	lint rhythm_tempo.txt
+rhythm_choppy	lint	lint rhythm_choppy.txt
+shape_exclaim	lint	lint shape_exclaim.txt
+shape_ordinal	lint	lint shape_ordinal.txt
+shape_numbering	lint	lint shape_numbering.txt
+shape_terminology	lint	lint shape_terminology.txt
+shape_simile	lint	lint shape_simile.txt
+shape_bracket	lint	lint shape_bracket.txt
+shape_quote	lint	lint shape_quote.txt
+blog_structure	lint	lint blog_structure.md
+blog_comment_only	lint	lint blog_comment_only.md
+usage	plain	
+help	plain	--help
+lint_help	plain	lint --help
+merge_help	plain	merge --help
+unknown_command	plain	nosuchcmd
+bad_genre	plain	lint short.txt --genre webfiction
+bad_min_severity	plain	lint short.txt --min-severity error
+unknown_rule	plain	lint short.txt --only no-such-rule
+only_empty	plain	lint short.txt --only ""
+genre_conflict	plain	lint short.txt --genre doc --only terminology-pile
+missing_file	plain	lint no_such_file.md
+unknown_flag	plain	lint short.txt --nofalg
+reply_hits	json	reply-check reply.txt
+reply_clean	json	reply-check clean.txt
+reply_help	plain	reply-check --help
+reply_missing_file	plain	reply-check no_such_file.txt
+reply_two_inputs	plain	reply-check reply.txt clean.txt
+calibrate_basic	json	calibrate --human calib/human --ai calib/ai
+calibrate_genre	json	calibrate --human calib/human --ai calib/ai --genre fiction
+calibrate_missing	plain	calibrate --human calib/human
+calibrate_missing_dir	plain	calibrate --human no_such_dir --ai calib/ai
+calibrate_bad_genre	plain	calibrate --human calib/human --ai calib/ai --genre webfiction
+calibrate_help	plain	calibrate --help
+
+# 目录输入、--baseline、--log 三类：目录样本在 lint_dir 与 empty_dir，
+# 读不了的子目录与软链接由脚本现造；log 类用例多跑一次 --log，并比日志文件。
+lint_dir	lint	lint lint_dir
+lint_dir_files	lint	lint lint_dir/a_first.txt lint_dir/sub
+lint_dir_empty	plain	lint empty_dir
+baseline	lint	lint baseline_body.txt --baseline baseline_base.txt
+baseline_only	lint	lint baseline_body.txt --baseline baseline_base.txt --only cliche-words,elevated-ending
+baseline_warn	lint	lint baseline_body.txt --baseline baseline_base.txt --min-severity warn
+baseline_dir	plain	lint lint_dir --baseline baseline_base.txt
+lint_log	log	lint short.txt
+lint_log_baseline	log	lint baseline_body.txt --baseline baseline_base.txt

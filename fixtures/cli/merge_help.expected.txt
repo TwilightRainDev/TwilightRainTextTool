@@ -1,0 +1,12 @@
+merge 选项：
+  --threshold <N>      每行拼到多少字（默认 20）
+  --chars / --bytes    按字符数 / 字节数（默认字符数）
+  --overwrite          直接覆盖原文件，不留备份（危险）
+  --backup             覆盖原文件，覆盖前备份为 .bak（隐含 --overwrite）
+  --no-cjk             禁用中文截断修复
+  --fix-punct          启用标点截断修复
+  --punct-chars <s>    标点截断字符集（默认 "，"）
+  --no-trim-comma      禁用行首逗号清理
+  --no-merge           行尾是句末标点时不与下一行合并
+  --no-merge-chars <s> 算作句末的标点（默认 "。！？"，隐含 --no-merge）
+  --apply-replace      按规则表把标点换一遍（规则来自 replace_rules.json）

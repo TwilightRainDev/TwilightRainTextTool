@@ -1,13 +1,13 @@
-# Codegraph
-.codegraph/
+# 构建产物不进仓库：两个平台的构建目录各留各的
+build-*/
+# 基准生成工具的中间产物
+tools/RuleDump/bin/
+tools/RuleDump/obj/
+# 发布压缩包，打完就发走，不进仓库。
+dist/
 
-# Build outputs
-bin/
-obj/
-
-# IDE user config / shortcuts
-*.user
-*.lnk
-
-# 自购电子书：只作本机语料，版权不外流
-NovelEdit/
+# 设计图、对照图与界面截图只留本地，不进远端
+tools/probes/
+# 规则导出工具的生成物
+tools/RuleDump/bin/
+tools/RuleDump/obj/

@@ -1,0 +1,12 @@
+TextTool 命令行工具 v4.0.0
+
+用法：
+  texttool merge <文件...> [选项]      行合并 + 后处理
+  texttool replace <文件...> [选项]    标点符号替换
+  texttool vn <文件...> [选项]        视觉小说排版
+  texttool join <目录> [选项]         文件拼接
+  texttool lint <文件|目录...> [选项]  AI 味检查（只报不改）
+  texttool calibrate [选项]            规则标定：人类文本与模型文本两侧对比
+  texttool reply-check [选项] [文件]    回复里读者解不开的写法（只报不改）
+
+运行 texttool <命令> --help 查看各命令选项。

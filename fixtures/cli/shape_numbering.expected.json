@@ -1,0 +1,88 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "shape_numbering.txt",
+      "Chars": 212,
+      "ParagraphMode": "markdown",
+      "Hits": [
+        {
+          "Id": "completion-log",
+          "Group": "lexis",
+          "Title": "完工记录或过程叙述",
+          "Severity": "info",
+          "Line": 3,
+          "Col": 8,
+          "Length": 2,
+          "Match": "本次",
+          "Snippet": "…\n1. 改动只在本次任务涉及的目录里…",
+          "Detail": "正文里记「已经改了、已经修过、本轮做完、验收通过」：读者要拿到的是此刻成立的规矩，做完的过程属于变更记录，留在正文里只会在压缩或转述之后把人引回旧状态。",
+          "Hint": "删掉轮次词；写具体改了哪一条",
+          "SuggestScheme": null
+        },
+        {
+          "Id": "agent-process-jargon",
+          "Group": "lexis",
+          "Title": "流程行话",
+          "Severity": "info",
+          "Line": 4,
+          "Col": 17,
+          "Length": 2,
+          "Match": "口径",
+          "Snippet": "…与既有文案同一个口径，没有多出第二种…",
+          "Detail": "收口、落盘、口径、档位、体检——这一带自造的词，头一次读到的人得先翻译一遍。回复每十万字 91 处，人写的技术博文 2 处。第一次出现时给一句同义的人话，或直接换掉",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "completion-log",
+          "Group": "lexis",
+          "Title": "完工记录或过程叙述",
+          "Severity": "info",
+          "Line": 8,
+          "Col": 8,
+          "Length": 3,
+          "Match": "已删除",
+          "Snippet": "…\n6. 临时文件已删除，构建产物没有进…",
+          "Detail": "正文里记「已经改了、已经修过、本轮做完、验收通过」：读者要拿到的是此刻成立的规矩，做完的过程属于变更记录，留在正文里只会在压缩或转述之后把人引回旧状态。",
+          "Hint": "删掉这一句；不存在的东西不占正文",
+          "SuggestScheme": null
+        },
+        {
+          "Id": "supersession",
+          "Group": "lexis",
+          "Title": "取代或版本变更叙事",
+          "Severity": "info",
+          "Line": 10,
+          "Col": 13,
+          "Length": 2,
+          "Match": "没变",
+          "Snippet": "…还有两件事：接口没变，所以没有通知下…",
+          "Detail": "正文里对照「原来是 A，现在改成 B」：读者只需要知道现在是什么。旧值一旦写进来，压缩或转述之后很容易被当成现行值引用，而写下旧值的人也早就不在场。",
+          "Hint": "删掉；没变的事不必声明",
+          "SuggestScheme": null
+        },
+        {
+          "Id": "supersession",
+          "Group": "lexis",
+          "Title": "取代或版本变更叙事",
+          "Severity": "info",
+          "Line": 10,
+          "Col": 27,
+          "Length": 2,
+          "Match": "没变",
+          "Snippet": "…有通知下游；文档没变，所以没有重出。…",
+          "Detail": "正文里对照「原来是 A，现在改成 B」：读者只需要知道现在是什么。旧值一旦写进来，压缩或转述之后很容易被当成现行值引用，而写下旧值的人也早就不在场。",
+          "Hint": "删掉；没变的事不必声明",
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": [
+        {
+          "Id": "explicit-numbering",
+          "Text": "显式序号标记 6 处——结构化排版的典型痕迹"
+        }
+      ]
+    }
+  ]
+}

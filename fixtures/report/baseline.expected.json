@@ -1,0 +1,33 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "baseline_after.txt",
+      "Chars": 35,
+      "ParagraphMode": "markdown",
+      "Hits": [
+        {
+          "Id": "repeated-punctuation",
+          "Group": "punctuation",
+          "Title": "重复标点",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 14,
+          "Length": 3,
+          "Match": "？？？",
+          "Snippet": "…多了一处重复标点？？？\n",
+          "Detail": "连续重复的标点",
+          "Hint": null,
+          "SuggestScheme": "重复矛盾标点整理"
+        }
+      ],
+      "Notes": [
+        {
+          "Id": "repeated-punctuation",
+          "Text": "相对基线新增 1 处"
+        }
+      ],
+      "BaselineHits": 1
+    }
+  ]
+}

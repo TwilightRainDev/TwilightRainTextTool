@@ -1,0 +1,53 @@
+# 行合并、文件拼接、标点替换的对照用例表。make_goldens.sh、compare.sh 与
+# tests/test_proc_text.cpp 都读这一份，加用例只改这里，三处不用跟着改。
+#
+# 制表符分隔，空行与 # 开头的行不算。头三列固定，后面全是「键=值」列，键可以重复（rule 每列一条）：
+#   用例名	类型	输入	键=值...
+# 类型 merge / replace / join。merge 与 replace 的输入是 inputs/ 下的文件名，
+# join 的输入是 inputs/ 下的目录名（该目录里的文件由命令行那一层挑，引擎只收正文）。
+# 基准文件是 expected/<用例名>.txt，由 make_goldens.sh 跑参考实现生成，不要手改。
+#
+# merge 的键：threshold by_chars fix_cjk fix_punct punct_chars no_merge no_merge_chars
+#             apply_replace trim_leading_comma rule
+# replace 的键：rule
+# join 的键：pattern
+#
+# 开关各开各关成对出现，成对的用例只差那一个键，看的是「那一个开关做了什么」。
+
+merge_default_mixed	merge	mixed.txt	threshold=20	by_chars=1	fix_cjk=1	fix_punct=0	punct_chars=，	no_merge=0	no_merge_chars=	apply_replace=0	trim_leading_comma=1
+merge_all_off	merge	mixed.txt	threshold=20	by_chars=1	fix_cjk=0	fix_punct=0	punct_chars=，	no_merge=0	no_merge_chars=	apply_replace=0	trim_leading_comma=0
+
+merge_cjk_on	merge	cjk.txt	threshold=4	by_chars=1	fix_cjk=1	fix_punct=0	punct_chars=，	no_merge=0	no_merge_chars=	apply_replace=0	trim_leading_comma=0
+merge_cjk_off	merge	cjk.txt	threshold=4	by_chars=1	fix_cjk=0	fix_punct=0	punct_chars=，	no_merge=0	no_merge_chars=	apply_replace=0	trim_leading_comma=0
+
+merge_punct_on	merge	punct.txt	threshold=3	by_chars=1	fix_cjk=0	fix_punct=1	punct_chars=，	no_merge=0	no_merge_chars=	apply_replace=0	trim_leading_comma=0
+merge_punct_off	merge	punct.txt	threshold=3	by_chars=1	fix_cjk=0	fix_punct=0	punct_chars=，	no_merge=0	no_merge_chars=	apply_replace=0	trim_leading_comma=0
+
+merge_comma_trim_on	merge	comma.txt	threshold=5	by_chars=1	fix_cjk=0	fix_punct=0	punct_chars=，	no_merge=0	no_merge_chars=	apply_replace=0	trim_leading_comma=1
+merge_comma_trim_off	merge	comma.txt	threshold=5	by_chars=1	fix_cjk=0	fix_punct=0	punct_chars=，	no_merge=0	no_merge_chars=	apply_replace=0	trim_leading_comma=0
+
+merge_word_split	merge	word.txt	threshold=20	by_chars=1	fix_cjk=1	fix_punct=0	punct_chars=，	no_merge=0	no_merge_chars=	apply_replace=0	trim_leading_comma=1
+
+merge_nomerge_on	merge	nomerge.txt	threshold=100	by_chars=1	fix_cjk=1	fix_punct=0	punct_chars=，	no_merge=1	no_merge_chars=。！？	apply_replace=0	trim_leading_comma=0
+merge_nomerge_off	merge	nomerge.txt	threshold=100	by_chars=1	fix_cjk=1	fix_punct=0	punct_chars=，	no_merge=0	no_merge_chars=。！？	apply_replace=0	trim_leading_comma=0
+
+merge_nomerge_cjk_on	merge	cjk_precedence.txt	threshold=1	by_chars=1	fix_cjk=1	fix_punct=0	punct_chars=，	no_merge=1	no_merge_chars=好	apply_replace=0	trim_leading_comma=0
+merge_nomerge_cjk_off	merge	cjk_precedence.txt	threshold=1	by_chars=1	fix_cjk=1	fix_punct=0	punct_chars=，	no_merge=0	no_merge_chars=好	apply_replace=0	trim_leading_comma=0
+
+merge_replace_on	merge	replace_in_merge.txt	threshold=100	by_chars=1	fix_cjk=1	fix_punct=0	punct_chars=，	no_merge=0	no_merge_chars=	apply_replace=1	trim_leading_comma=1	rule=.=>。	rule=,=>，
+merge_replace_off	merge	replace_in_merge.txt	threshold=100	by_chars=1	fix_cjk=1	fix_punct=0	punct_chars=，	no_merge=0	no_merge_chars=	apply_replace=0	trim_leading_comma=1	rule=.=>。	rule=,=>，
+
+merge_bytes	merge	bytes.txt	threshold=20	by_chars=0	fix_cjk=0	fix_punct=0	punct_chars=，	no_merge=0	no_merge_chars=	apply_replace=0	trim_leading_comma=0
+merge_chars	merge	bytes.txt	threshold=20	by_chars=1	fix_cjk=0	fix_punct=0	punct_chars=，	no_merge=0	no_merge_chars=	apply_replace=0	trim_leading_comma=0
+
+merge_crlf	merge	crlf.txt	threshold=4	by_chars=1	fix_cjk=0	fix_punct=0	punct_chars=，	no_merge=0	no_merge_chars=	apply_replace=0	trim_leading_comma=0
+
+replace_multi	replace	replace_multi.txt	rule=。。。=>…	rule=……=>…
+replace_overlap	replace	replace_overlap.txt	rule=aa=>b	rule=。。。=>；
+replace_chain_forward	replace	replace_chain.txt	rule=…=>……	rule=……=>——
+replace_chain_reverse	replace	replace_chain.txt	rule=……=>——	rule=…=>……
+replace_empty_find	replace	replace_empty_find.txt	rule==>X	rule=。=>。。
+replace_prefix_overlap	replace	replace_overlap.txt	rule=。。=>；
+
+join_basic	join	join_basic	pattern=*.txt
+join_bare_cr	join	join_cr	pattern=*.txt

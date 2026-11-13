@@ -1,0 +1,17 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "rhythm_short_run.txt",
+      "Chars": 30,
+      "ParagraphMode": "line",
+      "Hits": [],
+      "Notes": [
+        {
+          "Id": "short-sentence-run",
+          "Text": "连续 6 句都在 10 字以内——节拍化的碎片句，像在逐条填写动作与情绪"
+        }
+      ]
+    }
+  ]
+}

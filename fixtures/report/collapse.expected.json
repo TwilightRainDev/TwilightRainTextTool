@@ -1,0 +1,190 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "collapse.txt",
+      "Chars": 143,
+      "ParagraphMode": "line",
+      "Hits": [
+        {
+          "Id": "parallel-contrast",
+          "Group": "syntax",
+          "Title": "对举句式",
+          "Severity": "warn",
+          "Line": 1,
+          "Col": 3,
+          "Length": 7,
+          "Match": "不是速度，而是",
+          "Snippet": "问题不是速度，而是方向。\n缺陷不是…",
+          "Detail": "对举句式（AI 骨架）",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "parallel-contrast",
+          "Group": "syntax",
+          "Title": "对举句式",
+          "Severity": "warn",
+          "Line": 2,
+          "Col": 3,
+          "Length": 7,
+          "Match": "不是细节，而是",
+          "Snippet": "…而是方向。\n缺陷不是细节，而是结构。\n答复不是…",
+          "Detail": "对举句式（AI 骨架）",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "parallel-contrast",
+          "Group": "syntax",
+          "Title": "对举句式",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 3,
+          "Length": 7,
+          "Match": "不是解释，而是",
+          "Snippet": "…而是结构。\n答复不是解释，而是改法。\n工具不是…",
+          "Detail": "对举句式（AI 骨架）",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "parallel-contrast",
+          "Group": "syntax",
+          "Title": "对举句式",
+          "Severity": "warn",
+          "Line": 4,
+          "Col": 3,
+          "Length": 7,
+          "Match": "不是判官，而是",
+          "Snippet": "…而是改法。\n工具不是判官，而是尺子。\n报告不是…",
+          "Detail": "对举句式（AI 骨架）",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "parallel-contrast",
+          "Group": "syntax",
+          "Title": "对举句式",
+          "Severity": "warn",
+          "Line": 5,
+          "Col": 3,
+          "Length": 7,
+          "Match": "不是清单，而是",
+          "Snippet": "…而是尺子。\n报告不是清单，而是位置。\n重构不是…",
+          "Detail": "对举句式（AI 骨架）",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "parallel-contrast",
+          "Group": "syntax",
+          "Title": "对举句式",
+          "Severity": "warn",
+          "Line": 6,
+          "Col": 3,
+          "Length": 7,
+          "Match": "不是重写，而是",
+          "Snippet": "…而是位置。\n重构不是重写，而是拆开。\n沉默不是…",
+          "Detail": "对举句式（AI 骨架）",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "parallel-contrast",
+          "Group": "syntax",
+          "Title": "对举句式",
+          "Severity": "warn",
+          "Line": 7,
+          "Col": 3,
+          "Length": 7,
+          "Match": "不是同意，而是",
+          "Snippet": "…而是拆开。\n沉默不是同意，而是没答。\n犹豫不是…",
+          "Detail": "对举句式（AI 骨架）",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "parallel-contrast",
+          "Group": "syntax",
+          "Title": "对举句式",
+          "Severity": "warn",
+          "Line": 8,
+          "Col": 3,
+          "Length": 7,
+          "Match": "不是谨慎，而是",
+          "Snippet": "…而是没答。\n犹豫不是谨慎，而是没想。\n删改不是…",
+          "Detail": "对举句式（AI 骨架）",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "parallel-contrast",
+          "Group": "syntax",
+          "Title": "对举句式",
+          "Severity": "warn",
+          "Line": 9,
+          "Col": 3,
+          "Length": 7,
+          "Match": "不是损失，而是",
+          "Snippet": "…而是没想。\n删改不是损失，而是收口。\n接口不是…",
+          "Detail": "对举句式（AI 骨架）",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "agent-process-jargon",
+          "Group": "lexis",
+          "Title": "流程行话",
+          "Severity": "info",
+          "Line": 9,
+          "Col": 10,
+          "Length": 2,
+          "Match": "收口",
+          "Snippet": "…改不是损失，而是收口。\n接口不是文档…",
+          "Detail": "收口、落盘、口径、档位、体检——这一带自造的词，头一次读到的人得先翻译一遍。回复每十万字 91 处，人写的技术博文 2 处。第一次出现时给一句同义的人话，或直接换掉",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "parallel-contrast",
+          "Group": "syntax",
+          "Title": "对举句式",
+          "Severity": "warn",
+          "Line": 10,
+          "Col": 3,
+          "Length": 7,
+          "Match": "不是文档，而是",
+          "Snippet": "…而是收口。\n接口不是文档，而是承诺。\n参数不是…",
+          "Detail": "对举句式（AI 骨架）",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "parallel-contrast",
+          "Group": "syntax",
+          "Title": "对举句式",
+          "Severity": "warn",
+          "Line": 11,
+          "Col": 3,
+          "Length": 7,
+          "Match": "不是装饰，而是",
+          "Snippet": "…而是承诺。\n参数不是装饰，而是约定。\n",
+          "Detail": "对举句式（AI 骨架）",
+          "Hint": null,
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": [
+        {
+          "Id": "paragraph-length-uniform",
+          "Text": "段落长度过于均一（变异系数 0.00，11 段）——人写文本段落长短通常更参差"
+        },
+        {
+          "Id": "sentence-length-uniform",
+          "Text": "句长分布过于整齐（变异系数 0.00，11 句）"
+        }
+      ]
+    }
+  ]
+}

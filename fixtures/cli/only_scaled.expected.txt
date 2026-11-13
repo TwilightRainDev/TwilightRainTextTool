@@ -1,0 +1,19 @@
+[发现] 路径清单（17 处）
+       第 32 行 第 24 列  …份数那组数在 `ARCHITECTURE.md` 的博文识别一…  <- 一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处
+       第 32 行 第 51 列  …文识别一节与 `docs/ReleaseNotes.md` 的升级说明里…  <- 一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处
+       第 32 行 第 134 列  …判断条件本身。`ai-tic-catalog.md` 的实测与小说…  <- 一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处
+       第 80 行 第 1 列  …nd qq> ./run.sh up # 起协…  <- 一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处
+       第 81 行 第 1 列  …器人，后台运行 ./run.sh status …  <- 一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处
+       第 82 行 第 1 列  … # 查看状态 ./run.sh logs # …  <- 一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处
+       第 83 行 第 1 列  … 跟机器人日志 ./run.sh down # …  <- 一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处
+       第 84 行 第 1 列  …wn # 全停 ./run.sh fg # 机器…  <- 一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处
+       第 90 行 第 22 列  …里，不走文件：`default_schemes.json`、`defau…  <- 一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处
+       第 90 行 第 45 列  ….json`、`default_vn_schemes.json`、`defau…  <- 一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处
+       第 90 行 第 71 列  ….json`、`default_lint_rules.json`、`pinne…  <- 一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处
+       第 90 行 第 97 列  ….json`、`pinned_roots.txt`。 编码检测…  <- 一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处
+       第 124 行 第 11 列  …只有一个来源：`scripts/release-assets.sh` 的 `tex…  <- 一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处
+       第 124 行 第 177 列  …56`；CI、`release.sh`、`publi…  <- 一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处
+       第 124 行 第 190 列  …se.sh`、`publish.sh` 都调它，不各…  <- 一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处
+       第 212 行 第 16 列  …or path /opt/buildhome/repo/package.json npm err…  <- 一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处
+       第 213 行 第 33 列  …ot read package.json 换句话说，我…  <- 一段里至少两个文件路径或产物名（TextTool.Core/LintRule.cs、texttool.dll）——读者要知道的是哪个文件里发生了什么，不是它在这台机器上放在哪。回复每十万字 134 处，人写的技术博文 23 处
+[说明] 全文 13135 字，发现 17 处，另有 0 条统计；按段落分段。这个工具只指出位置，不改你的字。

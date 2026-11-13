@@ -1,0 +1,32 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "repeat_opening.txt",
+      "Chars": 93,
+      "ParagraphMode": "line",
+      "Hits": [
+        {
+          "Id": "agent-weight-comparison",
+          "Group": "syntax",
+          "Title": "给每句话称重",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 5,
+          "Length": 4,
+          "Match": "声音比平",
+          "Snippet": "…桌上。\n他说话的声音比平时低。\n然后他把…",
+          "Detail": "把普通对话称出重量：「这句话比之前的都重」「比刚才稳」。轻重、稳平说的是说话人的态度，不是事情本身，读者拿不到一条能验证的事实",
+          "Hint": "别替别人的声音估重量，说那句对不对",
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": [
+        {
+          "Id": "repeated-paragraph-opening",
+          "Text": "段首两字高度重复：「他说」×3、「然后」×3"
+        }
+      ]
+    }
+  ]
+}

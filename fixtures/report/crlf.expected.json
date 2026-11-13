@@ -1,0 +1,27 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "crlf.txt",
+      "Chars": 33,
+      "ParagraphMode": "markdown",
+      "Hits": [
+        {
+          "Id": "repeated-punctuation",
+          "Group": "punctuation",
+          "Title": "重复标点",
+          "Severity": "warn",
+          "Line": 1,
+          "Col": 14,
+          "Length": 3,
+          "Match": "！！！",
+          "Snippet": "…里有一个重复标点！！！\r\n\r\n第二行，…",
+          "Detail": "连续重复的标点",
+          "Hint": null,
+          "SuggestScheme": "重复矛盾标点整理"
+        }
+      ],
+      "Notes": []
+    }
+  ]
+}

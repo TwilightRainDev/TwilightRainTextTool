@@ -1,0 +1,83 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "shape_bracket.txt",
+      "Chars": 98,
+      "ParagraphMode": "markdown",
+      "Hits": [
+        {
+          "Id": "mixed-bracket-width",
+          "Group": "punctuation",
+          "Title": "括号全半角混用",
+          "Severity": "info",
+          "Line": 1,
+          "Col": 5,
+          "Length": 1,
+          "Match": "（",
+          "Snippet": "排序规则（按优先级从高到低…",
+          "Detail": "半角 4 个 / 全角 4 个",
+          "Hint": null,
+          "SuggestScheme": "引号括号统一"
+        },
+        {
+          "Id": "mixed-punctuation-width",
+          "Group": "punctuation",
+          "Title": "全半角混用",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 8,
+          "Length": 2,
+          "Match": "序(",
+          "Snippet": "…\n第一条是稳定排序(相同键值的相对次…",
+          "Detail": "半角标点与中文或全角字符相邻",
+          "Hint": null,
+          "SuggestScheme": "标点符号转换"
+        },
+        {
+          "Id": "mixed-punctuation-width",
+          "Group": "punctuation",
+          "Title": "全半角混用",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 20,
+          "Length": 2,
+          "Match": "变)",
+          "Snippet": "…键值的相对次序不变)。第二条是空值排…",
+          "Detail": "半角标点与中文或全角字符相邻",
+          "Hint": null,
+          "SuggestScheme": "标点符号转换"
+        },
+        {
+          "Id": "mixed-punctuation-width",
+          "Group": "punctuation",
+          "Title": "全半角混用",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 65,
+          "Length": 2,
+          "Match": "排(",
+          "Snippet": "…排，字符串按码位排(不按读音)。\n",
+          "Detail": "半角标点与中文或全角字符相邻",
+          "Hint": null,
+          "SuggestScheme": "标点符号转换"
+        },
+        {
+          "Id": "mixed-punctuation-width",
+          "Group": "punctuation",
+          "Title": "全半角混用",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 70,
+          "Length": 2,
+          "Match": "音)",
+          "Snippet": "…按码位排(不按读音)。\n",
+          "Detail": "半角标点与中文或全角字符相邻",
+          "Hint": null,
+          "SuggestScheme": "标点符号转换"
+        }
+      ],
+      "Notes": []
+    }
+  ]
+}

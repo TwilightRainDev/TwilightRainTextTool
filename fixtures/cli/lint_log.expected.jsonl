@@ -1,0 +1,13 @@
+{"Kind":"Report","File":"short.txt","Chars":201,"ParagraphMode":"markdown","Hits":12}
+{"Kind":"Hit","File":"short.txt","Line":1,"Col":1,"Length":2,"Id":"completion-log","Severity":"info","Match":"这次","Snippet":"这次的改动只是把入口\u2026"}
+{"Kind":"Hit","File":"short.txt","Line":3,"Col":9,"Length":2,"Id":"cliche-words","Severity":"info","Match":"闭环","Snippet":"\u2026我们把它当成一次闭环赋能，顺手把抓手\u2026"}
+{"Kind":"Hit","File":"short.txt","Line":3,"Col":9,"Length":2,"Id":"deck-speak","Severity":"info","Match":"闭环","Snippet":"\u2026我们把它当成一次闭环赋能，顺手把抓手\u2026"}
+{"Kind":"Hit","File":"short.txt","Line":3,"Col":11,"Length":2,"Id":"cliche-words","Severity":"info","Match":"赋能","Snippet":"\u2026把它当成一次闭环赋能，顺手把抓手也搭\u2026"}
+{"Kind":"Hit","File":"short.txt","Line":3,"Col":11,"Length":2,"Id":"deck-speak","Severity":"info","Match":"赋能","Snippet":"\u2026把它当成一次闭环赋能，顺手把抓手也搭\u2026"}
+{"Kind":"Hit","File":"short.txt","Line":3,"Col":17,"Length":2,"Id":"cliche-words","Severity":"info","Match":"抓手","Snippet":"\u2026闭环赋能，顺手把抓手也搭好了！！！\n\u2026"}
+{"Kind":"Hit","File":"short.txt","Line":3,"Col":17,"Length":2,"Id":"deck-speak","Severity":"info","Match":"抓手","Snippet":"\u2026闭环赋能，顺手把抓手也搭好了！！！\n\u2026"}
+{"Kind":"Hit","File":"short.txt","Line":3,"Col":23,"Length":3,"Id":"repeated-punctuation","Severity":"warn","Match":"！！！","Snippet":"\u2026手把抓手也搭好了！！！\n\n正文里两个选\u2026"}
+{"Kind":"Hit","File":"short.txt","Line":5,"Col":10,"Length":6,"Id":"agent-cli-option","Severity":"info","Match":"--json","Snippet":"\u2026文里两个选项 `--json` 和 `--l\u2026"}
+{"Kind":"Hit","File":"short.txt","Line":5,"Col":21,"Length":5,"Id":"agent-cli-option","Severity":"info","Match":"--log","Snippet":"\u2026son` 和 `--log` 都写在句子中\u2026"}
+{"Kind":"Hit","File":"short.txt","Line":7,"Col":1,"Length":1,"Id":"ellipsis-style","Severity":"warn","Match":"\u2026","Snippet":"\u2026一遍就明白。\n\n\u2026这句的省略号写法\u2026"}
+{"Kind":"Hit","File":"short.txt","Line":11,"Col":1,"Length":4,"Id":"completion-log","Severity":"info","Match":"验收通过","Snippet":"\u2026 两个路径。\n\n验收通过以后再说一遍，这\u2026"}

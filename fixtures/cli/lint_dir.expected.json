@@ -1,0 +1,78 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "lint_dir/a_first.txt",
+      "Chars": 14,
+      "ParagraphMode": "line",
+      "Hits": [
+        {
+          "Id": "cliche-words",
+          "Group": "lexis",
+          "Title": "套话词",
+          "Severity": "info",
+          "Line": 1,
+          "Col": 1,
+          "Length": 6,
+          "Match": "值得注意的是",
+          "Snippet": "值得注意的是，这不是重点。\n",
+          "Detail": "套话/空词",
+          "Hint": null,
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": []
+    },
+    {
+      "File": "lint_dir/b_upper.MD",
+      "Chars": 13,
+      "ParagraphMode": "line",
+      "Hits": [
+        {
+          "Id": "cliche-words",
+          "Group": "lexis",
+          "Title": "套话词",
+          "Severity": "info",
+          "Line": 1,
+          "Col": 10,
+          "Length": 2,
+          "Match": "赋能",
+          "Snippet": "…的来说，这是一种赋能。\n",
+          "Detail": "套话/空词",
+          "Hint": null,
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": []
+    },
+    {
+      "File": "lint_dir/sub/c_nested.txt",
+      "Chars": 7,
+      "ParagraphMode": "line",
+      "Hits": [],
+      "Notes": []
+    },
+    {
+      "File": "lint_dir/zzz/d_last.md",
+      "Chars": 14,
+      "ParagraphMode": "markdown",
+      "Hits": [
+        {
+          "Id": "cliche-words",
+          "Group": "lexis",
+          "Title": "套话词",
+          "Severity": "info",
+          "Line": 3,
+          "Col": 1,
+          "Length": 6,
+          "Match": "值得注意的是",
+          "Snippet": "# 标题\n\n值得注意的是。\n",
+          "Detail": "套话/空词",
+          "Hint": null,
+          "SuggestScheme": null
+        }
+      ],
+      "Notes": []
+    }
+  ]
+}

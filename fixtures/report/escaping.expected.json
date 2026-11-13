@@ -1,0 +1,55 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "escaping.txt",
+      "Chars": 69,
+      "ParagraphMode": "markdown",
+      "Hits": [
+        {
+          "Id": "invisible-characters",
+          "Group": "punctuation",
+          "Title": "隐形字符",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 4,
+          "Length": 1,
+          "Match": "\u200b",
+          "Snippet": "… 号。\n\n这里有\u200b一个零宽空格，还…",
+          "Detail": "隐形字符（零宽/软连字符/不换行空格）",
+          "Hint": null,
+          "SuggestScheme": "特殊符号清除"
+        },
+        {
+          "Id": "invisible-characters",
+          "Group": "punctuation",
+          "Title": "隐形字符",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 14,
+          "Length": 1,
+          "Match": "\u00A0",
+          "Snippet": "…个零宽空格，还有\u00A0一个不间断空格，…",
+          "Detail": "隐形字符（零宽/软连字符/不换行空格）",
+          "Hint": null,
+          "SuggestScheme": "特殊符号清除"
+        },
+        {
+          "Id": "invisible-characters",
+          "Group": "punctuation",
+          "Title": "隐形字符",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 25,
+          "Length": 1,
+          "Match": "\u00ad",
+          "Snippet": "…不间断空格，以及\u00ad一个软连字符。\n",
+          "Detail": "隐形字符（零宽/软连字符/不换行空格）",
+          "Hint": null,
+          "SuggestScheme": "特殊符号清除"
+        }
+      ],
+      "Notes": []
+    }
+  ]
+}

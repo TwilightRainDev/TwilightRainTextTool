@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    把 3.1 解析出来的规则表导成 JSON，给原生版的对照测试当基准。
+    它不是产品的一部分：不发布、不进 TextTool.sln，只在开发机上跑。
+    改这里的判据之前先想清楚：基准变了，原生版就要跟着重新对齐。
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>RuleDump</AssemblyName>
+    <RootNamespace>RuleDump</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../../Config/Archive/TextTool/TextTool.Core/TextTool.Core.csproj" />
+  </ItemGroup>
+</Project>

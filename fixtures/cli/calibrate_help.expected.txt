@@ -1,0 +1,10 @@
+calibrate 选项：
+  --human <目录>        人类写的文本目录（递归收 .txt）
+  --ai <目录>           模型写的文本目录（递归收 .txt）
+  --genre <doc|fiction|agent>  只跑该档规则；不给则整张规则表都跑
+  --json                以 JSON 输出（Version 1：Genre、Human、Ai、SeparableCount、Rules）
+
+判定：人类侧零命中、模型侧有命中记「可分」；两侧都有命中且模型侧每千字命中
+达到人类侧三倍记「弱」；其余记「不可分」。密度用未取整的值算，表里只取两位小数。
+
+退出码：0 = 跑完，2 = 用法或读取错误（缺 --human/--ai、目录不存在、没有 .txt、文本类型拼错）。

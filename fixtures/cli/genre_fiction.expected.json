@@ -1,0 +1,83 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "short.txt",
+      "Chars": 201,
+      "ParagraphMode": "markdown",
+      "Hits": [
+        {
+          "Id": "cliche-words",
+          "Group": "lexis",
+          "Title": "套话词",
+          "Severity": "info",
+          "Line": 3,
+          "Col": 9,
+          "Length": 2,
+          "Match": "闭环",
+          "Snippet": "…我们把它当成一次闭环赋能，顺手把抓手…",
+          "Detail": "套话/空词",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "cliche-words",
+          "Group": "lexis",
+          "Title": "套话词",
+          "Severity": "info",
+          "Line": 3,
+          "Col": 11,
+          "Length": 2,
+          "Match": "赋能",
+          "Snippet": "…把它当成一次闭环赋能，顺手把抓手也搭…",
+          "Detail": "套话/空词",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "cliche-words",
+          "Group": "lexis",
+          "Title": "套话词",
+          "Severity": "info",
+          "Line": 3,
+          "Col": 17,
+          "Length": 2,
+          "Match": "抓手",
+          "Snippet": "…闭环赋能，顺手把抓手也搭好了！！！\n…",
+          "Detail": "套话/空词",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "repeated-punctuation",
+          "Group": "punctuation",
+          "Title": "重复标点",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 23,
+          "Length": 3,
+          "Match": "！！！",
+          "Snippet": "…手把抓手也搭好了！！！\n\n正文里两个选…",
+          "Detail": "连续重复的标点",
+          "Hint": null,
+          "SuggestScheme": "重复矛盾标点整理"
+        },
+        {
+          "Id": "ellipsis-style",
+          "Group": "punctuation",
+          "Title": "省略号风格",
+          "Severity": "warn",
+          "Line": 7,
+          "Col": 1,
+          "Length": 1,
+          "Match": "…",
+          "Snippet": "…一遍就明白。\n\n…这句的省略号写法…",
+          "Detail": "非标准省略号写法：中文句号连打，或单个省略号字符（标准为 ……）。三个及以上的英文句点不报，代码与老终端里这是通行写法",
+          "Hint": null,
+          "SuggestScheme": "横线省略号→逗号"
+        }
+      ],
+      "Notes": []
+    }
+  ]
+}

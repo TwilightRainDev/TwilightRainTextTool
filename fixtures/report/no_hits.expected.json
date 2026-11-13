@@ -1,0 +1,12 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "no_hits.txt",
+      "Chars": 16,
+      "ParagraphMode": "line",
+      "Hits": [],
+      "Notes": []
+    }
+  ]
+}

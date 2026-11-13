@@ -1,0 +1,41 @@
+{
+  "Version": 4,
+  "Reports": [
+    {
+      "File": "mixed.txt",
+      "Chars": 41,
+      "ParagraphMode": "markdown",
+      "Hits": [
+        {
+          "Id": "elevated-ending",
+          "Group": "syntax",
+          "Title": "结尾升华",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 1,
+          "Length": 11,
+          "Match": "不仅仅是一项优化，更是",
+          "Snippet": "…重要的改动。\n\n不仅仅是一项优化，更是一次彻底的改造！…",
+          "Detail": "段末拔高收尾",
+          "Hint": null,
+          "SuggestScheme": null
+        },
+        {
+          "Id": "repeated-punctuation",
+          "Group": "punctuation",
+          "Title": "重复标点",
+          "Severity": "warn",
+          "Line": 3,
+          "Col": 19,
+          "Length": 3,
+          "Match": "！！！",
+          "Snippet": "…是一次彻底的改造！！！\n",
+          "Detail": "连续重复的标点",
+          "Hint": null,
+          "SuggestScheme": "重复矛盾标点整理"
+        }
+      ],
+      "Notes": []
+    }
+  ]
+}

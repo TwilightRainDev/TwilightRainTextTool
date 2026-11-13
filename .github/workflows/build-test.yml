@@ -8,6 +8,8 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# 自动构建先只做引擎、命令行与测试：界面要 FLTK，两个平台的 FLTK
+# 构建还没在 Actions 上调稳，成功后另加一个界面任务，不要挡住这条主检查。
 jobs:
   linux:
     runs-on: ubuntu-latest
@@ -17,41 +19,22 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build build-essential \
-            libx11-dev libxft-dev libxinerama-dev libxcursor-dev libxfixes-dev \
-            libxrender-dev libfontconfig1-dev libjpeg-dev libpng-dev zlib1g-dev
-
-      - name: Build FLTK
-        run: |
-          curl -fsSL -o fltk.tar.gz \
-            https://github.com/fltk/fltk/releases/download/release-1.4.5/fltk-1.4.5-source.tar.gz
-          tar xf fltk.tar.gz
-          cmake -S fltk-1.4.5 -B fltk-build -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX="$PWD/fltk-install" \
-            -DFLTK_BUILD_TEST=OFF -DFLTK_BUILD_EXAMPLES=OFF \
-            -DFLTK_BUILD_FLUID=OFF -DFLTK_BUILD_SHARED_LIBS=OFF
-          cmake --build fltk-build
-          cmake --install fltk-build
+          sudo apt-get install -y cmake ninja-build build-essential
 
       - name: Configure and build
         run: |
-          cmake -S . -B build-linux -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DTEXTTOOL_FLTK_PREFIX="$PWD/fltk-install"
+          cmake -S . -B build-linux -G Ninja -DCMAKE_BUILD_TYPE=Release -DTEXTTOOL_BUILD_GUI=OFF
           cmake --build build-linux
 
       - name: Test
         run: ./build-linux/engine_tests
 
       - name: Package
-        run: |
-          python3 tools/package.py build-linux kylin cli --out artifacts
-          python3 tools/package.py build-linux kylin gui --out artifacts
+        run: python3 tools/package.py build-linux kylin cli --out artifacts
 
       - uses: actions/upload-artifact@v4
         with:
-          name: texttool-linux
+          name: texttool-linux-cli
           path: artifacts/*
 
   windows:
@@ -59,33 +42,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build FLTK
-        shell: pwsh
-        run: |
-          curl.exe -fsSL -o fltk.tar.gz `
-            https://github.com/fltk/fltk/releases/download/release-1.4.5/fltk-1.4.5-source.tar.gz
-          tar xf fltk.tar.gz
-          cmake -S fltk-1.4.5 -B fltk-build -G "Visual Studio 17 2022" -A x64 `
-            -DCMAKE_INSTALL_PREFIX="$PWD/fltk-install" `
-            -DFLTK_BUILD_TEST=OFF -DFLTK_BUILD_EXAMPLES=OFF `
-            -DFLTK_BUILD_FLUID=OFF -DFLTK_BUILD_SHARED_LIBS=OFF
-          cmake --build fltk-build --config Release --target INSTALL
-
       - name: Configure and build
         run: |
-          cmake -S . -B build-windows -G "Visual Studio 17 2022" -A x64 `
-            -DTEXTTOOL_FLTK_PREFIX="$PWD/fltk-install"
+          cmake -S . -B build-windows -G "Visual Studio 17 2022" -A x64 -DTEXTTOOL_BUILD_GUI=OFF
           cmake --build build-windows --config Release
 
       - name: Test
         run: .\build-windows\Release\engine_tests.exe
 
       - name: Package
-        run: |
-          python tools/package.py build-windows/Release windows cli --out artifacts
-          python tools/package.py build-windows/Release windows gui --out artifacts
+        run: python tools/package.py build-windows/Release windows cli --out artifacts
 
       - uses: actions/upload-artifact@v4
         with:
-          name: texttool-windows
+          name: texttool-windows-cli
           path: artifacts/*

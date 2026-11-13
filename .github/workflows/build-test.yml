@@ -42,16 +42,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 用与开发机相同的 NMake 生成器；Visual Studio 生成器在
+      # windows-latest 上找不到实例时，会在配置阶段直接失败。
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Configure and build
         run: |
-          cmake -S . -B build-windows -G "Visual Studio 17 2022" -A x64 -DTEXTTOOL_BUILD_GUI=OFF
-          cmake --build build-windows --config Release
+          cmake -S . -B build-windows -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DTEXTTOOL_BUILD_GUI=OFF
+          cmake --build build-windows
 
       - name: Test
-        run: .\build-windows\Release\engine_tests.exe
+        run: .\build-windows\engine_tests.exe
 
       - name: Package
-        run: python tools/package.py build-windows/Release windows cli --out artifacts
+        run: python tools/package.py build-windows windows cli --out artifacts
 
       - uses: actions/upload-artifact@v4
         with:

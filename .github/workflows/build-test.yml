@@ -8,6 +8,12 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# 自带 Python 在 Windows 上默认按系统代码页输出，打印中文包名会直接报编码错误。
+# 两个任务都强制 UTF-8，命令行与界面打包的输出才一致。
+env:
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: "utf-8"
+
 # 自动构建先只做引擎、命令行与测试：界面要 FLTK，两个平台的 FLTK
 # 构建还没在 Actions 上调稳，成功后另加一个界面任务，不要挡住这条主检查。
 jobs:
